@@ -102,20 +102,27 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: AutofillGroup(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+            return SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + keyboardInset),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: (constraints.maxHeight - 48).clamp(0, double.infinity),
+                  maxWidth: 460,
+                ),
+                child: Center(
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: AutofillGroup(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
                         const GuardAidBrand(),
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 22),
                         const Text(
                           'Welcome back',
                           style: TextStyle(
@@ -200,23 +207,38 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: const Color(0xFFEAF3F8),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Text(
-                              'Prototype demo account\nadmin@guardaid.demo  ·  GuardAId123!',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: GuardAidColors.navy,
-                                height: 1.45,
-                              ),
+                            child: const Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.science_outlined,
+                                  size: 20,
+                                  color: GuardAidColors.navy,
+                                ),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Prototype demo mode\nCredentials are prefilled for local review only. This notice is not shown in live mode.',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: GuardAidColors.navy,
+                                      height: 1.45,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
-                      ],
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

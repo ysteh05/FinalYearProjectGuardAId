@@ -29,6 +29,7 @@ abstract interface class GuardAidRepository {
     required bool enabled,
     required Set<String> recipientRoleIds,
   });
+  Future<BorderlineSettings> loadBorderlineSettings();
 }
 
 class DemoGuardAidRepository implements GuardAidRepository {
@@ -177,8 +178,8 @@ class DemoGuardAidRepository implements GuardAidRepository {
       userCount: 12,
     ),
   ];
-  final List<AppUser> _users = const [
-    AppUser(
+  final List<AppUser> _users = [
+    const AppUser(
       id: 'user_admin',
       email: 'admin@guardaid.demo',
       displayName: 'Alex Morgan',
@@ -188,7 +189,7 @@ class DemoGuardAidRepository implements GuardAidRepository {
       sensitivity: SensitivityMode.moderate,
       isAdmin: true,
     ),
-    AppUser(
+    const AppUser(
       id: 'user_security',
       email: 'security@guardaid.demo',
       displayName: 'Jordan Lee',
@@ -197,7 +198,7 @@ class DemoGuardAidRepository implements GuardAidRepository {
       roleName: 'Security Personnel',
       sensitivity: SensitivityMode.sensitive,
     ),
-    AppUser(
+    const AppUser(
       id: 'user_pending',
       email: 'teacher@guardaid.demo',
       displayName: 'Taylor Wong',
@@ -325,4 +326,11 @@ class DemoGuardAidRepository implements GuardAidRepository {
     borderlineEnabled = enabled;
     borderlineRecipients = Set.of(recipientRoleIds);
   }
+
+  @override
+  Future<BorderlineSettings> loadBorderlineSettings() async =>
+      BorderlineSettings(
+        enabled: borderlineEnabled,
+        recipientRoleIds: Set.unmodifiable(borderlineRecipients),
+      );
 }
