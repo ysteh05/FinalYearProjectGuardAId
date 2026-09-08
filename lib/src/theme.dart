@@ -78,6 +78,12 @@ ThemeData buildGuardAidTheme() {
         textStyle: const TextStyle(fontWeight: FontWeight.w700),
       ),
     ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        minimumSize: const Size(48, 48),
+        tapTargetSize: MaterialTapTargetSize.padded,
+      ),
+    ),
     navigationBarTheme: const NavigationBarThemeData(
       backgroundColor: Colors.white,
       indicatorColor: Color(0xFFDCEAF2),

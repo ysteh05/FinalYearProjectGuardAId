@@ -21,6 +21,8 @@ class AlertDetailScreen extends StatefulWidget {
 }
 
 class _AlertDetailScreenState extends State<AlertDetailScreen> {
+  bool submitting = false;
+
   GuardAlert get alert =>
       widget.controller.alerts.firstWhere((item) => item.id == widget.alertId);
 
@@ -148,6 +150,7 @@ class _AlertDetailScreenState extends State<AlertDetailScreen> {
       ),
     );
     if (result == null || !mounted) return;
+    setState(() => submitting = true);
     final success = await widget.controller.submitAlertAction(
       alert.id,
       targetStatus,
@@ -155,7 +158,7 @@ class _AlertDetailScreenState extends State<AlertDetailScreen> {
       recipientRoleIds: result.recipientRoleIds,
     );
     if (!mounted) return;
-    setState(() {});
+    setState(() => submitting = false);
     showMessage(
       context,
       success
@@ -183,8 +186,10 @@ class _AlertDetailScreenState extends State<AlertDetailScreen> {
       destructive: true,
     );
     if (!confirmed || !mounted) return;
+    setState(() => submitting = true);
     final success = await widget.controller.simulateEmergencyCall(alert.id);
     if (!mounted) return;
+    setState(() => submitting = false);
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
@@ -221,7 +226,7 @@ class _AlertDetailScreenState extends State<AlertDetailScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Alert review')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: pageListPadding(context, top: 8),
         children: [
           Card(
             child: Padding(
@@ -385,37 +390,54 @@ class _AlertDetailScreenState extends State<AlertDetailScreen> {
             const SizedBox(height: 22),
             const SectionTitle('Response actions'),
             const SizedBox(height: 10),
+            if (submitting) ...[
+              const LinearProgressIndicator(),
+              const SizedBox(height: 10),
+              const Text(
+                'Saving response… Please wait.',
+                style: TextStyle(color: GuardAidColors.muted),
+              ),
+              const SizedBox(height: 8),
+            ],
             OutlinedButton.icon(
-              onPressed: () => _showActionForm(AlertStatus.dismissed),
+              onPressed: submitting
+                  ? null
+                  : () => _showActionForm(AlertStatus.dismissed),
               icon: const Icon(Icons.cancel_outlined),
-              label: const Text('Dismiss as false alarm'),
+              label: Text(submitting ? 'Saving…' : 'Dismiss as false alarm'),
             ),
             const SizedBox(height: 10),
             FilledButton.icon(
               style: FilledButton.styleFrom(
                 backgroundColor: GuardAidColors.success,
               ),
-              onPressed: () => _showActionForm(AlertStatus.resolved),
+              onPressed: submitting
+                  ? null
+                  : () => _showActionForm(AlertStatus.resolved),
               icon: const Icon(Icons.check_circle_outline_rounded),
-              label: const Text('Resolve and notify school'),
+              label: Text(submitting ? 'Saving…' : 'Resolve and notify school'),
             ),
             const SizedBox(height: 10),
             FilledButton.icon(
               style: FilledButton.styleFrom(
                 backgroundColor: GuardAidColors.weapon,
               ),
-              onPressed: () => _showActionForm(AlertStatus.escalated),
+              onPressed: submitting
+                  ? null
+                  : () => _showActionForm(AlertStatus.escalated),
               icon: const Icon(Icons.emergency_share_rounded),
-              label: const Text('Escalate as emergency'),
+              label: Text(submitting ? 'Saving…' : 'Escalate as emergency'),
             ),
             const SizedBox(height: 10),
             OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 foregroundColor: GuardAidColors.weapon,
               ),
-              onPressed: _simulateEmergencyCall,
+              onPressed: submitting ? null : _simulateEmergencyCall,
               icon: const Icon(Icons.phone_in_talk_outlined),
-              label: const Text('Simulate emergency call'),
+              label: Text(
+                submitting ? 'Saving…' : 'Simulate emergency call',
+              ),
             ),
           ],
         ],
@@ -451,9 +473,11 @@ class _DetailRow extends StatelessWidget {
           Icon(icon, size: 19, color: GuardAidColors.muted),
           const SizedBox(width: 9),
           SizedBox(
-            width: 105,
+            width: 126,
             child: Text(
-              label,
+              '$label:',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: GuardAidColors.muted),
             ),
           ),
@@ -541,9 +565,16 @@ class _EvidenceViewerState extends State<EvidenceViewer> {
   @override
   Widget build(BuildContext context) {
     final url = widget.evidence.url;
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Column(
+    return Semantics(
+      label: widget.evidence.isVideo
+          ? 'Incident evidence video'
+          : 'Weapon evidence image',
+      hint: url == null
+          ? 'Demo evidence is not connected to a media file'
+          : 'Evidence media preview',
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AspectRatio(
@@ -555,32 +586,49 @@ class _EvidenceViewerState extends State<EvidenceViewer> {
           ),
           Padding(
             padding: const EdgeInsets.all(13),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  widget.evidence.isVideo
-                      ? Icons.movie_outlined
-                      : Icons.image_outlined,
-                  color: widget.accent,
+                Row(
+                  children: [
+                    Icon(
+                      widget.evidence.isVideo
+                          ? Icons.movie_outlined
+                          : Icons.image_outlined,
+                      color: widget.accent,
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Text(
+                        widget.evidence.isVideo
+                            ? 'Incident evidence clip'
+                            : 'Weapon evidence image',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    if (widget.evidence.startSeconds != null)
+                      Text(
+                        '${widget.evidence.startSeconds!.toStringAsFixed(1)}–${widget.evidence.endSeconds?.toStringAsFixed(1) ?? '?'}s',
+                        style: const TextStyle(color: GuardAidColors.muted),
+                      ),
+                  ],
                 ),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Text(
-                    widget.evidence.isVideo
-                        ? 'Incident evidence clip'
-                        : 'Weapon evidence image',
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                if (widget.evidence.startSeconds != null)
-                  Text(
-                    '${widget.evidence.startSeconds!.toStringAsFixed(1)}–${widget.evidence.endSeconds?.toStringAsFixed(1) ?? '?'}s',
-                    style: const TextStyle(color: GuardAidColors.muted),
+                if (url == null)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text(
+                      'Demo evidence preview only. A connected evidence URL is required for playback.',
+                      style: TextStyle(
+                        color: GuardAidColors.muted,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
               ],
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -602,6 +650,12 @@ class _EvidenceViewerState extends State<EvidenceViewer> {
             const Text(
               'Demo evidence preview',
               style: TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Playback becomes available when evidence is connected.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white54, fontSize: 11),
             ),
           ],
         ),

@@ -38,7 +38,7 @@ class _LogsScreenState extends State<LogsScreen> {
     int count(AlertStatus value) =>
         widget.controller.alerts.where((item) => item.status == value).length;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: pageListPadding(context),
       children: [
         const SectionTitle(
           'Incident logs',
@@ -127,6 +127,7 @@ class _LogsScreenState extends State<LogsScreen> {
               padding: const EdgeInsets.only(bottom: 12),
               child: AlertCard(
                 alert: alert,
+                actionLabel: 'View saved record',
                 onOpen: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => AlertDetailScreen(
@@ -156,8 +157,10 @@ class _LogMetric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
+    return Semantics(
+      label: '$label incidents: $value. Summary statistic.',
+      child: Card(
+        child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 13),
         child: Column(
           children: [
@@ -178,6 +181,7 @@ class _LogMetric extends StatelessWidget {
               style: const TextStyle(fontSize: 11, color: GuardAidColors.muted),
             ),
           ],
+        ),
         ),
       ),
     );
