@@ -5,6 +5,135 @@ import '../models.dart';
 import '../theme.dart';
 import '../widgets.dart';
 
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key, required this.controller});
+
+  final GuardAidController controller;
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  late final TextEditingController nameController;
+  bool saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    nameController = TextEditingController(
+      text: widget.controller.currentUser?.displayName == 'Name not provided'
+          ? ''
+          : widget.controller.currentUser?.displayName ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = nameController.text.trim();
+    if (name.isEmpty) {
+      showMessage(context, 'Enter a display name.', error: true);
+      return;
+    }
+    setState(() => saving = true);
+    final success = await widget.controller.updateProfile(name);
+    if (!mounted) return;
+    setState(() => saving = false);
+    showMessage(
+      context,
+      success
+          ? 'Profile updated.'
+          : widget.controller.error ?? 'Unable to update profile.',
+      error: !success,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = widget.controller.currentUser!;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Profile')),
+      body: ListView(
+        padding: pageListPadding(context, top: 8),
+        children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    maxLength: 80,
+                    textInputAction: TextInputAction.done,
+                    decoration: const InputDecoration(
+                      labelText: 'Display name',
+                      helperText: 'This name is shown to other authorised staff.',
+                      prefixIcon: Icon(Icons.badge_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _ReadOnlyProfileRow(label: 'Email', value: user.email),
+                  _ReadOnlyProfileRow(label: 'Role', value: user.roleName ?? 'No role assigned'),
+                  _ReadOnlyProfileRow(label: 'Sensitivity', value: user.sensitivity?.label ?? 'Not set'),
+                  _ReadOnlyProfileRow(label: 'Account status', value: user.status.name),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: saving ? null : _save,
+                    icon: saving
+                        ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.save_outlined),
+                    label: Text(saving ? 'Saving…' : 'Save profile'),
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final confirmed = await showConfirmDialog(
+                        context,
+                        title: 'Sign out?',
+                        message: 'You will need to sign in again to review GuardAId alerts.',
+                        confirmLabel: 'Sign out',
+                      );
+                      if (!confirmed || !context.mounted) return;
+                      await widget.controller.signOut();
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                    icon: const Icon(Icons.logout_rounded),
+                    label: const Text('Sign out'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReadOnlyProfileRow extends StatelessWidget {
+  const _ReadOnlyProfileRow({required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(width: 104, child: Text(label, style: const TextStyle(color: GuardAidColors.muted))),
+        Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w700))),
+      ],
+    ),
+  );
+}
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key, required this.controller});
 
@@ -71,7 +200,7 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
         ),
-        if (user.isAdmin) ...[
+        if (user.isAdmin && (user.permissions.manageRoles || user.permissions.manageUsers || user.permissions.manageBorderlineSettings)) ...[
           const SizedBox(height: 22),
           const Text(
             'Administration',
@@ -82,7 +211,8 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 9),
-          _SettingsTile(
+          if (user.permissions.manageRoles)
+            _SettingsTile(
             icon: Icons.admin_panel_settings_outlined,
             title: 'Roles and sensitivity',
             subtitle:
@@ -94,7 +224,8 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
-          _SettingsTile(
+          if (user.permissions.manageUsers)
+            _SettingsTile(
             icon: Icons.manage_accounts_outlined,
             title: 'User assignments',
             subtitle: 'Approve users, assign roles and disable access.',
@@ -105,7 +236,8 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
-          _SettingsTile(
+          if (user.permissions.manageBorderlineSettings)
+            _SettingsTile(
             icon: Icons.auto_awesome_outlined,
             title: 'Borderline alert settings',
             subtitle:
@@ -253,6 +385,27 @@ class RoleManagementScreen extends StatefulWidget {
 }
 
 class _RoleManagementScreenState extends State<RoleManagementScreen> {
+  Future<void> _createRole() async {
+    final result = await Navigator.push<_NewRoleDraft>(
+      context,
+      MaterialPageRoute<_NewRoleDraft>(builder: (_) => CreateRoleScreen(controller: widget.controller)),
+    );
+    if (result == null || !mounted) return;
+    final success = await widget.controller.createRole(
+      name: result.name,
+      description: result.description,
+      sensitivity: result.sensitivity,
+      permissions: result.permissions,
+    );
+    if (!mounted) return;
+    showMessage(
+      context,
+      success ? 'Role created.' : widget.controller.error ?? 'Unable to create role.',
+      error: !success,
+    );
+    if (success) setState(() {});
+  }
+
   Future<void> _editRole(GuardRole role) async {
     var mode = role.sensitivity;
     final selected = await showModalBottomSheet<SensitivityMode>(
@@ -359,9 +512,11 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
           overflow: TextOverflow.ellipsis,
         ),
       ),
-      body: ListView(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
           const Text(
             'Sensitivity is stored on the role. Every assigned user inherits the same alert threshold mode.',
             style: TextStyle(color: GuardAidColors.muted, height: 1.45),
@@ -378,13 +533,19 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Prototype roles are fixed in this build. Administrators can adjust sensitivity; creating or deleting roles is not enabled yet.',
+                      'System roles cannot be deleted. Custom roles can be created with only permissions already held by the current administrator.',
                       style: const TextStyle(color: GuardAidColors.muted, height: 1.4),
                     ),
                   ),
                 ],
               ),
             ),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: _createRole,
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Create role'),
           ),
           const SizedBox(height: 16),
           ...widget.controller.roles.map(
@@ -435,8 +596,21 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
                         spacing: 8,
                         runSpacing: 4,
                         children: [
-                          Text(
-                            '${role.userCount} assigned user${role.userCount == 1 ? '' : 's'}',
+                          TextButton.icon(
+                            onPressed: () async {
+                              await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute<bool>(
+                                  builder: (_) => AssignedUsersScreen(
+                                    controller: widget.controller,
+                                    role: role,
+                                  ),
+                                ),
+                              );
+                              if (mounted) setState(() {});
+                            },
+                            icon: const Icon(Icons.people_outline, size: 18),
+                            label: Text('${widget.controller.users.where((user) => user.roleId == role.id).length} assigned user${widget.controller.users.where((user) => user.roleId == role.id).length == 1 ? '' : 's'}'),
                           ),
                           TextButton.icon(
                             onPressed: () => _editRole(role),
@@ -451,6 +625,151 @@ class _RoleManagementScreenState extends State<RoleManagementScreen> {
               ),
             ),
           ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NewRoleDraft {
+  const _NewRoleDraft({required this.name, required this.description, required this.sensitivity, required this.permissions});
+  final String name;
+  final String description;
+  final SensitivityMode sensitivity;
+  final RolePermissions permissions;
+}
+
+class CreateRoleScreen extends StatefulWidget {
+  const CreateRoleScreen({super.key, required this.controller});
+  final GuardAidController controller;
+
+  @override
+  State<CreateRoleScreen> createState() => _CreateRoleScreenState();
+}
+
+class _CreateRoleScreenState extends State<CreateRoleScreen> {
+  final nameController = TextEditingController();
+  final descriptionController = TextEditingController();
+  SensitivityMode sensitivity = SensitivityMode.moderate;
+  bool manageRoles = false;
+  bool manageUsers = false;
+  bool manageBorderline = false;
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    descriptionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _review() async {
+    final name = nameController.text.trim();
+    final description = descriptionController.text.trim();
+    if (name.length < 2 || name.length > 60) {
+      showMessage(context, 'Role name must be 2–60 characters.', error: true);
+      return;
+    }
+    if (description.length > 200) {
+      showMessage(context, 'Description must be 200 characters or fewer.', error: true);
+      return;
+    }
+    final permissions = RolePermissions(
+      manageRoles: manageRoles,
+      manageUsers: manageUsers,
+      manageBorderlineSettings: manageBorderline,
+    );
+    final permissionLabels = <String>[
+      if (manageRoles) 'Manage roles',
+      if (manageUsers) 'Manage users',
+      if (manageBorderline) 'Manage borderline settings',
+    ];
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Create this role?',
+      message: '$name\nSensitivity: ${sensitivity.label}\nPermissions: ${permissionLabels.isEmpty ? 'No management permissions' : permissionLabels.join(', ')}',
+      confirmLabel: 'Create role',
+    );
+    if (confirmed && mounted) {
+      Navigator.pop(context, _NewRoleDraft(name: name, description: description, sensitivity: sensitivity, permissions: permissions));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Create role')),
+    body: ListView(
+      padding: pageListPadding(context, top: 8),
+      children: [
+        TextField(controller: nameController, maxLength: 60, decoration: const InputDecoration(labelText: 'Role name *')),
+        const SizedBox(height: 8),
+        TextField(controller: descriptionController, maxLength: 200, maxLines: 3, decoration: const InputDecoration(labelText: 'Description', alignLabelWithHint: true)),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<SensitivityMode>(
+          initialValue: sensitivity,
+          decoration: const InputDecoration(labelText: 'Sensitivity'),
+          items: SensitivityMode.values.map((mode) => DropdownMenuItem(value: mode, child: Text(mode.label))).toList(),
+          onChanged: (value) => setState(() => sensitivity = value ?? SensitivityMode.moderate),
+        ),
+        const SizedBox(height: 14),
+        const Text('Management permissions', style: TextStyle(fontWeight: FontWeight.w900)),
+        SwitchListTile(title: const Text('Manage roles'), value: manageRoles, onChanged: widget.controller.currentUser?.permissions.manageRoles == true ? (value) => setState(() => manageRoles = value) : null),
+        SwitchListTile(title: const Text('Manage users'), value: manageUsers, onChanged: widget.controller.currentUser?.permissions.manageUsers == true ? (value) => setState(() => manageUsers = value) : null),
+        SwitchListTile(title: const Text('Manage borderline settings'), value: manageBorderline, onChanged: widget.controller.currentUser?.permissions.manageBorderlineSettings == true ? (value) => setState(() => manageBorderline = value) : null),
+        const SizedBox(height: 12),
+        FilledButton.icon(onPressed: _review, icon: const Icon(Icons.check_rounded), label: const Text('Review and create')),
+      ],
+    ),
+  );
+}
+
+class AssignedUsersScreen extends StatefulWidget {
+  const AssignedUsersScreen({super.key, required this.controller, required this.role});
+  final GuardAidController controller;
+  final GuardRole role;
+
+  @override
+  State<AssignedUsersScreen> createState() => _AssignedUsersScreenState();
+}
+
+class _AssignedUsersScreenState extends State<AssignedUsersScreen> {
+  GuardAidController get controller => widget.controller;
+  GuardRole get role => widget.role;
+
+  @override
+  Widget build(BuildContext context) {
+    final users = controller.users.where((user) => user.roleId == role.id).toList();
+    return Scaffold(
+      appBar: AppBar(title: Text('${role.name} users', maxLines: 1, overflow: TextOverflow.ellipsis)),
+      body: ListView(
+        padding: pageListPadding(context, top: 8),
+        children: [
+          Text('${users.length} assigned user${users.length == 1 ? '' : 's'} · ${role.sensitivity.label} sensitivity', style: const TextStyle(color: GuardAidColors.muted)),
+          const SizedBox(height: 12),
+          if (users.isEmpty) const Card(child: Padding(padding: EdgeInsets.all(18), child: Text('No users are assigned to this role.'))),
+          ...users.map((user) => Card(
+            child: ListTile(
+              title: Text(user.displayName, style: const TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: Text('${user.email}\n${user.status.name}'),
+              isThreeLine: true,
+              trailing: IconButton(
+                tooltip: 'Revoke role',
+                icon: const Icon(Icons.close_rounded, color: GuardAidColors.weapon),
+                onPressed: () async {
+                  final ok = await showConfirmDialog(context, title: 'Revoke ${role.name}?', message: 'The user will become Pending and all registered notification devices will be disabled.', confirmLabel: 'Revoke role', destructive: true);
+                  if (!ok || !context.mounted) return;
+                  final success = await controller.updateUserAssignment(user.id, null, UserStatus.pending);
+                  if (!context.mounted) return;
+                  if (success) {
+                    setState(() {});
+                    showMessage(context, 'Role revoked.');
+                  } else {
+                    showMessage(context, controller.error ?? 'Unable to revoke role.', error: true);
+                  }
+                },
+              ),
+            ),
+          )),
         ],
       ),
     );

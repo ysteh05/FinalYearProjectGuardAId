@@ -54,16 +54,27 @@ class _HomeShellState extends State<HomeShell> {
               ),
             ),
           Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: GuardAidColors.navy,
-              child: Text(
-                _initials(widget.controller.currentUser?.displayName ?? 'User'),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
+            padding: const EdgeInsets.only(right: 10),
+            child: IconButton(
+              tooltip: 'Open profile',
+              onPressed: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ProfileScreen(controller: widget.controller),
+                  ),
+                );
+                if (mounted) setState(() {});
+              },
+              icon: CircleAvatar(
+                radius: 18,
+                backgroundColor: GuardAidColors.navy,
+                child: Text(
+                  _initials(widget.controller.currentUser?.displayName ?? 'User'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ),

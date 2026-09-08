@@ -5,6 +5,7 @@ abstract interface class GuardAidRepository {
   Stream<String> get openedAlertIds;
   Future<String?> takeInitialAlertId();
   Future<AppUser> signIn(String email, String password);
+  Future<AppUser> refreshSession();
   Future<void> sendPasswordReset(String email);
   Future<void> signOut();
   Future<List<GuardAlert>> loadAlerts();
@@ -20,11 +21,18 @@ abstract interface class GuardAidRepository {
   Future<void> recordSimulatedEmergencyCall(String alertId);
   Future<void> markAllNotificationsRead();
   Future<void> updateRoleSensitivity(String roleId, SensitivityMode mode);
+  Future<void> createRole({
+    required String name,
+    required String description,
+    required SensitivityMode sensitivity,
+    required RolePermissions permissions,
+  });
   Future<void> updateUserAssignment(
     String userId, {
-    required String roleId,
+    String? roleId,
     required UserStatus status,
   });
+  Future<void> updateProfile(String displayName);
   Future<void> updateBorderlineSettings({
     required bool enabled,
     required Set<String> recipientRoleIds,
@@ -188,6 +196,11 @@ class DemoGuardAidRepository implements GuardAidRepository {
       roleName: 'School Administrator',
       sensitivity: SensitivityMode.moderate,
       isAdmin: true,
+      permissions: RolePermissions(
+        manageRoles: true,
+        manageUsers: true,
+        manageBorderlineSettings: true,
+      ),
     ),
     const AppUser(
       id: 'user_security',
@@ -230,6 +243,9 @@ class DemoGuardAidRepository implements GuardAidRepository {
     }
     throw const FormatException('Incorrect email or password.');
   }
+
+  @override
+  Future<AppUser> refreshSession() async => _users.first;
 
   @override
   Future<void> sendPasswordReset(String email) async {
@@ -301,14 +317,42 @@ class DemoGuardAidRepository implements GuardAidRepository {
   }
 
   @override
+  Future<void> createRole({
+    required String name,
+    required String description,
+    required SensitivityMode sensitivity,
+    required RolePermissions permissions,
+  }) async {
+    if (_roles.any((role) => role.name.toLowerCase() == name.trim().toLowerCase())) {
+      throw StateError('A role with this name already exists.');
+    }
+    _roles.add(
+      GuardRole(
+        id: 'role_custom_${DateTime.now().microsecondsSinceEpoch}',
+        name: name.trim(),
+        description: description.trim(),
+        sensitivity: sensitivity,
+        userCount: 0,
+        isAdmin: false,
+        isSystem: false,
+        permissions: permissions,
+      ),
+    );
+  }
+
+  @override
   Future<void> updateUserAssignment(
     String userId, {
-    required String roleId,
+    String? roleId,
     required UserStatus status,
   }) async {
     final index = _users.indexWhere((user) => user.id == userId);
-    final role = _roles.firstWhere((item) => item.id == roleId);
     if (index < 0) throw StateError('User not found.');
+    if (roleId == null) {
+      _users[index] = _users[index].copyWith(status: UserStatus.pending);
+      return;
+    }
+    final role = _roles.firstWhere((item) => item.id == roleId);
     _users[index] = _users[index].copyWith(
       roleId: role.id,
       roleName: role.name,
@@ -316,6 +360,23 @@ class DemoGuardAidRepository implements GuardAidRepository {
       status: status,
       isAdmin: role.isAdmin,
     );
+  }
+
+  @override
+  Future<void> updateProfile(String displayName) async {
+    final index = _users.indexWhere((user) => user.id == 'user_admin');
+    if (index >= 0) {
+      _users[index] = AppUser(
+        id: _users[index].id,
+        email: _users[index].email,
+        displayName: displayName.trim(),
+        status: _users[index].status,
+        roleId: _users[index].roleId,
+        roleName: _users[index].roleName,
+        sensitivity: _users[index].sensitivity,
+        isAdmin: _users[index].isAdmin,
+      );
+    }
   }
 
   @override

@@ -5,6 +5,7 @@ import '../firebase_options.dart';
 import 'controller.dart';
 import 'firebase_api_repository.dart';
 import 'models.dart';
+import 'notification_service.dart';
 import 'repository.dart';
 import 'screens/home_shell.dart';
 import 'screens/login_screen.dart';
@@ -17,7 +18,7 @@ class GuardAidApp extends StatefulWidget {
   State<GuardAidApp> createState() => _GuardAidAppState();
 }
 
-class _GuardAidAppState extends State<GuardAidApp> {
+class _GuardAidAppState extends State<GuardAidApp> with WidgetsBindingObserver {
   static const liveMode = bool.fromEnvironment('GUARDAID_LIVE_MODE');
   static const backendUrl = String.fromEnvironment(
     'GUARDAID_BACKEND_URL',
@@ -31,6 +32,7 @@ class _GuardAidAppState extends State<GuardAidApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initialiseRepository();
     Future<void>.delayed(const Duration(milliseconds: 900), () {
       if (mounted) setState(() => showSplash = false);
@@ -44,6 +46,7 @@ class _GuardAidAppState extends State<GuardAidApp> {
         await Firebase.initializeApp(
           options: DefaultFirebaseOptions.currentPlatform,
         );
+        await GuardAidNotificationService.initialize();
         repository = FirebaseApiGuardAidRepository(baseUrl: backendUrl);
       } else {
         repository = DemoGuardAidRepository();
@@ -56,8 +59,16 @@ class _GuardAidAppState extends State<GuardAidApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     controller?.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && controller?.isSignedIn == true) {
+      controller?.refresh();
+    }
   }
 
   @override

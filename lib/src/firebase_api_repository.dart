@@ -23,7 +23,7 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
   final FirebaseAuth _auth;
   final FirebaseMessaging _messaging;
   final http.Client _client;
-  bool _isAdmin = false;
+  RolePermissions _permissions = const RolePermissions();
   StreamSubscription<String>? _tokenRefreshSubscription;
 
   @override
@@ -56,7 +56,7 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
           await _requestJson('GET', '/api/mobile/session')
               as Map<String, dynamic>;
       final user = _parseSession(session);
-      _isAdmin = user.isAdmin;
+      _permissions = user.permissions;
       if (user.status == UserStatus.active) {
         await _registerDevice();
         _tokenRefreshSubscription ??= _messaging.onTokenRefresh.listen(
@@ -73,6 +73,14 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
   }
 
   @override
+  Future<AppUser> refreshSession() async {
+    final session = await _requestJson('GET', '/api/mobile/session') as Map<String, dynamic>;
+    final user = _parseSession(session);
+    _permissions = user.permissions;
+    return user;
+  }
+
+  @override
   Future<void> sendPasswordReset(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email.trim());
@@ -83,7 +91,6 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
 
   @override
   Future<void> signOut() async {
-    _isAdmin = false;
     await _tokenRefreshSubscription?.cancel();
     _tokenRefreshSubscription = null;
     await _auth.signOut();
@@ -128,11 +135,13 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
         .map((item) {
           return GuardRole(
             id: item['id'] as String,
-            name: _roleDisplayName(item['name'] as String),
+            name: item['displayName'] as String? ?? _roleDisplayName(item['name'] as String),
             description: item['description'] as String? ?? '',
             sensitivity: _sensitivity(item['sensitivityMode'] as String?),
             userCount: item['userCount'] as int? ?? 0,
             isAdmin: item['isAdmin'] as bool? ?? false,
+            isSystem: item['isSystem'] as bool? ?? true,
+            permissions: _parsePermissions(item['permissions']),
           );
         })
         .toList(growable: false);
@@ -140,7 +149,7 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
 
   @override
   Future<List<AppUser>> loadUsers() async {
-    if (!_isAdmin) return const [];
+    if (!_permissions.manageUsers) return const [];
     final payload =
         await _requestJson('GET', '/api/mobile/admin/users') as List<dynamic>;
     return payload
@@ -204,15 +213,45 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
   }
 
   @override
+  Future<void> createRole({
+    required String name,
+    required String description,
+    required SensitivityMode sensitivity,
+    required RolePermissions permissions,
+  }) async {
+    await _requestJson(
+      'POST',
+      '/api/mobile/admin/roles',
+      body: {
+        'name': name.trim(),
+        'description': description.trim(),
+        'sensitivityMode': sensitivity.name,
+        'canManageRoles': permissions.manageRoles,
+        'canManageUsers': permissions.manageUsers,
+        'canManageBorderlineSettings': permissions.manageBorderlineSettings,
+      },
+    );
+  }
+
+  @override
   Future<void> updateUserAssignment(
     String userId, {
-    required String roleId,
+    String? roleId,
     required UserStatus status,
   }) async {
     await _requestJson(
       'PATCH',
       '/api/mobile/admin/users/$userId',
       body: {'roleId': roleId, 'status': status.name},
+    );
+  }
+
+  @override
+  Future<void> updateProfile(String displayName) async {
+    await _requestJson(
+      'PATCH',
+      '/api/mobile/profile',
+      body: {'displayName': displayName.trim()},
     );
   }
 
@@ -230,6 +269,9 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
 
   @override
   Future<BorderlineSettings> loadBorderlineSettings() async {
+    if (!_permissions.manageBorderlineSettings) {
+      return const BorderlineSettings(enabled: false, recipientRoleIds: {});
+    }
     final value = await _requestJson(
       'GET',
       '/api/mobile/admin/borderline-settings',
@@ -324,18 +366,19 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
       id: value['userId'] as String,
       email: value['email'] as String? ?? '',
       displayName:
-          value['displayName'] as String? ??
-          value['email'] as String? ??
-          'GuardAId user',
+          ((value['displayName'] as String?)?.trim().isNotEmpty ?? false)
+              ? (value['displayName'] as String).trim()
+              : 'Name not provided',
       status: _userStatus(value['status'] as String?),
       roleId: firstRole?['id'] as String?,
       roleName: firstRole == null
           ? null
-          : _roleDisplayName(firstRole['name'] as String),
+          : firstRole['displayName'] as String? ?? _roleDisplayName(firstRole['name'] as String),
       sensitivity: value['sensitivityMode'] == null
           ? null
           : _sensitivity(value['sensitivityMode'] as String?),
       isAdmin: value['isAdmin'] as bool? ?? false,
+      permissions: firstRole == null ? const RolePermissions() : _parsePermissions(firstRole['permissions']),
     );
   }
 
@@ -343,14 +386,14 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
     id: value['id'] as String,
     email: value['email'] as String? ?? '',
     displayName:
-        value['displayName'] as String? ??
-        value['email'] as String? ??
-        'Pending user',
+        ((value['displayName'] as String?)?.trim().isNotEmpty ?? false)
+            ? (value['displayName'] as String).trim()
+            : 'Name not provided',
     status: _userStatus(value['status'] as String?),
     roleId: value['roleId'] as String?,
-    roleName: value['roleName'] == null
+    roleName: value['roleDisplayName'] == null && value['roleName'] == null
         ? null
-        : _roleDisplayName(value['roleName'] as String),
+        : value['roleDisplayName'] as String? ?? _roleDisplayName(value['roleName'] as String),
     sensitivity: value['sensitivityMode'] == null
         ? null
         : _sensitivity(value['sensitivityMode'] as String?),
@@ -370,7 +413,7 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
       sensitivity: _sensitivity(value['sensitivityMode'] as String?),
       detectedAt: DateTime.parse(value['firstDetectedAt'] as String),
       descriptionStatus: value['descriptionStatus'] as String? ?? 'pending',
-      sceneDescription: value['sceneDescription'] as String?,
+      sceneDescription: readableSceneSummary(value['sceneDescription'] as String?),
       isBorderline: value['isBorderlinePromoted'] as bool? ?? false,
       isProvisional: value['isProvisional'] as bool? ?? false,
       evidence: (value['evidence'] as List<dynamic>? ?? const [])
@@ -389,6 +432,15 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
           )
           .toList(growable: false),
       actionNote: _latestActionNote(value['actions'] as List<dynamic>?),
+    );
+  }
+
+  RolePermissions _parsePermissions(dynamic value) {
+    final map = value is Map ? value : const <String, dynamic>{};
+    return RolePermissions(
+      manageRoles: map['manageRoles'] == true,
+      manageUsers: map['manageUsers'] == true,
+      manageBorderlineSettings: map['manageBorderlineSettings'] == true,
     );
   }
 

@@ -38,6 +38,7 @@ dependencies:
   firebase_core: ^4.12.1
   firebase_auth: ^6.5.6
   firebase_messaging: ^16.4.3
+  flutter_local_notifications: ^19.4.0
   http: ^1.6.0
 
 dev_dependencies:
