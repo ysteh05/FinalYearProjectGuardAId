@@ -56,18 +56,21 @@ class GuardAidController extends ChangeNotifier {
       _run(() => repository.sendPasswordReset(email));
 
   Future<void> refresh() async {
+    if (currentUser != null) {
+      currentUser = await repository.refreshSession();
+    }
     final results = await Future.wait<Object>([
       repository.loadAlerts(),
       repository.loadNotifications(),
       repository.loadRoles(),
       repository.loadUsers(),
-      if (currentUser?.isAdmin == true) repository.loadBorderlineSettings(),
+      if (currentUser?.permissions.manageBorderlineSettings == true) repository.loadBorderlineSettings(),
     ]);
     alerts = results[0] as List<GuardAlert>;
     notifications = results[1] as List<AppNotification>;
     roles = results[2] as List<GuardRole>;
     users = results[3] as List<AppUser>;
-    if (currentUser?.isAdmin == true && results.length > 4) {
+    if (currentUser?.permissions.manageBorderlineSettings == true && results.length > 4) {
       final settings = results[4] as BorderlineSettings;
       borderlineEnabled = settings.enabled;
       borderlineRecipientRoleIds = Set.of(settings.recipientRoleIds);
@@ -119,13 +122,30 @@ class GuardAidController extends ChangeNotifier {
   Future<bool> updateRoleSensitivity(String roleId, SensitivityMode mode) =>
       _run(() async {
         await repository.updateRoleSensitivity(roleId, mode);
+        currentUser = await repository.refreshSession();
         roles = await repository.loadRoles();
         users = await repository.loadUsers();
+        alerts = await repository.loadAlerts();
       });
+
+  Future<bool> createRole({
+    required String name,
+    required String description,
+    required SensitivityMode sensitivity,
+    required RolePermissions permissions,
+  }) => _run(() async {
+    await repository.createRole(
+      name: name,
+      description: description,
+      sensitivity: sensitivity,
+      permissions: permissions,
+    );
+    roles = await repository.loadRoles();
+  });
 
   Future<bool> updateUserAssignment(
     String userId,
-    String roleId,
+    String? roleId,
     UserStatus status,
   ) => _run(() async {
     await repository.updateUserAssignment(
@@ -135,6 +155,12 @@ class GuardAidController extends ChangeNotifier {
     );
     users = await repository.loadUsers();
     roles = await repository.loadRoles();
+  });
+
+  Future<bool> updateProfile(String displayName) => _run(() async {
+    await repository.updateProfile(displayName);
+    currentUser = await repository.refreshSession();
+    users = await repository.loadUsers();
   });
 
   Future<bool> updateBorderlineSettings(bool enabled, Set<String> recipients) =>

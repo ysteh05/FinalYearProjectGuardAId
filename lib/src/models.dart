@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 enum AlertType { weapon, violence, physicalContactBullying }
 
 enum AlertStatus { open, inReview, resolved, dismissed, escalated }
@@ -30,6 +32,29 @@ extension SensitivityLabels on SensitivityMode {
     SensitivityMode.moderate => 'Moderate',
     SensitivityMode.certain => 'Certain',
   };
+}
+
+String readableSceneSummary(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return 'Scene description is not available yet.';
+  final candidate = raw.trim().replaceAll('```json', '').replaceAll('```', '').trim();
+  try {
+    final decoded = jsonDecode(candidate);
+    if (decoded is String && decoded.trim().isNotEmpty) return decoded.trim();
+    if (decoded is Map<String, dynamic>) {
+      for (final key in const ['description', 'scene_description', 'sceneDescription', 'summary', 'brief_reason']) {
+        final value = decoded[key];
+        if (value is String && value.trim().isNotEmpty) return value.trim();
+      }
+      final observations = decoded['visible_observations'] ?? decoded['observations'];
+      if (observations is List) {
+        final values = observations.map((item) => item.toString().trim()).where((item) => item.isNotEmpty).toList();
+        if (values.isNotEmpty) return values.join(' ');
+      }
+    }
+  } catch (_) {
+    // Keep malformed legacy output readable instead of showing an exception.
+  }
+  return candidate;
 }
 
 class EvidenceRecord {
@@ -113,6 +138,7 @@ class AppUser {
     this.roleName,
     this.sensitivity,
     this.isAdmin = false,
+    this.permissions = const RolePermissions(),
   });
 
   final String id;
@@ -123,6 +149,7 @@ class AppUser {
   final String? roleName;
   final SensitivityMode? sensitivity;
   final bool isAdmin;
+  final RolePermissions permissions;
 
   AppUser copyWith({
     UserStatus? status,
@@ -130,6 +157,7 @@ class AppUser {
     String? roleName,
     SensitivityMode? sensitivity,
     bool? isAdmin,
+    RolePermissions? permissions,
   }) => AppUser(
     id: id,
     email: email,
@@ -139,7 +167,20 @@ class AppUser {
     roleName: roleName ?? this.roleName,
     sensitivity: sensitivity ?? this.sensitivity,
     isAdmin: isAdmin ?? this.isAdmin,
+    permissions: permissions ?? this.permissions,
   );
+}
+
+class RolePermissions {
+  const RolePermissions({
+    this.manageRoles = false,
+    this.manageUsers = false,
+    this.manageBorderlineSettings = false,
+  });
+
+  final bool manageRoles;
+  final bool manageUsers;
+  final bool manageBorderlineSettings;
 }
 
 class GuardRole {
@@ -150,6 +191,8 @@ class GuardRole {
     required this.sensitivity,
     required this.userCount,
     this.isAdmin = false,
+    this.isSystem = true,
+    this.permissions = const RolePermissions(),
   });
 
   final String id;
@@ -158,6 +201,8 @@ class GuardRole {
   final SensitivityMode sensitivity;
   final int userCount;
   final bool isAdmin;
+  final bool isSystem;
+  final RolePermissions permissions;
 
   GuardRole copyWith({SensitivityMode? sensitivity, int? userCount}) =>
       GuardRole(
@@ -167,6 +212,8 @@ class GuardRole {
         sensitivity: sensitivity ?? this.sensitivity,
         userCount: userCount ?? this.userCount,
         isAdmin: isAdmin,
+        isSystem: isSystem,
+        permissions: permissions,
       );
 }
 

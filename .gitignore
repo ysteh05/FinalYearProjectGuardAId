@@ -63,6 +63,7 @@ app.*.map.json
 /integration_test/
 **/test/
 **/integration_test/
+**/RunnerTests/
 
 # Local datasets, model/runtime evidence and generated packages.
 *.sqlite
