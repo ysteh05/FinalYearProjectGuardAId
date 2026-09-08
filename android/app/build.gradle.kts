@@ -1,8 +1,5 @@
 plugins {
     id("com.android.application")
-    // START: FlutterFire Configuration
-    id("com.google.gms.google-services")
-    // END: FlutterFire Configuration
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
@@ -49,4 +46,12 @@ dependencies {
 
 flutter {
     source = "../.."
+}
+
+// Firebase configuration is intentionally local-only. Demo builds from the
+// sanitized repository do not need the Google Services Gradle task; live
+// builds enable it automatically when the developer supplies the private
+// android/app/google-services.json file.
+if (file("google-services.json").isFile) {
+    apply(plugin = "com.google.gms.google-services")
 }
