@@ -196,3 +196,13 @@ class AppNotification {
     isRead: isRead ?? this.isRead,
   );
 }
+
+class BorderlineSettings {
+  const BorderlineSettings({
+    required this.enabled,
+    required this.recipientRoleIds,
+  });
+
+  final bool enabled;
+  final Set<String> recipientRoleIds;
+}

@@ -163,8 +163,27 @@ Color alertStatusColor(AlertStatus status) => switch (status) {
 String formatDateTime(DateTime value) {
   final local = value.toLocal();
   String two(int number) => number.toString().padLeft(2, '0');
-  return '${two(local.day)}/${two(local.month)}/${local.year} · '
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  return '${local.day} ${months[local.month - 1]} ${local.year}, '
       '${two(local.hour)}:${two(local.minute)}';
+}
+
+EdgeInsets pageListPadding(BuildContext context, {double top = 12}) {
+  final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+  return EdgeInsets.fromLTRB(16, top, 16, 96 + bottomInset);
 }
 
 class MetricCard extends StatelessWidget {

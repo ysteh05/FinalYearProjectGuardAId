@@ -20,6 +20,10 @@ class AlertsScreen extends StatefulWidget {
 class _AlertsScreenState extends State<AlertsScreen> {
   AlertFilter filter = AlertFilter.all;
   String query = '';
+  AlertStatus? statusFilter;
+  SensitivityMode? sensitivityFilter;
+  String? cameraFilter;
+  DateTimeRange? dateRangeFilter;
 
   List<GuardAlert> get filteredAlerts {
     final normalized = query.toLowerCase().trim();
@@ -37,8 +41,57 @@ class _AlertsScreenState extends State<AlertsScreen> {
           alert.cameraName.toLowerCase().contains(normalized) ||
           alert.location.toLowerCase().contains(normalized) ||
           alert.type.label.toLowerCase().contains(normalized);
-      return filterMatches && searchMatches;
+      final statusMatches =
+          statusFilter == null || alert.status == statusFilter;
+      final sensitivityMatches =
+          sensitivityFilter == null || alert.sensitivity == sensitivityFilter;
+      final cameraMatches =
+          cameraFilter == null || alert.cameraName == cameraFilter;
+      final dateMatches = dateRangeFilter == null ||
+          (!alert.detectedAt.isBefore(dateRangeFilter!.start) &&
+              alert.detectedAt.isBefore(
+                dateRangeFilter!.end.add(const Duration(days: 1)),
+              ));
+      return filterMatches &&
+          searchMatches &&
+          statusMatches &&
+          sensitivityMatches &&
+          cameraMatches &&
+          dateMatches;
     }).toList()..sort((a, b) => b.detectedAt.compareTo(a.detectedAt));
+  }
+
+  int get advancedFilterCount =>
+      (statusFilter == null ? 0 : 1) +
+      (sensitivityFilter == null ? 0 : 1) +
+      (cameraFilter == null ? 0 : 1) +
+      (dateRangeFilter == null ? 0 : 1);
+
+  Future<void> _openAdvancedFilters() async {
+    final cameras = widget.controller.alerts
+        .map((alert) => alert.cameraName)
+        .toSet()
+        .toList()
+      ..sort();
+    final selection = await showModalBottomSheet<_AdvancedAlertFilters>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => _AdvancedAlertFilterSheet(
+        cameras: cameras,
+        status: statusFilter,
+        sensitivity: sensitivityFilter,
+        camera: cameraFilter,
+        dateRange: dateRangeFilter,
+      ),
+    );
+    if (selection == null || !mounted) return;
+    setState(() {
+      statusFilter = selection.status;
+      sensitivityFilter = selection.sensitivity;
+      cameraFilter = selection.camera;
+      dateRangeFilter = selection.dateRange;
+    });
   }
 
   @override
@@ -49,7 +102,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            padding: pageListPadding(context),
             sliver: SliverList.list(
               children: [
                 SectionTitle(
@@ -100,25 +153,34 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: AlertFilter.values.map((item) {
-                      final label = switch (item) {
-                        AlertFilter.all => 'All',
-                        AlertFilter.weapon => 'Weapon',
-                        AlertFilter.violenceBullying => 'Violence / Bullying',
-                        AlertFilter.open => 'Open',
-                      };
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: FilterChip(
-                          label: Text(label),
-                          selected: filter == item,
-                          onSelected: (_) => setState(() => filter = item),
-                        ),
-                      );
-                    }).toList(),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: AlertFilter.values.map((item) {
+                    final label = switch (item) {
+                      AlertFilter.all => 'All',
+                      AlertFilter.weapon => 'Weapon',
+                      AlertFilter.violenceBullying => 'Violence / Bullying',
+                      AlertFilter.open => 'Open',
+                    };
+                    return FilterChip(
+                      label: Text(label),
+                      selected: filter == item,
+                      onSelected: (_) => setState(() => filter = item),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: _openAdvancedFilters,
+                    icon: const Icon(Icons.filter_alt_outlined),
+                    label: Text(
+                      advancedFilterCount == 0
+                          ? 'More filters'
+                          : 'More filters ($advancedFilterCount)',
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -150,17 +212,201 @@ class _AlertsScreenState extends State<AlertsScreen> {
   }
 }
 
+class _AdvancedAlertFilters {
+  const _AdvancedAlertFilters({
+    this.status,
+    this.sensitivity,
+    this.camera,
+    this.dateRange,
+  });
+
+  final AlertStatus? status;
+  final SensitivityMode? sensitivity;
+  final String? camera;
+  final DateTimeRange? dateRange;
+}
+
+class _AdvancedAlertFilterSheet extends StatefulWidget {
+  const _AdvancedAlertFilterSheet({
+    required this.cameras,
+    this.status,
+    this.sensitivity,
+    this.camera,
+    this.dateRange,
+  });
+
+  final List<String> cameras;
+  final AlertStatus? status;
+  final SensitivityMode? sensitivity;
+  final String? camera;
+  final DateTimeRange? dateRange;
+
+  @override
+  State<_AdvancedAlertFilterSheet> createState() =>
+      _AdvancedAlertFilterSheetState();
+}
+
+class _AdvancedAlertFilterSheetState
+    extends State<_AdvancedAlertFilterSheet> {
+  late AlertStatus? status = widget.status;
+  late SensitivityMode? sensitivity = widget.sensitivity;
+  late String? camera = widget.camera;
+  late DateTimeRange? dateRange = widget.dateRange;
+
+  Future<void> _selectDateRange() async {
+    final today = DateTime.now();
+    final selected = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(today.year - 2),
+      lastDate: DateTime(today.year + 1, 12, 31),
+      initialDateRange: dateRange,
+    );
+    if (selected != null && mounted) setState(() => dateRange = selected);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Filter alerts',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Use these filters together with the incident-type chips and search field.',
+              style: TextStyle(color: GuardAidColors.muted, height: 1.4),
+            ),
+            const SizedBox(height: 18),
+            DropdownButtonFormField<String>(
+              initialValue: status?.name ?? 'all',
+              decoration: const InputDecoration(labelText: 'Incident status'),
+              items: [
+                const DropdownMenuItem(value: 'all', child: Text('All statuses')),
+                ...AlertStatus.values.map(
+                  (item) => DropdownMenuItem(
+                    value: item.name,
+                    child: Text(item.label),
+                  ),
+                ),
+              ],
+              onChanged: (value) => setState(
+                () => status = value == null || value == 'all'
+                    ? null
+                    : AlertStatus.values.byName(value),
+              ),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: sensitivity?.name ?? 'all',
+              decoration: const InputDecoration(labelText: 'Threshold mode'),
+              items: [
+                const DropdownMenuItem(value: 'all', child: Text('All modes')),
+                ...SensitivityMode.values.map(
+                  (item) => DropdownMenuItem(
+                    value: item.name,
+                    child: Text(item.label),
+                  ),
+                ),
+              ],
+              onChanged: (value) => setState(
+                () => sensitivity = value == null || value == 'all'
+                    ? null
+                    : SensitivityMode.values.byName(value),
+              ),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: camera ?? 'all',
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Camera source'),
+              items: [
+                const DropdownMenuItem(value: 'all', child: Text('All cameras')),
+                ...widget.cameras.map(
+                  (item) => DropdownMenuItem(value: item, child: Text(item)),
+                ),
+              ],
+              onChanged: (value) => setState(
+                () => camera = value == null || value == 'all' ? null : value,
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _selectDateRange,
+              icon: const Icon(Icons.date_range_outlined),
+              label: Text(
+                dateRange == null
+                    ? 'Choose date range'
+                    : '${formatDateTime(dateRange!.start)} – ${formatDateTime(dateRange!.end)}',
+              ),
+            ),
+            if (dateRange != null)
+              TextButton(
+                onPressed: () => setState(() => dateRange = null),
+                child: const Text('Clear date range'),
+              ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(
+                      context,
+                      _AdvancedAlertFilters(
+                        status: status,
+                        sensitivity: sensitivity,
+                        camera: camera,
+                        dateRange: dateRange,
+                      ),
+                    ),
+                    child: const Text('Apply filters'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class AlertCard extends StatelessWidget {
-  const AlertCard({super.key, required this.alert, required this.onOpen});
+  const AlertCard({
+    super.key,
+    required this.alert,
+    required this.onOpen,
+    this.actionLabel,
+  });
 
   final GuardAlert alert;
   final VoidCallback onOpen;
+  final String? actionLabel;
 
   @override
   Widget build(BuildContext context) {
     final color = alertTypeColor(alert.type);
-    return Card(
-      child: InkWell(
+    return Semantics(
+      button: true,
+      label:
+          '${alert.type.label} ${alert.status.label.toLowerCase()} record at ${alert.cameraName}',
+      hint: alert.status == AlertStatus.open ||
+              alert.status == AlertStatus.inReview
+          ? 'Double tap to review alert details'
+          : 'Double tap to view the saved incident record',
+      child: Card(
+        child: InkWell(
         onTap: onOpen,
         borderRadius: BorderRadius.circular(18),
         child: Padding(
@@ -278,17 +524,20 @@ class AlertCard extends StatelessWidget {
                   ),
                 ),
               ],
-              const SizedBox(height: 13),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: onOpen,
-                  icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                  label: const Text('Open alert'),
+              if (actionLabel != null) ...[
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: onOpen,
+                    icon: const Icon(Icons.folder_open_outlined, size: 18),
+                    label: Text(actionLabel!),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
+        ),
         ),
       ),
     );

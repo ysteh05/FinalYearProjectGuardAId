@@ -61,11 +61,17 @@ class GuardAidController extends ChangeNotifier {
       repository.loadNotifications(),
       repository.loadRoles(),
       repository.loadUsers(),
+      if (currentUser?.isAdmin == true) repository.loadBorderlineSettings(),
     ]);
     alerts = results[0] as List<GuardAlert>;
     notifications = results[1] as List<AppNotification>;
     roles = results[2] as List<GuardRole>;
     users = results[3] as List<AppUser>;
+    if (currentUser?.isAdmin == true && results.length > 4) {
+      final settings = results[4] as BorderlineSettings;
+      borderlineEnabled = settings.enabled;
+      borderlineRecipientRoleIds = Set.of(settings.recipientRoleIds);
+    }
     notifyListeners();
   }
 

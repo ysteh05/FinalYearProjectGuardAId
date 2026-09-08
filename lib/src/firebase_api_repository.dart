@@ -228,6 +228,21 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
     );
   }
 
+  @override
+  Future<BorderlineSettings> loadBorderlineSettings() async {
+    final value = await _requestJson(
+      'GET',
+      '/api/mobile/admin/borderline-settings',
+    ) as Map<String, dynamic>;
+    return BorderlineSettings(
+      enabled: value['enabled'] as bool? ?? false,
+      recipientRoleIds: {
+        ...(value['recipientRoleIds'] as List<dynamic>? ?? const [])
+            .whereType<String>(),
+      },
+    );
+  }
+
   Future<void> _registerDevice([String? refreshedToken]) async {
     try {
       await _messaging.requestPermission(alert: true, badge: true, sound: true);

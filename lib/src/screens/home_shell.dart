@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../controller.dart';
 import '../theme.dart';
@@ -31,8 +32,13 @@ class _HomeShellState extends State<HomeShell> {
       LogsScreen(controller: widget.controller),
       SettingsScreen(controller: widget.controller),
     ];
-    return Scaffold(
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmExit();
+      },
+      child: Scaffold(
+        appBar: AppBar(
         title: const GuardAidBrand(compact: true),
         actions: [
           if (widget.controller.unreadCount > 0)
@@ -63,12 +69,13 @@ class _HomeShellState extends State<HomeShell> {
             ),
           ),
         ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: IndexedStack(index: selectedIndex, children: pages),
-      ),
-      bottomNavigationBar: Builder(
+        ),
+        body: SafeArea(
+          top: false,
+          bottom: false,
+          child: IndexedStack(index: selectedIndex, children: pages),
+        ),
+        bottomNavigationBar: Builder(
         builder: (context) {
           final compactLabels =
               MediaQuery.sizeOf(context).width < 360 ||
@@ -108,8 +115,26 @@ class _HomeShellState extends State<HomeShell> {
             ],
           );
         },
+        ),
       ),
     );
+  }
+
+  bool exitDialogOpen = false;
+
+  Future<void> _confirmExit() async {
+    if (exitDialogOpen || !mounted) return;
+    exitDialogOpen = true;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Leave GuardAId?',
+      message: 'You will stop viewing the current school safety workspace.',
+      confirmLabel: 'Exit app',
+    );
+    exitDialogOpen = false;
+    if (confirmed && mounted) {
+      await SystemNavigator.pop();
+    }
   }
 
   void _openRequestedAlertIfNeeded() {

@@ -16,13 +16,13 @@ class UpdatesScreen extends StatelessWidget {
     final items = [...controller.notifications]
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: pageListPadding(context),
       children: [
         SectionTitle(
           'Updates',
           subtitle:
               '${controller.unreadCount} unread notification${controller.unreadCount == 1 ? '' : 's'}',
-          trailing: TextButton(
+          trailing: TextButton.icon(
             onPressed: controller.unreadCount == 0
                 ? null
                 : () async {
@@ -46,7 +46,8 @@ class UpdatesScreen extends StatelessWidget {
                       );
                     }
                   },
-            child: const Text('Mark all as read'),
+            icon: const Icon(Icons.done_all_rounded, size: 18),
+            label: const Text('Mark all as read'),
           ),
         ),
         const SizedBox(height: 16),
@@ -113,9 +114,27 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: notification.isRead ? Colors.white : const Color(0xFFF6FBFE),
-      child: InkWell(
+    final incidentIcon = notification.title.toLowerCase().contains('weapon')
+        ? Icons.gpp_bad_outlined
+        : notification.title.toLowerCase().contains('bully') ||
+              notification.title.toLowerCase().contains('violence')
+        ? Icons.sports_mma_rounded
+        : notification.title.toLowerCase().contains('resolved')
+        ? Icons.check_circle_outline_rounded
+        : Icons.notifications_active_outlined;
+    final iconColor = notification.title.toLowerCase().contains('weapon')
+        ? GuardAidColors.weapon
+        : notification.title.toLowerCase().contains('bully') ||
+              notification.title.toLowerCase().contains('violence')
+        ? GuardAidColors.violence
+        : GuardAidColors.navy;
+    return Semantics(
+      button: true,
+      label: notification.title,
+      hint: 'Double tap to open this update',
+      child: Card(
+        color: notification.isRead ? Colors.white : const Color(0xFFF6FBFE),
+        child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: onOpen,
         child: Padding(
@@ -133,10 +152,7 @@ class _NotificationCard extends StatelessWidget {
                       color: GuardAidColors.navy.withValues(alpha: 0.09),
                       borderRadius: BorderRadius.circular(13),
                     ),
-                    child: const Icon(
-                      Icons.notifications_active_outlined,
-                      color: GuardAidColors.navy,
-                    ),
+                    child: Icon(incidentIcon, color: iconColor),
                   ),
                   if (!notification.isRead)
                     const Positioned(
@@ -183,6 +199,7 @@ class _NotificationCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
         ),
       ),
     );
