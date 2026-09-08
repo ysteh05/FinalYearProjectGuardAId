@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-import '../firebase_options.dart';
 import 'controller.dart';
 import 'firebase_api_repository.dart';
 import 'models.dart';
@@ -16,6 +15,20 @@ class GuardAidApp extends StatefulWidget {
 
   @override
   State<GuardAidApp> createState() => _GuardAidAppState();
+}
+
+/// Firebase configuration is supplied at build time and is intentionally not
+/// committed. Demo mode does not initialize Firebase, while live mode should
+/// pass the six FIREBASE_* values with --dart-define (or provide a local
+/// generated file in a developer-only build wrapper).
+class DefaultFirebaseOptions {
+  static FirebaseOptions get currentPlatform => const FirebaseOptions(
+    apiKey: String.fromEnvironment('FIREBASE_API_KEY'),
+    appId: String.fromEnvironment('FIREBASE_APP_ID'),
+    messagingSenderId: String.fromEnvironment('FIREBASE_MESSAGING_SENDER_ID'),
+    projectId: String.fromEnvironment('FIREBASE_PROJECT_ID'),
+    storageBucket: String.fromEnvironment('FIREBASE_STORAGE_BUCKET'),
+  );
 }
 
 class _GuardAidAppState extends State<GuardAidApp> with WidgetsBindingObserver {
