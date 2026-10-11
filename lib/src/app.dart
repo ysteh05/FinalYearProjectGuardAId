@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -80,7 +82,7 @@ class _GuardAidAppState extends State<GuardAidApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && controller?.isSignedIn == true) {
-      controller?.refresh();
+      unawaited(controller!.refresh().catchError((Object _) {}));
     }
   }
 

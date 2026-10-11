@@ -27,7 +27,7 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     _openRequestedAlertIfNeeded();
     final pages = [
-      AlertsScreen(controller: widget.controller),
+      AlertsScreen(controller: widget.controller, isActive: selectedIndex == 0),
       UpdatesScreen(controller: widget.controller),
       LogsScreen(controller: widget.controller),
       SettingsScreen(controller: widget.controller),
@@ -39,47 +39,50 @@ class _HomeShellState extends State<HomeShell> {
       },
       child: Scaffold(
         appBar: AppBar(
-        title: const GuardAidBrand(compact: true),
-        actions: [
-          if (widget.controller.unreadCount > 0)
+          title: const GuardAidBrand(compact: true),
+          actions: [
+            if (widget.controller.unreadCount > 0)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Badge(
+                  label: Text('${widget.controller.unreadCount}'),
+                  child: IconButton(
+                    tooltip: 'Notifications',
+                    onPressed: () => setState(() => selectedIndex = 1),
+                    icon: const Icon(Icons.notifications_none_rounded),
+                  ),
+                ),
+              ),
             Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Badge(
-                label: Text('${widget.controller.unreadCount}'),
-                child: IconButton(
-                  tooltip: 'Notifications',
-                  onPressed: () => setState(() => selectedIndex = 1),
-                  icon: const Icon(Icons.notifications_none_rounded),
-                ),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: IconButton(
-              tooltip: 'Open profile',
-              onPressed: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => ProfileScreen(controller: widget.controller),
-                  ),
-                );
-                if (mounted) setState(() {});
-              },
-              icon: CircleAvatar(
-                radius: 18,
-                backgroundColor: GuardAidColors.navy,
-                child: Text(
-                  _initials(widget.controller.currentUser?.displayName ?? 'User'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
+              padding: const EdgeInsets.only(right: 10),
+              child: IconButton(
+                tooltip: 'Open profile',
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          ProfileScreen(controller: widget.controller),
+                    ),
+                  );
+                  if (mounted) setState(() {});
+                },
+                icon: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: GuardAidColors.navy,
+                  child: Text(
+                    _initials(
+                      widget.controller.currentUser?.displayName ?? 'User',
+                    ),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
         ),
         body: SafeArea(
           top: false,
@@ -87,45 +90,45 @@ class _HomeShellState extends State<HomeShell> {
           child: IndexedStack(index: selectedIndex, children: pages),
         ),
         bottomNavigationBar: Builder(
-        builder: (context) {
-          final compactLabels =
-              MediaQuery.sizeOf(context).width < 360 ||
-              MediaQuery.textScalerOf(context).scale(12) > 15;
-          return NavigationBar(
-            selectedIndex: selectedIndex,
-            labelBehavior: compactLabels
-                ? NavigationDestinationLabelBehavior.onlyShowSelected
-                : NavigationDestinationLabelBehavior.alwaysShow,
-            onDestinationSelected: (index) =>
-                setState(() => selectedIndex = index),
-            destinations: [
-              const NavigationDestination(
-                icon: Icon(Icons.warning_amber_rounded),
-                selectedIcon: Icon(Icons.warning_rounded),
-                label: 'Alerts',
-              ),
-              NavigationDestination(
-                icon: Badge(
-                  isLabelVisible: widget.controller.unreadCount > 0,
-                  label: Text('${widget.controller.unreadCount}'),
-                  child: const Icon(Icons.notifications_none_rounded),
+          builder: (context) {
+            final compactLabels =
+                MediaQuery.sizeOf(context).width < 360 ||
+                MediaQuery.textScalerOf(context).scale(12) > 15;
+            return NavigationBar(
+              selectedIndex: selectedIndex,
+              labelBehavior: compactLabels
+                  ? NavigationDestinationLabelBehavior.onlyShowSelected
+                  : NavigationDestinationLabelBehavior.alwaysShow,
+              onDestinationSelected: (index) =>
+                  setState(() => selectedIndex = index),
+              destinations: [
+                const NavigationDestination(
+                  icon: Icon(Icons.warning_amber_rounded),
+                  selectedIcon: Icon(Icons.warning_rounded),
+                  label: 'Alerts',
                 ),
-                selectedIcon: const Icon(Icons.notifications_rounded),
-                label: 'Updates',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.folder_open_outlined),
-                selectedIcon: Icon(Icons.folder_rounded),
-                label: 'Logs',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.settings_outlined),
-                selectedIcon: Icon(Icons.settings_rounded),
-                label: 'Settings',
-              ),
-            ],
-          );
-        },
+                NavigationDestination(
+                  icon: Badge(
+                    isLabelVisible: widget.controller.unreadCount > 0,
+                    label: Text('${widget.controller.unreadCount}'),
+                    child: const Icon(Icons.notifications_none_rounded),
+                  ),
+                  selectedIcon: const Icon(Icons.notifications_rounded),
+                  label: 'Updates',
+                ),
+                const NavigationDestination(
+                  icon: Icon(Icons.folder_open_outlined),
+                  selectedIcon: Icon(Icons.folder_rounded),
+                  label: 'Logs',
+                ),
+                const NavigationDestination(
+                  icon: Icon(Icons.settings_outlined),
+                  selectedIcon: Icon(Icons.settings_rounded),
+                  label: 'Settings',
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

@@ -146,6 +146,163 @@ class StatusBadge extends StatelessWidget {
   }
 }
 
+class AiSceneSummaryView extends StatelessWidget {
+  const AiSceneSummaryView({
+    super.key,
+    required this.summary,
+    this.legacy,
+    this.pending = false,
+    this.compact = false,
+  });
+
+  final AiSceneSummary? summary;
+  final String? legacy;
+  final bool pending;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    if (pending) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox.square(
+            dimension: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Scene summary is being prepared. The alert remains available now.',
+              style: TextStyle(height: 1.4),
+            ),
+          ),
+        ],
+      );
+    }
+    final value = summary ?? AiSceneSummary.fromValue(null, legacy: legacy);
+    if (value == null) {
+      return const Text(
+        unavailableSceneSummary,
+        style: TextStyle(color: GuardAidColors.muted, height: 1.4),
+      );
+    }
+    if (compact) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text.rich(
+            TextSpan(
+              children: [
+                const TextSpan(
+                  text: 'Observed: ',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+                TextSpan(text: value.description),
+              ],
+            ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: GuardAidColors.muted, height: 1.4),
+          ),
+          const SizedBox(height: 5),
+          Wrap(
+            spacing: 5,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              const Text(
+                'Uncertainty: ',
+                style: TextStyle(
+                  color: GuardAidColors.muted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              StatusBadge(
+                label: value.uncertaintyLabel,
+                color: GuardAidColors.info,
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Observed',
+          style: TextStyle(
+            color: GuardAidColors.muted,
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(value.description, style: const TextStyle(height: 1.45)),
+        if (value.visibleEvidence.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          const Text(
+            'Key evidence',
+            style: TextStyle(
+              color: GuardAidColors.muted,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 5),
+          for (final item in value.visibleEvidence)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '•  ',
+                    style: TextStyle(color: GuardAidColors.info),
+                  ),
+                  Expanded(
+                    child: Text(item, style: const TextStyle(height: 1.4)),
+                  ),
+                ],
+              ),
+            ),
+        ],
+        const SizedBox(height: 14),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Expanded(
+              child: Text(
+                'Uncertainty',
+                style: TextStyle(
+                  color: GuardAidColors.muted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            StatusBadge(
+              label: value.uncertaintyLabel,
+              color: GuardAidColors.info,
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'AI-generated summary. Verify against the video evidence.',
+          style: TextStyle(
+            color: GuardAidColors.muted,
+            fontSize: 12,
+            height: 1.35,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 Color alertTypeColor(AlertType type) => switch (type) {
   AlertType.weapon => GuardAidColors.weapon,
   AlertType.violence ||
