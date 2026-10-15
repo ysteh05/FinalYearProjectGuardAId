@@ -1,0 +1,17 @@
+{
+  "source_tables": 44,
+  "schema_version": 14,
+  "config_versions": 30,
+  "source_foreign_key_violations": 0,
+  "delivery_mirrors": 115,
+  "delivery_mirror_differences": 0,
+  "feed_deliveries_without_outbox_mirror": 65,
+  "payload_differences": 0,
+  "queue_users_missing_feed_user": 0,
+  "alerts_without_workflow": 0,
+  "status_contradictions": 0,
+  "review_tasks": 0,
+  "review_task_event_missing": 0,
+  "timestamps_checked": 4657,
+  "timestamp_errors": 0
+}

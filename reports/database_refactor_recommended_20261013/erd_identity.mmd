@@ -1,0 +1,10 @@
+erDiagram
+    users ||--o{ user_roles : user_id
+    roles ||--o{ user_roles : role_id
+    users o|--o{ user_roles : assigned_by
+    users ||--o{ devices : user_id
+    users o|--o{ users : preference_updated_by
+    users o|--o{ roles : default_updated_by
+    users o|--o| mobile_settings : updated_by
+    users o|--o{ audit_logs : actor
+

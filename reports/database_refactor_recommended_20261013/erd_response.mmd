@@ -1,0 +1,26 @@
+erDiagram
+    alerts ||--o{ alert_actions : human_response
+    users ||--o{ alert_actions : actor
+    alerts ||--o{ alert_reads : first_view
+    users ||--o{ alert_reads : viewer
+    alerts ||--o{ notifications : messages
+    notifications ||--o| notification_outbox : durable_push_job
+    notifications ||--o{ notification_recipients : feed_and_queued_targets
+    users o|--o{ notification_recipients : user
+    roles o|--o{ notification_recipients : role
+    notifications ||--o{ notification_deliveries : delivery_result
+    devices ||--o{ notification_deliveries : target_device
+    notifications ||--o{ notification_reads : first_read
+    users ||--o{ notification_reads : reader
+    alerts ||--o{ alert_notification_audience : initial_user_qualification
+    users ||--o{ alert_notification_audience : user
+    alerts ||--o{ notification_phases : timer_history
+    notification_phases o|--o| alerts : current_active_phase
+    notification_phases ||--o{ notification_phase_roles : selected_role
+    roles ||--o{ notification_phase_roles : role
+    notification_phases ||--o{ notification_phase_dispatches : stage_claim
+    notifications o|--o| notification_phase_dispatches : optional_actual_message
+    notification_phases ||--o{ notification_phase_audience : user_stage_guard
+    users ||--o{ notification_phase_audience : user
+    notifications o|--o{ notification_phase_audience : main_or_late_repeat
+

@@ -1,0 +1,662 @@
+{
+  "tables": [
+    {
+      "name": "users",
+      "purpose": "Firebase 身份映射、账号状态、个人资料及个人 Borderline 偏好",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "firebase_uid",
+          "TEXT",
+          "NOT NULL",
+          "Firebase 官方规定 UID 为 1..128 字符；大小写敏感、唯一，不保存密码"
+        ],
+        [
+          "email_cache",
+          "TEXT",
+          "",
+          "Firebase 返回的显示缓存不等同于新建用户输入；不额外封死已有外部身份。管理员创建时仍沿用254字符 API 上限"
+        ],
+        [
+          "display_name",
+          "TEXT",
+          "",
+          "Firebase 登录会同步 provider displayName，其协议未规定80字符上限；本地创建/编辑仍在 API 限制80，DB不截断合法外部缓存"
+        ],
+        [
+          "status",
+          "TEXT",
+          "NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','active','disabled'))",
+          "保留审批、启用、停用三个状态"
+        ],
+        [
+          "borderline_enabled",
+          "INTEGER",
+          "CHECK(borderline_enabled IN (0,1))",
+          "NULL 表示尚无个人偏好，0/1 表示已经物化的有效开关"
+        ],
+        [
+          "borderline_source",
+          "TEXT",
+          "CHECK(borderline_source IN ('migration','role_default','role_bulk','individual'))",
+          "保留个人覆盖与整组覆盖来源"
+        ],
+        [
+          "borderline_updated_by",
+          "TEXT",
+          "",
+          "修改偏好的用户 ID；后台初始化时可空"
+        ],
+        [
+          "borderline_updated_at",
+          "INTEGER",
+          "CHECK(borderline_updated_at >= 0)",
+          "UTC Unix 微秒；保留既有微秒精度，排序和期限比较直接使用整数"
+        ],
+        [
+          "created_at",
+          "INTEGER",
+          "NOT NULL CHECK(created_at >= 0)",
+          "UTC Unix 微秒；保留既有微秒精度，排序和期限比较直接使用整数"
+        ],
+        [
+          "updated_at",
+          "INTEGER",
+          "NOT NULL CHECK(updated_at >= 0)",
+          "UTC Unix 微秒；保留既有微秒精度，排序和期限比较直接使用整数"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(firebase_uid)",
+        "CHECK(updated_at >= created_at)",
+        "CHECK((borderline_enabled IS NULL AND borderline_source IS NULL AND borderline_updated_at IS NULL) OR (borderline_enabled IS NOT NULL AND borderline_source IS NOT NULL AND borderline_updated_at IS NOT NULL))",
+        "FOREIGN KEY (borderline_updated_by) REFERENCES users(id) ON DELETE RESTRICT",
+        "CHECK(length(firebase_uid) BETWEEN 1 AND 128)"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_users_email_lookup ON users(lower(trim(email_cache))) WHERE email_cache IS NOT NULL;"
+      ],
+      "notes": "邮箱不是唯一认证键，避免两个 Firebase 身份的显示缓存产生不必要的迁移冲突。管理员新建账号的邮箱重复检查仍在服务事务中执行；不新增未经现有接口要求的唯一邮箱约束。停用和撤销使用状态及关联修改，历史身份不硬删除。"
+    },
+    {
+      "name": "roles",
+      "purpose": "角色、可管理权限、通知敏感度与角色 Borderline 默认值",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "name",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(name)) > 0)",
+          "机器角色名唯一；历史 seed 名称和新的 slug 都保留"
+        ],
+        [
+          "display_name",
+          "TEXT",
+          "CHECK(length(display_name) <= 60)",
+          "新建/编辑接口要求 2..60 字符；历史行可空"
+        ],
+        [
+          "description",
+          "TEXT",
+          "CHECK(length(description) <= 200)",
+          "角色描述的当前接口上限为 200 字符"
+        ],
+        [
+          "sensitivity_mode",
+          "TEXT",
+          "NOT NULL DEFAULT 'moderate' CHECK(sensitivity_mode IN ('sensitive','moderate','certain'))",
+          "只决定普通推送资格，不作为警报可见性的授权条件"
+        ],
+        [
+          "is_system",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(is_system IN (0,1))",
+          "系统角色标记；保护删除逻辑仍在事务权限检查中"
+        ],
+        [
+          "can_manage_roles",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(can_manage_roles IN (0,1))",
+          "对应目前已有的角色管理权限"
+        ],
+        [
+          "can_manage_users",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(can_manage_users IN (0,1))",
+          "对应目前已有的用户管理权限"
+        ],
+        [
+          "can_manage_borderline_settings",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(can_manage_borderline_settings IN (0,1))",
+          "对应目前已有的 Borderline 管理权限"
+        ],
+        [
+          "borderline_default_enabled",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(borderline_default_enabled IN (0,1))",
+          "新成员默认值及整组覆盖操作的角色默认开关"
+        ],
+        [
+          "borderline_updated_by",
+          "TEXT",
+          "",
+          "默认值修改者，使用真实用户外键"
+        ],
+        [
+          "borderline_updated_at",
+          "INTEGER",
+          "CHECK(borderline_updated_at >= 0)",
+          "UTC Unix 微秒；保留既有微秒精度，排序和期限比较直接使用整数"
+        ],
+        [
+          "compat_borderline_selected",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(compat_borderline_selected IN (0,1))",
+          "旧版 mobile_settings 的角色选择集合，逐角色保存，避免把活关系藏入 JSON"
+        ],
+        [
+          "created_at",
+          "INTEGER",
+          "NOT NULL CHECK(created_at >= 0)",
+          "UTC Unix 微秒；保留既有微秒精度，排序和期限比较直接使用整数"
+        ],
+        [
+          "updated_at",
+          "INTEGER",
+          "NOT NULL CHECK(updated_at >= 0)",
+          "UTC Unix 微秒；保留既有微秒精度，排序和期限比较直接使用整数"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(name)",
+        "CHECK(updated_at >= created_at)",
+        "FOREIGN KEY (borderline_updated_by) REFERENCES users(id) ON DELETE RESTRICT"
+      ],
+      "indexes": [],
+      "notes": ""
+    },
+    {
+      "name": "user_roles",
+      "purpose": "用户与角色的多对多分配关系；保持当前模式的扩展能力",
+      "columns": [
+        [
+          "user_id",
+          "TEXT",
+          "NOT NULL",
+          "联合主键成员，所属用户"
+        ],
+        [
+          "role_id",
+          "TEXT",
+          "NOT NULL",
+          "联合主键成员，分配的角色"
+        ],
+        [
+          "assigned_by",
+          "TEXT",
+          "",
+          "系统首次初始化可空，否则记录分配者"
+        ],
+        [
+          "assigned_at",
+          "INTEGER",
+          "NOT NULL CHECK(assigned_at >= 0)",
+          "UTC Unix 微秒；保留既有微秒精度，排序和期限比较直接使用整数"
+        ]
+      ],
+      "rules": [
+        "PRIMARY KEY(user_id,role_id)",
+        "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
+        "FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (assigned_by) REFERENCES users(id) ON DELETE RESTRICT"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_user_roles_role ON user_roles(role_id,user_id);"
+      ],
+      "notes": "UI 当前为每人指定一个 primary role；不把这一 UI 选择写成永久唯一约束，从而保留已有多角色关系能力。"
+    },
+    {
+      "name": "devices",
+      "purpose": "FCM 注册、设备归属、有效性及最后在线时间",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "user_id",
+          "TEXT",
+          "NOT NULL",
+          "当前设备归属；同一 token 重新登录可转移到另一用户"
+        ],
+        [
+          "installation_id",
+          "TEXT",
+          "CHECK(length(installation_id) <= 512)",
+          "沿用设备注册接口最大 512 字符"
+        ],
+        [
+          "fcm_token",
+          "TEXT",
+          "NOT NULL CHECK(length(fcm_token) BETWEEN 20 AND 4096)",
+          "沿用 DeviceRegistration 20..4096 范围；token 长度由供应商决定，不臆测固定长度"
+        ],
+        [
+          "platform",
+          "TEXT",
+          "NOT NULL CHECK(platform IN ('android','ios','web'))",
+          "现有受支持的平台集合"
+        ],
+        [
+          "device_label",
+          "TEXT",
+          "CHECK(length(device_label) <= 100)",
+          "沿用接口最大 100 字符"
+        ],
+        [
+          "enabled",
+          "INTEGER",
+          "NOT NULL DEFAULT 1 CHECK(enabled IN (0,1))",
+          "失效 token 或账号停用后置 0"
+        ],
+        [
+          "last_seen_at",
+          "INTEGER",
+          "NOT NULL CHECK(last_seen_at >= 0)",
+          "UTC Unix 微秒；保留既有微秒精度，排序和期限比较直接使用整数"
+        ],
+        [
+          "created_at",
+          "INTEGER",
+          "NOT NULL CHECK(created_at >= 0)",
+          "UTC Unix 微秒；保留既有微秒精度，排序和期限比较直接使用整数"
+        ],
+        [
+          "updated_at",
+          "INTEGER",
+          "NOT NULL CHECK(updated_at >= 0)",
+          "UTC Unix 微秒；保留既有微秒精度，排序和期限比较直接使用整数"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(fcm_token)",
+        "CHECK(updated_at >= created_at)",
+        "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_devices_user_enabled ON devices(user_id,enabled);"
+      ],
+      "notes": ""
+    },
+    {
+      "name": "locations",
+      "purpose": "共享地点名称和建筑、楼层、说明；避免摄像头间重复地点信息",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "保留地点历史 ID；与摄像头位置关联"
+        ],
+        [
+          "name",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(name)) > 0 AND length(name) <= 120)",
+          "当前摄像头位置接口上限 120；空位置应转为 Unspecified"
+        ],
+        [
+          "normalized_name",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(normalized_name)) > 0)",
+          "唯一检索键，由服务器按现有空白/大小写规则生成；不能由客户端单独提交"
+        ],
+        [
+          "building",
+          "TEXT",
+          "",
+          "现有 schema 无已定义业务长度；不臆造上限"
+        ],
+        [
+          "floor",
+          "TEXT",
+          "",
+          "文本允许 G、B1、Mezzanine 等，并非只允许整数"
+        ],
+        [
+          "description",
+          "TEXT",
+          "",
+          "保留地点说明，不臆造字符上限"
+        ],
+        [
+          "created_at",
+          "INTEGER",
+          "NOT NULL CHECK(created_at >= 0)",
+          "UTC Unix 微秒；保留既有微秒精度，排序和期限比较直接使用整数"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(normalized_name)"
+      ],
+      "indexes": [],
+      "notes": ""
+    },
+    {
+      "name": "cameras",
+      "purpose": "监控摄像头身份、位置及分析状态",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "location_id",
+          "TEXT",
+          "NOT NULL",
+          "位置为独立共享实体"
+        ],
+        [
+          "name",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(name)) > 0 AND length(name) <= 80)",
+          "沿用 Camera.name 的 1..80 字符范围"
+        ],
+        [
+          "enabled",
+          "INTEGER",
+          "NOT NULL DEFAULT 1 CHECK(enabled IN (0,1))",
+          "启用状态"
+        ],
+        [
+          "status",
+          "TEXT",
+          "NOT NULL CHECK(status IN ('ready','analysing','paused','error'))",
+          "保持现有状态集合"
+        ],
+        [
+          "created_at",
+          "INTEGER",
+          "NOT NULL CHECK(created_at >= 0)",
+          "UTC Unix 微秒；保留既有微秒精度，排序和期限比较直接使用整数"
+        ],
+        [
+          "updated_at",
+          "INTEGER",
+          "NOT NULL CHECK(updated_at >= 0)",
+          "UTC Unix 微秒；保留既有微秒精度，排序和期限比较直接使用整数"
+        ]
+      ],
+      "rules": [
+        "FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE RESTRICT",
+        "CHECK(updated_at >= created_at)"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_cameras_location ON cameras(location_id);"
+      ],
+      "notes": ""
+    },
+    {
+      "name": "media_files",
+      "purpose": "实际文件的唯一元数据；视频源、截图、证据片段共享文件模型",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "relative_path",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(relative_path)) > 0)",
+          "服务器媒体根目录下的 POSIX 相对路径；SQL 防越界形态，服务仍须 realpath containment 检查"
+        ],
+        [
+          "original_filename",
+          "TEXT",
+          "",
+          "上传文件名只作元数据；不作为服务器文件路径"
+        ],
+        [
+          "media_kind",
+          "TEXT",
+          "NOT NULL CHECK(media_kind IN ('camera_source','evidence_clip','evidence_image'))",
+          "与当前文件分类保持一致"
+        ],
+        [
+          "content_type",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(content_type)) > 0)",
+          "MIME 类型由媒体处理器验证，不臆造固定长度"
+        ],
+        [
+          "size_bytes",
+          "INTEGER",
+          "NOT NULL CHECK(size_bytes >= 0)",
+          "字节大小非负；不存 BLOB 视频内容"
+        ],
+        [
+          "sha256",
+          "BLOB",
+          "CHECK(sha256 IS NULL OR length(sha256)=32)",
+          "SHA-256 原始摘要固定 32 字节；API 显示时转回 64 位十六进制"
+        ],
+        [
+          "created_at",
+          "INTEGER",
+          "NOT NULL CHECK(created_at >= 0)",
+          "UTC Unix 微秒；保留既有微秒精度，排序和期限比较直接使用整数"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(relative_path)",
+        "CHECK(substr(relative_path,1,1)<>'/' AND instr(relative_path,':')=0 AND instr(relative_path,char(92))=0 AND instr(relative_path,char(0))=0 AND instr('/'||relative_path||'/','/../')=0 AND instr('/'||relative_path||'/','/./')=0 AND instr(relative_path,'//')=0)"
+      ],
+      "indexes": [],
+      "notes": ""
+    }
+  ],
+  "policy_columns": [
+    [
+      "default_sensitivity",
+      "TEXT",
+      "CHECK(default_sensitivity IN ('sensitive','moderate','certain'))",
+      "保留默认敏感度"
+    ],
+    [
+      "detection_debug_enabled",
+      "INTEGER",
+      "CHECK(detection_debug_enabled IN (0,1))",
+      "保持当前调试功能开关"
+    ],
+    [
+      "violence_segment_seconds",
+      "REAL",
+      "CHECK(violence_segment_seconds >= 1 AND violence_segment_seconds <= 60)",
+      "沿用 ViolenceSettings 范围"
+    ],
+    [
+      "violence_stride_seconds",
+      "REAL",
+      "CHECK(violence_stride_seconds >= 0 AND violence_stride_seconds <= 60)",
+      "必须大于 0 且不大于 segment；表级约束另外执行"
+    ],
+    [
+      "violence_input_frames",
+      "INTEGER",
+      "CHECK(violence_input_frames >= 4 AND violence_input_frames <= 128)",
+      "沿用输入帧预算"
+    ],
+    [
+      "violence_sensitive_threshold",
+      "REAL",
+      "CHECK(violence_sensitive_threshold >= 0 AND violence_sensitive_threshold <= 1)",
+      "置信度阈值；保留历史精度并保证三个模式排序"
+    ],
+    [
+      "violence_moderate_threshold",
+      "REAL",
+      "CHECK(violence_moderate_threshold >= 0 AND violence_moderate_threshold <= 1)",
+      "置信度阈值；保留历史精度并保证三个模式排序"
+    ],
+    [
+      "violence_certain_threshold",
+      "REAL",
+      "CHECK(violence_certain_threshold >= 0 AND violence_certain_threshold <= 1)",
+      "置信度阈值；保留历史精度并保证三个模式排序"
+    ],
+    [
+      "violence_cooldown_seconds",
+      "INTEGER",
+      "CHECK(violence_cooldown_seconds >= 0 AND violence_cooldown_seconds <= 3600)",
+      "保留当前兼容字段；不得恢复成丢弃新警报的旧策略"
+    ],
+    [
+      "violence_merge_gap_seconds",
+      "REAL",
+      "CHECK(violence_merge_gap_seconds >= 0 AND violence_merge_gap_seconds <= 120)",
+      "沿用当前事件合并间隔可配置范围"
+    ],
+    [
+      "weapon_sample_fps",
+      "REAL",
+      "CHECK(weapon_sample_fps >= 0.25 AND weapon_sample_fps <= 30)",
+      "沿用 WeaponSettings 采样范围"
+    ],
+    [
+      "weapon_legacy_confidence",
+      "REAL",
+      "CHECK(weapon_legacy_confidence >= 0 AND weapon_legacy_confidence <= 1)",
+      "保留旧 global threshold；实际通知仍用类别/模式阈值"
+    ],
+    [
+      "weapon_nms_floor",
+      "REAL",
+      "CHECK(weapon_nms_floor >= 0 AND weapon_nms_floor <= 0.1)",
+      "沿用 NMS 候选下限范围"
+    ],
+    [
+      "weapon_nms_iou",
+      "REAL",
+      "CHECK(weapon_nms_iou >= 0.1 AND weapon_nms_iou <= 0.95)",
+      "沿用 NMS IoU 范围"
+    ],
+    [
+      "weapon_n_required",
+      "INTEGER",
+      "CHECK(weapon_n_required >= 1 AND weapon_n_required <= 120)",
+      "N-of-M 参数；另约束 N<=M"
+    ],
+    [
+      "weapon_m_window",
+      "INTEGER",
+      "CHECK(weapon_m_window >= 1 AND weapon_m_window <= 120)",
+      "滑动窗口 M"
+    ],
+    [
+      "weapon_cooldown_seconds",
+      "INTEGER",
+      "CHECK(weapon_cooldown_seconds >= 0 AND weapon_cooldown_seconds <= 3600)",
+      "保留兼容参数"
+    ],
+    [
+      "weapon_merge_gap_seconds",
+      "REAL",
+      "CHECK(weapon_merge_gap_seconds >= 0 AND weapon_merge_gap_seconds <= 120)",
+      "武器事件合并间隔"
+    ],
+    [
+      "weapon_thresholds_json",
+      "TEXT",
+      "CHECK(weapon_thresholds_json IS NULL OR (CASE WHEN json_valid(weapon_thresholds_json) THEN json_type(weapon_thresholds_json)='object' ELSE 0 END))",
+      "三种 sensitivity 的类别→数值阈值映射；不是外键关系。历史五类与 long_gun 名称保留，由触发器校验每个分数"
+    ],
+    [
+      "vlm_model_ref",
+      "TEXT",
+      "",
+      "外部模型供应商标识，沿用 VlmSettings.model_id；不是内部资源 ID"
+    ],
+    [
+      "vlm_quantization",
+      "TEXT",
+      "",
+      "VLM 量化设置"
+    ],
+    [
+      "vlm_input_fps",
+      "REAL",
+      "CHECK(vlm_input_fps >= 0.25 AND vlm_input_fps <= 12)",
+      "沿用 VLM 输入采样范围"
+    ],
+    [
+      "vlm_video_token_budget",
+      "INTEGER",
+      "CHECK(vlm_video_token_budget >= 256 AND vlm_video_token_budget <= 16384)",
+      "沿用 token 预算"
+    ],
+    [
+      "vlm_max_output_tokens",
+      "INTEGER",
+      "CHECK(vlm_max_output_tokens >= 32 AND vlm_max_output_tokens <= 2048)",
+      "沿用输出 token 预算"
+    ],
+    [
+      "vlm_scene_frames",
+      "INTEGER",
+      "CHECK(vlm_scene_frames >= 4 AND vlm_scene_frames <= 128)",
+      "还必须为偶数；与复核 input_fps 独立"
+    ],
+    [
+      "vlm_borderline_enabled",
+      "INTEGER",
+      "CHECK(vlm_borderline_enabled IN (0,1))",
+      "Web master switch；不同于账号接收偏好"
+    ],
+    [
+      "vlm_scene_enabled",
+      "INTEGER",
+      "CHECK(vlm_scene_enabled IN (0,1))",
+      "场景描述开关"
+    ],
+    [
+      "binary_prompt_id",
+      "TEXT",
+      "",
+      "真实外键，指向 prompt/borderline_binary 资源"
+    ],
+    [
+      "scene_prompt_id",
+      "TEXT",
+      "",
+      "真实外键，指向 prompt/scene_description 资源"
+    ],
+    [
+      "repeat_after_seconds",
+      "INTEGER",
+      "CHECK(repeat_after_seconds >= 15 AND repeat_after_seconds <= 3600)",
+      "当前 Config API 的第一次重复范围"
+    ],
+    [
+      "escalate_after_seconds",
+      "INTEGER",
+      "CHECK(escalate_after_seconds >= 30 AND escalate_after_seconds <= 7200)",
+      "当前全体升级范围；必须晚于首次重复"
+    ]
+  ]
+}

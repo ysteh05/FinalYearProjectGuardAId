@@ -1,0 +1,9 @@
+# Sanitized baseline export; real local ignore rules are in the private backup.
+build/
+.dart_tool/
+.gradle/
+*.db
+.env
+google-services.json
+GoogleService-Info.plist
+firebase_options.dart

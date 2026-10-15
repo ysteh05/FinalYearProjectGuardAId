@@ -1,0 +1,215 @@
+erDiagram
+    users {
+        TEXT id PK
+        TEXT borderline_updated_by_user_id FK
+    }
+    roles {
+        TEXT id PK
+        TEXT borderline_updated_by_user_id FK
+    }
+    user_roles {
+        TEXT user_id PK, FK
+        TEXT role_id PK, FK
+        TEXT assigned_by_user_id FK
+    }
+    devices {
+        TEXT id PK
+        TEXT user_id FK
+    }
+    locations {
+        TEXT id PK
+    }
+    cameras {
+        TEXT id PK
+        TEXT location_id FK
+    }
+    media_files {
+        TEXT id PK
+    }
+    camera_sources {
+        TEXT id PK
+        TEXT camera_id FK
+        TEXT media_file_id FK
+    }
+    model_versions {
+        TEXT id PK
+    }
+    prompt_versions {
+        TEXT id PK
+    }
+    config_versions {
+        TEXT id PK
+        TEXT created_by_user_id FK
+        TEXT binary_prompt_version_id FK
+        TEXT scene_prompt_version_id FK
+    }
+    alerts {
+        TEXT id PK, FK
+        TEXT camera_id FK
+        TEXT opening_config_version_id FK
+        TEXT opening_model_version_id FK
+        TEXT binary_prompt_version_id FK
+        TEXT handler_user_id FK
+        TEXT active_phase_id FK
+    }
+    detection_events {
+        TEXT id PK
+        TEXT alert_id FK
+        TEXT model_version_id FK
+        TEXT config_version_id FK
+    }
+    borderline_reviews {
+        TEXT id PK
+        TEXT camera_id FK
+        TEXT alert_id FK
+        TEXT detection_event_id FK
+        TEXT model_version_id FK
+        TEXT prompt_version_id FK
+        TEXT config_version_id FK
+    }
+    evidence_records {
+        TEXT id PK
+        TEXT alert_id FK
+        TEXT media_file_id FK
+    }
+    vlm_descriptions {
+        TEXT id PK
+        TEXT alert_id FK
+        TEXT model_version_id FK
+        TEXT prompt_version_id FK
+        TEXT config_version_id FK
+    }
+    alert_actions {
+        TEXT id PK
+        TEXT alert_id FK
+        TEXT user_id FK
+    }
+    alert_reads {
+        TEXT user_id PK, FK
+        TEXT alert_id PK, FK
+    }
+    notifications {
+        TEXT id PK
+        TEXT alert_id FK
+        TEXT phase_id FK
+    }
+    notification_outbox {
+        TEXT id PK
+        TEXT notification_id FK
+    }
+    notification_recipients {
+        INTEGER id PK
+        TEXT notification_id FK
+        TEXT user_id FK
+        TEXT role_id FK
+    }
+    notification_deliveries {
+        TEXT id PK
+        TEXT notification_id FK
+        TEXT device_id FK
+        TEXT recipient_user_id FK
+    }
+    notification_reads {
+        TEXT notification_id PK, FK
+        TEXT user_id PK, FK
+    }
+    alert_notification_audience {
+        TEXT alert_id PK, FK
+        TEXT user_id PK, FK
+        TEXT first_notification_id FK
+    }
+    notification_phases {
+        TEXT id PK
+        TEXT alert_id FK
+        TEXT initiated_by_user_id FK
+        TEXT source_notification_id FK
+    }
+    notification_phase_roles {
+        TEXT phase_id PK, FK
+        TEXT role_id PK, FK
+    }
+    notification_phase_dispatches {
+        TEXT phase_id PK, FK
+        INTEGER stage PK
+        TEXT notification_id FK
+    }
+    notification_phase_audience {
+        TEXT phase_id PK, FK
+        TEXT user_id PK, FK
+        INTEGER stage PK
+        TEXT notification_id FK
+    }
+    mobile_settings {
+        TEXT id PK
+        TEXT updated_by_user_id FK
+    }
+    audit_logs {
+        TEXT id PK
+        TEXT user_id FK
+    }
+    schema_migrations {
+        INTEGER version PK
+    }
+    users o|--o{ users : borderline_updated_by_user_id
+    users o|--o{ roles : borderline_updated_by_user_id
+    users ||--o{ user_roles : user_id
+    roles ||--o{ user_roles : role_id
+    users o|--o{ user_roles : assigned_by_user_id
+    users ||--o{ devices : user_id
+    locations ||--o{ cameras : location_id
+    cameras ||--o{ camera_sources : camera_id
+    media_files o|--o{ camera_sources : media_file_id
+    users o|--o{ config_versions : created_by_user_id
+    prompt_versions ||--o{ config_versions : binary_prompt_version_id
+    prompt_versions ||--o{ config_versions : scene_prompt_version_id
+    cameras ||--o{ alerts : camera_id
+    config_versions ||--o{ alerts : opening_config_version_id
+    model_versions ||--o{ alerts : opening_model_version_id
+    prompt_versions o|--o{ alerts : binary_prompt_version_id
+    users o|--o{ alerts : handler_user_id
+    notification_phases o|--o| alerts : active_phase_id_id
+    alerts ||--o{ detection_events : alert_id
+    model_versions ||--o{ detection_events : model_version_id
+    config_versions ||--o{ detection_events : config_version_id
+    cameras ||--o{ borderline_reviews : camera_id
+    alerts o|--o{ borderline_reviews : alert_id_camera_id
+    detection_events o|--o| borderline_reviews : detection_event_id
+    model_versions ||--o{ borderline_reviews : model_version_id
+    prompt_versions ||--o{ borderline_reviews : prompt_version_id
+    config_versions ||--o{ borderline_reviews : config_version_id
+    alerts ||--o{ evidence_records : alert_id
+    media_files ||--o| evidence_records : media_file_id
+    alerts ||--o{ vlm_descriptions : alert_id
+    model_versions ||--o{ vlm_descriptions : model_version_id
+    prompt_versions o|--o{ vlm_descriptions : prompt_version_id
+    config_versions o|--o{ vlm_descriptions : config_version_id
+    alerts ||--o{ alert_actions : alert_id
+    users ||--o{ alert_actions : user_id
+    users ||--o{ alert_reads : user_id
+    alerts ||--o{ alert_reads : alert_id
+    alerts ||--o{ notifications : alert_id
+    notification_phases o|--o{ notifications : phase_id_alert_id
+    notifications ||--o| notification_outbox : notification_id
+    notifications ||--o{ notification_recipients : notification_id
+    users o|--o{ notification_recipients : user_id
+    roles o|--o{ notification_recipients : role_id
+    notifications ||--o{ notification_deliveries : notification_id
+    devices ||--o{ notification_deliveries : device_id
+    users o|--o{ notification_deliveries : recipient_user_id
+    notifications ||--o{ notification_reads : notification_id
+    users ||--o{ notification_reads : user_id
+    alerts ||--o{ alert_notification_audience : alert_id
+    users ||--o{ alert_notification_audience : user_id
+    notifications o|--o{ alert_notification_audience : first_notification_id
+    alerts ||--o{ notification_phases : alert_id
+    users o|--o{ notification_phases : initiated_by_user_id
+    notifications o|--o{ notification_phases : source_notification_id
+    notification_phases ||--o{ notification_phase_roles : phase_id
+    roles ||--o{ notification_phase_roles : role_id
+    notification_phases ||--o{ notification_phase_dispatches : phase_id
+    notifications o|--o| notification_phase_dispatches : notification_id
+    notification_phases ||--o{ notification_phase_audience : phase_id
+    users ||--o{ notification_phase_audience : user_id
+    notifications o|--o{ notification_phase_audience : notification_id
+    users o|--o| mobile_settings : updated_by_user_id
+    users o|--o{ audit_logs : user_id

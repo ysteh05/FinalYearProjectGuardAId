@@ -1,0 +1,7 @@
+--index-url https://download.pytorch.org/whl/cu128
+
+# TorchCodec 0.11 is paired with PyTorch 2.11. The exact pins avoid an
+# incompatible codec/runtime combination and match the verified RTX runtime.
+torch==2.11.0
+torchvision==0.26.0
+torchcodec==0.11.1

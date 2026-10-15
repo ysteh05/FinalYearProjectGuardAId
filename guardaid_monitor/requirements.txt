@@ -1,0 +1,24 @@
+fastapi==0.139.0
+uvicorn[standard]>=0.35,<1
+python-multipart>=0.0.20,<1
+firebase-admin>=7,<8
+pytest>=8,<9
+httpx>=0.28,<1
+numpy>=1.26,<3
+opencv-python>=4.10,<5
+ipython>=8,<10
+pandas>=2,<3
+matplotlib>=3.8,<4
+seaborn>=0.13,<1
+PyYAML>=6,<7
+# Install the pinned NVIDIA runtime from requirements-cuda.txt first. Keeping
+# PyTorch out of this file prevents pip from silently replacing it with a
+# CPU-only Windows wheel.
+# 5.15.0.dev0: the verified Qwen3-VL/Qwen3.5 Windows runtime. The previous
+# e52d0fd pin downgraded the working environment to 5.14 and caused a native
+# torch_cpu.dll crash at the first weight during Qwen3-VL loading.
+transformers @ https://github.com/huggingface/transformers/archive/a8609bed2ad1593e7d756006525a10053d4d5bc6.zip
+accelerate>=1.4
+bitsandbytes>=0.45
+qwen-vl-utils>=0.0.14
+av>=14

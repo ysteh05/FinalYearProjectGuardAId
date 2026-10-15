@@ -1,0 +1,21 @@
+erDiagram
+    locations ||--o{ cameras : location_id
+    cameras ||--o{ camera_sources : camera_id
+    media_files o|--o{ camera_sources : uploaded_file
+    cameras ||--o{ alerts : camera_id
+    alerts ||--o{ detection_events : alert_id
+    model_versions ||--o{ detection_events : detector_model
+    config_versions ||--o{ detection_events : per_event_policy
+    alerts o|--o{ borderline_reviews : alert_id
+    detection_events o|--o| borderline_reviews : task_window
+    model_versions ||--o{ borderline_reviews : review_model
+    prompt_versions ||--o{ borderline_reviews : binary_prompt
+    config_versions ||--o{ borderline_reviews : policy
+    alerts ||--o{ evidence_records : alert_id
+    media_files ||--o| evidence_records : unique_evidence_file
+    alerts ||--o{ vlm_descriptions : alert_id
+    model_versions ||--o{ vlm_descriptions : description_model
+    prompt_versions o|--o{ vlm_descriptions : optional_historical_prompt
+    config_versions o|--o{ vlm_descriptions : optional_historical_policy
+    prompt_versions ||--o{ config_versions : binary_and_scene_prompt
+

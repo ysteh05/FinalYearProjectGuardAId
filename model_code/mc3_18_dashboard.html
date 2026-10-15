@@ -1,0 +1,1755 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f6f5">
+  <title>GuardAId · MC3-18 工作台</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #162b2c;
+      --muted: #657879;
+      --soft: #8b9a99;
+      --line: #e3e9e7;
+      --paper: #ffffff;
+      --canvas: #f4f7f5;
+      --teal: #087f78;
+      --teal-dark: #06645f;
+      --teal-pale: #e4f4f1;
+      --mint: #bce6d8;
+      --amber: #ad6d13;
+      --amber-pale: #fff3dc;
+      --red: #bb4649;
+      --red-pale: #fff0ef;
+      --shadow: 0 12px 34px rgba(28, 58, 56, .06);
+      --radius: 18px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--canvas); color: var(--ink); }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .app { min-height: 100vh; }
+    .topbar {
+      height: 72px; background: rgba(255,255,255,.92); border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 34px; position: sticky; top: 0; z-index: 5;
+      backdrop-filter: blur(12px);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 750; letter-spacing: -.025em; }
+    .brand-mark { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 11px; color: #fff; background: var(--teal); box-shadow: 0 5px 12px #087f7833; }
+    .brand-mark svg { width: 20px; height: 20px; }
+    .brand small { display: block; color: var(--muted); font-size: 10px; font-weight: 650; letter-spacing: .14em; margin-top: 2px; text-transform: uppercase; }
+    .top-meta { display: flex; align-items: center; gap: 18px; color: var(--muted); font-size: 12px; }
+    .health-pill, .status-pill { border: 1px solid var(--line); background: #fff; border-radius: 99px; padding: 7px 11px; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; background: #97a7a5; }
+    .dot.good { background: #159477; box-shadow: 0 0 0 3px #15947720; }
+    .dot.warn { background: #d29330; box-shadow: 0 0 0 3px #d2933020; }
+    .dot.bad { background: #c64c4c; box-shadow: 0 0 0 3px #c64c4c20; }
+    .shell { display: grid; grid-template-columns: 224px minmax(0, 1fr); max-width: 1580px; margin: 0 auto; min-height: calc(100vh - 72px); }
+    .sidebar { padding: 26px 16px 28px 22px; border-right: 1px solid var(--line); }
+    .side-caption { padding: 0 12px; color: #96a4a2; font-size: 10px; font-weight: 750; text-transform: uppercase; letter-spacing: .13em; margin: 10px 0 10px; }
+    .nav-button { width: 100%; border: 0; background: transparent; color: #627473; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 11px; text-align: left; text-decoration: none; font-size: 13px; font-weight: 650; margin-bottom: 4px; }
+    .nav-button:hover { color: var(--ink); background: #eaf0ee; }
+    .nav-button.active { color: var(--teal-dark); background: var(--teal-pale); }
+    .nav-icon { width: 20px; height: 20px; display: inline-grid; place-items: center; }
+    .nav-icon svg { width: 18px; height: 18px; }
+    .side-note { margin: 28px 6px 0; padding: 14px; border: 1px solid #dcebe7; border-radius: 13px; background: #f9fcfa; color: var(--muted); font-size: 11px; line-height: 1.65; }
+    .side-note strong { color: var(--ink); display: block; font-size: 12px; margin-bottom: 4px; }
+    main { min-width: 0; padding: 32px clamp(18px, 3.3vw, 48px) 56px; }
+    .page { display: none; animation: appear .22s ease-out; }
+    .page.active { display: block; }
+    @keyframes appear { from { opacity: .5; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .page-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 23px; }
+    .eyebrow { color: var(--teal); font-weight: 750; font-size: 10px; text-transform: uppercase; letter-spacing: .15em; margin-bottom: 8px; }
+    h1 { margin: 0; font-size: clamp(25px, 3vw, 34px); letter-spacing: -.045em; line-height: 1.15; }
+    .subtitle { margin: 8px 0 0; max-width: 720px; color: var(--muted); font-size: 13px; line-height: 1.65; }
+    .heading-tags { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .tag { border: 1px solid var(--line); background: #fff; color: var(--muted); border-radius: 99px; padding: 7px 10px; font-size: 11px; white-space: nowrap; }
+    .tag.protocol { color: var(--teal-dark); border-color: #c7e4dd; background: #f1faf7; }
+    .banner { padding: 12px 15px; border-radius: 12px; font-size: 12px; line-height: 1.55; display: none; margin-bottom: 17px; }
+    .banner.show { display: block; }
+    .banner.error { background: var(--red-pale); color: #873638; border: 1px solid #f2d3d1; }
+    .banner.info { background: #edf5f5; color: #466364; border: 1px solid #dae8e7; }
+    .banner.warn { background: var(--amber-pale); color: #77500f; border: 1px solid #f0dfbd; }
+    .grid-main { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(350px, .92fr); gap: 18px; align-items: start; }
+    .stack { display: grid; gap: 18px; min-width: 0; }
+    .card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); min-width: 0; }
+    .card-head { padding: 19px 21px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
+    .card-body { padding: 18px 21px 21px; }
+    h2 { font-size: 15px; margin: 0; letter-spacing: -.02em; }
+    .card-description { color: var(--muted); font-size: 11px; margin-top: 5px; line-height: 1.5; }
+    .section-label { color: #879795; font-size: 10px; font-weight: 750; letter-spacing: .11em; text-transform: uppercase; margin: 19px 0 10px; }
+    .section-label:first-child { margin-top: 0; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px 14px; }
+    .form-grid.three { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .field { min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
+    .field label, .field-label { display: block; color: #526665; font-size: 11px; font-weight: 650; margin: 0 0 6px; }
+    .hint { color: #8a9997; font-size: 10px; line-height: 1.4; margin-top: 5px; }
+    input[type="text"], input[type="number"], select {
+      width: 100%; height: 39px; border: 1px solid #dce5e2; border-radius: 9px; padding: 0 11px; color: var(--ink); background: #fff; outline: none; font-size: 12px; transition: border-color .15s, box-shadow .15s;
+    }
+    input:focus, select:focus { border-color: #63aaa1; box-shadow: 0 0 0 3px #087f7814; }
+    input:disabled, select:disabled { background: #f4f6f5; color: #859391; }
+    .path-field { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 10px !important; }
+    .toggle-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .check-chip { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: #fbfcfb; border-radius: 9px; padding: 9px 11px; color: #516463; font-size: 11px; cursor: pointer; }
+    .check-chip input { accent-color: var(--teal); }
+    .actions { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; margin-top: 19px; }
+    .button { min-height: 38px; border-radius: 9px; padding: 0 14px; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 11px; font-weight: 700; transition: .15s ease; }
+    .button:disabled { cursor: not-allowed; opacity: .48; }
+    .button.primary { background: var(--teal); color: #fff; box-shadow: 0 5px 12px #087f7820; }
+    .button.primary:hover:not(:disabled) { background: var(--teal-dark); transform: translateY(-1px); }
+    .button.secondary { background: #fff; border-color: #dce5e2; color: #49605f; }
+    .button.secondary:hover:not(:disabled) { background: #f5f8f7; border-color: #bdd1cb; }
+    .button.danger { color: #a73a3c; border-color: #efd3d1; background: #fff9f8; }
+    .button.danger:hover:not(:disabled) { background: var(--red-pale); }
+    .button.subtle { color: var(--teal-dark); background: transparent; padding: 0 8px; }
+    .button svg { width: 15px; height: 15px; }
+    .resume-box { margin-top: 14px; padding: 11px 12px; border-radius: 10px; background: #f5f8f7; border: 1px solid var(--line); display: none; }
+    .resume-box.show { display: block; }
+    .resume-box .path { font-family: ui-monospace, Consolas, monospace; word-break: break-all; color: #465d5c; font-size: 10px; margin-top: 6px; }
+    .resume-box .resume-title { color: #526665; font-size: 11px; font-weight: 700; }
+    .progress-card { overflow: hidden; }
+    .progress-top { padding: 20px 21px 17px; background: linear-gradient(120deg, #f5fbf9, #fff); border-bottom: 1px solid var(--line); }
+    .progress-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .big-status { display: flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 750; }
+    .big-status .dot { width: 9px; height: 9px; }
+    .status-pill { padding: 5px 9px; color: #6e7e7c; font-size: 10px; }
+    .status-pill.running { color: var(--teal-dark); background: var(--teal-pale); border-color: #cbe7df; }
+    .status-pill.completed { color: #17694f; background: #e8f6ec; border-color: #cde8d4; }
+    .status-pill.failed, .status-pill.stopped { color: #a33e41; background: var(--red-pale); border-color: #f0d2d0; }
+    .progress-stage { color: var(--muted); font-size: 11px; margin-top: 13px; display: flex; justify-content: space-between; gap: 10px; }
+    .progress-track { height: 8px; background: #e8efed; border-radius: 99px; margin-top: 8px; overflow: hidden; }
+    .progress-fill { height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #07857b, #42b99f); transition: width .4s ease; }
+    .epoch-line { display: flex; justify-content: space-between; color: #71817f; font-size: 10px; margin-top: 9px; }
+    .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; padding: 15px 18px 18px; }
+    .metric-tile { padding: 12px 13px; background: #f8faf9; border: 1px solid #edf1ef; border-radius: 11px; min-width: 0; }
+    .metric-name { color: #7b8b89; font-size: 10px; }
+    .metric-value { color: var(--ink); font-size: 20px; font-weight: 760; letter-spacing: -.04em; margin-top: 5px; }
+    .metric-detail { color: #8a9997; font-size: 9px; margin-top: 2px; }
+    .log-wrap { border-radius: 11px; background: #132524; overflow: hidden; }
+    .log-head { color: #c1d5d1; padding: 9px 12px; border-bottom: 1px solid #ffffff14; font-size: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .log-lights { display: flex; gap: 5px; }
+    .log-lights i { width: 6px; height: 6px; border-radius: 50%; background: #809794; }
+    .console { min-height: 124px; max-height: 230px; overflow: auto; color: #c0d4d0; padding: 11px 13px; font: 10px/1.65 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; word-break: break-word; scrollbar-color: #45615e #132524; }
+    .console.empty { color: #78908b; }
+    .table-scroll { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 10px; white-space: nowrap; }
+    th { color: #82918f; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; padding: 9px 8px; border-bottom: 1px solid var(--line); }
+    td { color: #4e6260; padding: 9px 8px; border-bottom: 1px solid #eff2f1; }
+    tbody tr:last-child td { border-bottom: 0; }
+    td:first-child { color: var(--ink); font-weight: 650; }
+    .empty-state { color: #8a9997; font-size: 11px; padding: 19px 9px; text-align: center; }
+    .chart-stack { display: grid; gap: 12px; }
+    .chart-panel { border: 1px solid #edf1ef; border-radius: 11px; padding: 10px 12px 8px; }
+    .chart-title { display: flex; justify-content: space-between; color: #5c706e; font-size: 10px; font-weight: 700; margin-bottom: 3px; }
+    .chart-title span:last-child { color: #9aa7a5; font-weight: 500; }
+    canvas { display: block; width: 100%; height: 112px; }
+    .table-note { margin-top: 10px; color: #879693; font-size: 10px; line-height: 1.5; }
+    .run-meta { color: #82918f; font-size: 10px; }
+    .inference-layout { display: grid; grid-template-columns: minmax(310px, .78fr) minmax(0, 1.22fr); gap: 18px; align-items: start; }
+    .drop-zone { position: relative; border: 1px dashed #b9d1ca; border-radius: 13px; background: #f8fcfa; min-height: 124px; display: grid; place-items: center; text-align: center; padding: 18px; transition: .15s; }
+    .drop-zone.drag { background: #ebf8f4; border-color: var(--teal); }
+    .drop-zone input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+    .drop-icon { color: var(--teal); margin: 0 auto 8px; }
+    .drop-icon svg { width: 25px; height: 25px; }
+    .drop-title { color: #3d5553; font-size: 12px; font-weight: 700; }
+    .drop-subtitle { color: #879693; font-size: 10px; margin-top: 5px; }
+    .file-name { color: var(--teal-dark); font-size: 10px; margin-top: 8px; overflow-wrap: anywhere; }
+    .video-stage { position: relative; display: none; width: 100%; aspect-ratio: 16 / 9; margin-top: 12px; overflow: hidden; border-radius: 12px; background: #111c1b; box-shadow: inset 0 0 0 1px rgba(255,255,255,.07); }
+    .video-stage.show { display: block; }
+    .video-canvas { position: relative; width: 100%; height: 100%; overflow: hidden; background: #111c1b; }
+    .preview { display: block; width: 100%; height: 100%; object-fit: contain; background: #111c1b; margin: 0; border-radius: inherit; }
+    .live-score-overlay { position: absolute; z-index: 4; top: 12px; right: 12px; display: grid; justify-items: end; gap: 4px; min-width: 144px; max-width: calc(100% - 24px); padding: 10px 12px; border: 1px solid rgba(226,245,239,.34); border-radius: 12px; color: #f5fffb; text-align: right; background: rgba(12,27,26,.56); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 8px 24px rgba(0,0,0,.22); pointer-events: none; transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease; }
+    .live-score-overlay[hidden] { display: none; }
+    .live-score-overlay.alert { background: #c83e49; border-color: #ff9ca2; box-shadow: 0 8px 28px rgba(140,20,30,.4); }
+    .live-score-top { display: flex; align-items: center; justify-content: flex-end; gap: 6px; color: rgba(245,255,251,.88); font-size: 9px; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
+    .live-score-dot { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: #79dfbf; box-shadow: 0 0 0 3px rgba(121,223,191,.14); }
+    .live-score-overlay.alert .live-score-dot { background: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.2); animation: alert-pulse 1.2s ease-in-out infinite; }
+    .live-score-number { color: #fff; font-size: 26px; line-height: 1; font-weight: 820; letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+    .live-score-meta { display: grid; gap: 2px; color: rgba(245,255,251,.82); font-size: 9px; font-weight: 550; font-variant-numeric: tabular-nums; }
+    .video-stage-controls { position: absolute; z-index: 5; top: 12px; left: 12px; display: flex; align-items: center; gap: 8px; }
+    .video-fullscreen-button { position: static; display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid rgba(226,245,239,.28); border-radius: 9px; color: #f5fffb; background: rgba(12,27,26,.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; transition: background-color .15s ease, border-color .15s ease; }
+    .video-fullscreen-button:hover { background: rgba(12,27,26,.82); border-color: rgba(226,245,239,.56); }
+    .video-fullscreen-button svg { width: 14px; height: 14px; flex: 0 0 auto; }
+    .video-audio-button { width: 34px; height: 34px; display: inline-grid; place-items: center; padding: 0; border: 1px solid rgba(226,245,239,.28); border-radius: 9px; color: #f5fffb; background: rgba(12,27,26,.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); cursor: pointer; transition: background-color .15s ease, border-color .15s ease; }
+    .video-audio-button:hover { background: rgba(12,27,26,.82); border-color: rgba(226,245,239,.56); }
+    .video-audio-button svg { width: 17px; height: 17px; }
+    .video-sound-controls { position: absolute; z-index: 5; left: 12px; bottom: 52px; max-width: calc(100% - 24px); display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 10px; border: 1px solid rgba(226,245,239,.25); border-radius: 9px; color: #fff; background: rgba(12,27,26,.8); font-size: 10px; }
+    .video-sound-controls input[type="range"] { width: 88px; height: 20px; margin: 0; accent-color: #79dfbf; cursor: pointer; }
+    .video-sound-controls output { min-width: 31px; font-variant-numeric: tabular-nums; }
+    .video-sound-controls label { display: inline-flex; align-items: center; gap: 5px; }
+    .video-sound-controls input[type="checkbox"] { margin: 0; accent-color: #79dfbf; }
+    .beep-test-button { color: #fff; border: 1px solid #ffffff40; border-radius: 6px; background: transparent; padding: 4px 6px; font-size: 10px; }
+    .audio-status { margin-top: 8px; color: #58726c; font-size: 11px; line-height: 1.5; }
+    .audio-status.warning { color: #98632c; }
+    .video-playback-note { margin-top: 7px; color: #879693; font-size: 9px; line-height: 1.45; }
+    .video-stage:fullscreen, .video-stage:-webkit-full-screen, .video-stage.fullscreen-fallback { display: grid; place-items: center; width: 100vw; height: 100vh; max-width: none; max-height: none; aspect-ratio: auto; margin: 0; border-radius: 0; background: #050908; }
+    .video-stage:fullscreen .video-canvas, .video-stage:-webkit-full-screen .video-canvas, .video-stage.fullscreen-fallback .video-canvas { flex: none; max-width: 100vw; max-height: 100vh; }
+    .video-stage:fullscreen .preview, .video-stage:-webkit-full-screen .preview, .video-stage.fullscreen-fallback .preview { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; }
+    .video-stage:fullscreen .live-score-overlay, .video-stage:-webkit-full-screen .live-score-overlay, .video-stage.fullscreen-fallback .live-score-overlay { top: 18px; right: 18px; gap: 6px; min-width: 216px; padding: 15px 18px; border-radius: 18px; }
+    .video-stage:fullscreen .live-score-top, .video-stage:-webkit-full-screen .live-score-top, .video-stage.fullscreen-fallback .live-score-top,
+    .video-stage:fullscreen .live-score-meta, .video-stage:-webkit-full-screen .live-score-meta, .video-stage.fullscreen-fallback .live-score-meta { font-size: 13.5px; }
+    .video-stage:fullscreen .live-score-top, .video-stage:-webkit-full-screen .live-score-top, .video-stage.fullscreen-fallback .live-score-top { gap: 9px; }
+    .video-stage:fullscreen .live-score-dot, .video-stage:-webkit-full-screen .live-score-dot, .video-stage.fullscreen-fallback .live-score-dot { width: 10.5px; height: 10.5px; }
+    .video-stage:fullscreen .live-score-number, .video-stage:-webkit-full-screen .live-score-number, .video-stage.fullscreen-fallback .live-score-number { font-size: 39px; }
+    .video-stage:fullscreen .video-stage-controls, .video-stage:-webkit-full-screen .video-stage-controls, .video-stage.fullscreen-fallback .video-stage-controls { top: 22px; left: 22px; }
+    .video-stage:fullscreen .video-sound-controls, .video-stage:-webkit-full-screen .video-sound-controls, .video-stage.fullscreen-fallback .video-sound-controls { bottom: 96px; }
+    body.video-fullscreen-fallback { overflow: hidden; }
+    @keyframes alert-pulse { 50% { opacity: .55; transform: scale(.88); } }
+    @media (prefers-reduced-motion: reduce) { .live-score-overlay.alert .live-score-dot { animation: none; } }
+    .privacy-note { display: flex; gap: 8px; align-items: flex-start; color: #71817f; background: #f5f8f7; padding: 10px 11px; border-radius: 9px; font-size: 10px; line-height: 1.5; margin-top: 12px; }
+    .privacy-note svg { flex: 0 0 auto; width: 14px; height: 14px; color: var(--teal); }
+    .mode-help { border-left: 2px solid var(--mint); padding-left: 10px; color: #70807e; font-size: 10px; line-height: 1.6; margin: 11px 0 0; }
+    .infer-progress { margin-top: 13px; display: none; }
+    .infer-progress.show { display: block; }
+    .result-placeholder { display: grid; place-items: center; min-height: 250px; text-align: center; color: #879693; padding: 30px; }
+    .result-placeholder svg { width: 42px; height: 42px; color: #b5c5c0; margin-bottom: 12px; }
+    .result-placeholder strong { color: #526665; font-size: 13px; display: block; margin-bottom: 5px; }
+    .result-card-body { padding: 20px; }
+    .decision-banner { border-radius: 12px; padding: 15px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--teal-pale); border: 1px solid #cfe8e0; }
+    .decision-banner.fight { background: var(--red-pale); border-color: #f1d3d1; }
+    .decision-label { color: #54706d; font-size: 10px; }
+    .decision-value { color: var(--teal-dark); font-size: 23px; letter-spacing: -.04em; font-weight: 800; margin-top: 3px; }
+    .decision-banner.fight .decision-value { color: #ad4144; }
+    .score-pill { background: #fff; border: 1px solid #d6e6e1; padding: 8px 11px; border-radius: 9px; text-align: right; }
+    .score-pill strong { display: block; font-size: 17px; color: var(--ink); }
+    .score-pill span { display: block; font-size: 9px; color: #7a8b88; margin-top: 1px; }
+    .result-metrics { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 9px; margin: 13px 0 17px; }
+    .result-metric { background: #f7f9f8; border: 1px solid #edf1ef; border-radius: 10px; padding: 10px; min-width: 0; }
+    .result-metric span { display: block; color: #879693; font-size: 9px; }
+    .result-metric strong { display: block; color: #3f5654; font-size: 12px; margin-top: 5px; overflow-wrap: anywhere; }
+    .window-table td { padding-top: 8px; padding-bottom: 8px; }
+    .prob-cell { min-width: 90px; }
+    .prob-track { display: inline-block; vertical-align: middle; width: 48px; height: 5px; border-radius: 5px; background: #e4ebe8; margin-right: 5px; overflow: hidden; }
+    .prob-fill { display: block; height: 100%; background: var(--teal); }
+    .prob-fill.high { background: #c44d4e; }
+    .footer-note { color: #9aa7a5; font-size: 10px; text-align: center; padding-top: 22px; }
+    .source-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin: 13px 0; }
+    .source-summary { border: 1px solid #e6ece9; background: #f8faf9; border-radius: 11px; padding: 11px 12px; min-width: 0; }
+    .source-summary strong { display: block; font-size: 11px; color: #38514f; }
+    .source-summary span { display: block; font-size: 10px; line-height: 1.5; color: #72817f; margin-top: 5px; }
+    .source-summary .source-count { color: var(--teal-dark); font-size: 17px; font-weight: 750; letter-spacing: -.03em; }
+    .reverse-protocol-note, .four-protocol-note { border: 1px solid #d6e9e2; background: #f2faf6; color: #526d65; border-radius: 11px; padding: 12px 13px; font-size: 11px; line-height: 1.65; margin-top: 12px; }
+    .reverse-protocol-note strong, .four-protocol-note strong { color: #315b50; }
+    @media (max-width: 1080px) {
+      .grid-main { grid-template-columns: minmax(0, 1fr); }
+      .inference-layout { grid-template-columns: minmax(0, 1fr); }
+      .sidebar { width: 74px; padding: 23px 9px; }
+      .shell { grid-template-columns: 74px minmax(0,1fr); }
+      .side-caption, .nav-button .nav-text, .side-note { display: none; }
+      .nav-button { justify-content: center; padding: 13px 5px; }
+    }
+    @media (max-width: 700px) {
+      .topbar { height: 61px; padding: 0 15px; }
+      .top-meta .python-chip { display: none; }
+      .shell { display: block; min-height: calc(100vh - 61px); }
+      .sidebar { display: flex; width: 100%; position: sticky; top: 61px; z-index: 4; padding: 7px 12px; border-right: 0; border-bottom: 1px solid var(--line); background: #f8faf9; gap: 5px; }
+      .nav-button { flex: 1; justify-content: center; margin: 0; padding: 9px 6px; font-size: 11px; }
+      .nav-button .nav-text { display: inline; }
+      .nav-icon { display: none; }
+      main { padding: 23px 14px 40px; }
+      .page-heading { display: block; }
+      .heading-tags { justify-content: flex-start; margin-top: 13px; }
+      .card-head { padding: 16px 16px 0; }
+      .card-body { padding: 15px 16px 17px; }
+      .progress-top { padding: 16px; }
+      .metric-grid { padding: 13px 14px 15px; }
+      .form-grid.three { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .result-metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .source-summary-grid { grid-template-columns: 1fr; }
+      .top-meta { gap: 8px; }
+      .health-pill { font-size: 10px; padding: 6px 8px; }
+    }
+    @media (max-width: 420px) {
+      .brand { gap: 8px; font-size: 12px; }
+      .brand-mark { width: 31px; height: 31px; }
+      .health-pill { max-width: 118px; overflow: hidden; }
+      .form-grid, .form-grid.three { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .heading-tags .tag { font-size: 9px; }
+      .button { padding: 0 11px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12.4 9.2 17 20 6.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 2.8a9.2 9.2 0 1 0 9.2 9.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+      <div>GuardAId <small>Video intelligence</small></div>
+    </div>
+    <div class="top-meta">
+      <span class="python-chip" id="pythonVersion">本机 Python · 正在检查</span>
+      <span class="health-pill"><i class="dot" id="healthDot"></i><span id="healthText">正在连接本机服务</span></span>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="sidebar" aria-label="主导航">
+      <div class="side-caption">工作区</div>
+      <button class="nav-button active" data-page="training" aria-current="page">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19V5m0 14h16M7.5 15l3.2-4 3 2.2 4.8-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">训练与评测</span>
+      </button>
+      <button class="nav-button" data-page="reverse">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 8h13a3 3 0 0 1 0 6H6m0 0 3-3m-3 3 3 3M20 5v2m0 8v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">2 秒倒放方案</span>
+      </button>
+      <button class="nav-button" data-page="four">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 8h13a3 3 0 0 1 0 6H6m0 0 3-3m-3 3 3 3M20 5v2m0 8v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">4 秒窗口方案</span>
+      </button>
+      <a class="nav-button" href="/skeleton-training" title="四数据集黑底骨架训练">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="4" r="2" stroke="currentColor" stroke-width="1.7"/><circle cx="7" cy="10" r="1.5" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="10" r="1.5" stroke="currentColor" stroke-width="1.7"/><circle cx="9" cy="17" r="1.5" stroke="currentColor" stroke-width="1.7"/><circle cx="15" cy="17" r="1.5" stroke="currentColor" stroke-width="1.7"/><path d="m12 6-5 2.5m5-2.5 5 2.5m-10 3 2 4m8-4-2 4m-4-4h2m-1-2v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><span class="nav-text">黑底骨架训练</span>
+      </a>
+      <a class="nav-button" href="/native-finetune" title="四数据集原生视频后训练">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="13" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="m16 10 5-3v10l-5-3M7 9h5M7 12h5M7 15h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">原生视频后训练</span>
+      </a>
+      <a class="nav-button" href="/full-frame-training" title="五数据集全画面短边112训练">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 8h8v8H8z" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="nav-text">全画面短边112训练</span>
+      </a>
+      <a class="nav-button" href="/harvard-letterbox-training" title="Harvard、RWF-2000、AIRT Lab 均值补边训练">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 3.8v16.4M16 3.8v16.4M8 8h8v8H8z" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="nav-text">160×160 均值补边训练</span>
+      </a>
+      <a class="nav-button" href="/temporal-shift-training" title="四数据集全画面补边与 ±2 源帧时间偏移训练">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 8h13a3 3 0 0 1 0 6H7m0 0 3-3m-3 3 3 3M20 5v2m0 8v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">±2 帧四数据集训练</span>
+      </a>
+      <button class="nav-button" data-page="inference">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="13" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="m16 10 5-3v10l-5-3" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span class="nav-text">视频推理</span>
+      </button>
+      <div class="side-note"><strong>推理协议</strong>根据所选模型自动匹配窗口和帧数；阈值来自该模型自己的验证集。<br><br>本页面只连接当前电脑上的本地服务。</div>
+    </aside>
+
+    <main>
+      <section class="page active" id="page-training">
+        <div class="page-heading">
+          <div><div class="eyebrow">Model workspace / 01</div><h1>训练与评测</h1><p class="subtitle">用统一的 MC3-18 MIL 流程完成多数据集训练、逐轮验证、阈值校准和最终测试。训练进度与验证结果会自动刷新。</p></div>
+          <div class="heading-tags"><span class="tag protocol">1 秒窗口 · 0.5 秒步长 · 4 帧</span><span class="tag">Kinetics-400 初始化</span></div>
+        </div>
+        <div class="banner" id="trainBanner" role="status"></div>
+        <div class="grid-main">
+          <div class="stack">
+            <article class="card">
+              <div class="card-head"><div><h2>训练设置</h2><div class="card-description">默认值是推荐起点；开始新训练前可调整。恢复任务时会读取 checkpoint 中保存的原始设置。</div></div><span class="tag protocol">MC3-18 MIL</span></div>
+              <div class="card-body">
+                <div class="section-label">数据与运行位置</div>
+                <div class="form-grid">
+                  <div class="field full"><label for="datasetRoot">数据集根目录</label><input class="path-field" id="datasetRoot" type="text" autocomplete="off"><div class="hint">需要包含 RWF-2000、Real Life Violence、bus-violence、seymanurakti 与 ShanghaiTech 数据集目录。</div></div>
+                  <div class="field full"><label for="outputRoot">训练输出文件夹</label><input class="path-field" id="outputRoot" type="text" autocomplete="off"><div class="hint">checkpoint、日志、预测明细与报告都会保存在这里。</div></div>
+                  <div class="field full"><label for="cacheDir">帧缓存目录 <span style="font-weight:400;color:#8a9997">（可选）</span></label><input class="path-field" id="cacheDir" type="text" placeholder="留空则使用共享默认缓存" autocomplete="off"><div class="hint">保存解码后的帧，后续训练会复用；留空时不同输出目录共用项目中的缓存。缺失缓存最多用 4 个进程并行生成，日志会显示实际进程数。</div></div>
+                  <div class="field full"><label for="resumeRun">继续一个未完成的训练</label><select id="resumeRun"><option value="">新建训练</option></select><div class="hint">选择最近完成的 checkpoint（last.pt）后，程序从其后的 epoch 接着训练。</div></div>
+                </div>
+
+                <div class="section-label">优化器与训练计划</div>
+                <div class="form-grid three">
+                  <div class="field"><label for="epochs">最多 Epoch</label><input id="epochs" type="number" min="1" max="500" step="1" value="30"><div class="hint">推荐：30</div></div>
+                  <div class="field"><label for="patience">早停耐心值</label><input id="patience" type="number" min="1" max="100" step="1" value="6"><div class="hint">验证 AUC 停滞轮数</div></div>
+                  <div class="field"><label for="minDelta">早停最小提升</label><input id="minDelta" type="number" min="0" max="1" step="0.0001" value="0.001"><div class="hint">ROC-AUC 的提升幅度</div></div>
+                  <div class="field"><label for="backboneLr">骨干学习率</label><input id="backboneLr" type="number" min="0.0000001" max="1" step="0.000001" value="0.00002"><div class="hint">推荐：2 × 10⁻⁵</div></div>
+                  <div class="field"><label for="headLr">分类头学习率</label><input id="headLr" type="number" min="0.0000001" max="1" step="0.000001" value="0.0001"><div class="hint">推荐：1 × 10⁻⁴</div></div>
+                  <div class="field"><label for="weightDecay">Weight decay</label><input id="weightDecay" type="number" min="0" max="1" step="0.00001" value="0.0001"><div class="hint">AdamW 正则化</div></div>
+                  <div class="field"><label for="gradAccum">梯度累积包数</label><input id="gradAccum" type="number" min="1" max="128" step="1" value="8"><div class="hint">每包对应一条原视频</div></div>
+                  <div class="field"><label for="windowBatchSize">窗口推理批量</label><input id="windowBatchSize" type="number" min="1" max="128" step="1" value="8"><div class="hint">影响显存占用</div></div>
+                  <div class="field"><label for="seed">随机种子</label><input id="seed" type="number" min="0" max="2147483647" step="1" value="42"><div class="hint">推荐：42</div></div>
+                  <div class="field"><label for="device">计算设备</label><select id="device"><option value="auto">自动选择</option><option value="cuda">CUDA 显卡</option><option value="cpu">CPU</option></select><div class="hint">CPU 训练速度会较慢</div></div>
+                </div>
+                <div class="toggle-row">
+                  <label class="check-chip"><input id="amp" type="checkbox" checked> CUDA 混合精度</label>
+                  <label class="check-chip"><input id="allowCpu" type="checkbox"> 允许使用 CPU（速度较慢）</label>
+                </div>
+                <div class="actions">
+                  <button class="button primary" id="startButton"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5a1 1 0 0 1 1.5-.86l9.1 5.5a1 1 0 0 1 0 1.72l-9.1 5.5A1 1 0 0 1 8 16.5v-11Z"/></svg><span>开始训练</span></button>
+                  <button class="button secondary" id="pauseButton" disabled>本轮结束后暂停</button>
+                  <button class="button subtle" id="cancelPauseButton" hidden>取消暂停</button>
+                  <button class="button danger" id="stopButton" disabled>立即停止</button>
+                  <button class="button subtle" id="refreshRunsButton">刷新运行列表</button>
+                </div>
+                <div class="resume-box" id="resumeBox"><div class="resume-title">最近完整 checkpoint</div><div class="path" id="checkpointPath">—</div></div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>训练控制台</h2><div class="card-description">显示数据检查、epoch 训练、验证与最终测试的实时日志。日志也保存在运行目录的 run.log。</div></div><button class="button subtle" id="copyRunButton" title="复制运行目录">复制路径</button></div>
+              <div class="card-body"><div class="log-wrap"><div class="log-head"><span>LIVE PROCESS OUTPUT</span><span class="log-lights"><i></i><i></i><i></i></span></div><div class="console empty" id="consoleLog">等待训练任务。开始后，这里会显示实时控制台输出。</div></div><div class="table-note" id="runPathLabel">运行目录尚未创建</div></div>
+            </article>
+          </div>
+
+          <div class="stack">
+            <article class="card progress-card">
+              <div class="progress-top">
+                <div class="progress-title-row"><div class="big-status"><i class="dot" id="trainStatusDot"></i><span id="trainStatusText">尚未开始</span></div><span class="status-pill" id="trainStatusPill">空闲</span></div>
+                <div class="progress-stage"><span id="stageText">等待启动训练</span><strong id="progressPercent">0%</strong></div>
+                <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+                <div class="epoch-line"><span id="epochText">Epoch — / —</span><span id="etaText">预计剩余时间 —</span></div>
+              </div>
+              <div class="metric-grid">
+                <div class="metric-tile"><div class="metric-name">当前训练损失</div><div class="metric-value" id="metricLoss">—</div><div class="metric-detail">每条视频包等权</div></div>
+                <div class="metric-tile"><div class="metric-name">验证 ROC-AUC</div><div class="metric-value" id="metricAuc">—</div><div class="metric-detail">用于选择最佳 epoch 与早停</div></div>
+                <div class="metric-tile"><div class="metric-name">验证 F1 @ 0.5</div><div class="metric-value" id="metricF1">—</div><div class="metric-detail">固定参考阈值，不是最终模式阈值</div></div>
+                <div class="metric-tile"><div class="metric-name">最佳验证 AUC</div><div class="metric-value" id="metricBest">—</div><div class="metric-detail" id="bestEpochDetail">最佳 epoch —</div></div>
+                <div class="metric-tile"><div class="metric-name">参与训练与评估</div><div class="metric-value" id="metricSamples">—</div><div class="metric-detail">达到 1 秒的原视频数</div></div>
+                <div class="metric-tile"><div class="metric-name">不足 1 秒，已排除</div><div class="metric-value" id="metricExcluded">—</div><div class="metric-detail">不会进入训练、验证或测试</div></div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>训练曲线</h2><div class="card-description">每轮结束后刷新。验证 AUC 是模型选择指标。</div></div><span class="run-meta" id="historyCount">0 个 epoch</span></div>
+              <div class="card-body"><div class="chart-stack">
+                <div class="chart-panel"><div class="chart-title"><span>Training loss</span><span>越低通常越好</span></div><canvas id="lossChart" aria-label="训练损失曲线"></canvas></div>
+                <div class="chart-panel"><div class="chart-title"><span>Validation ROC-AUC</span><span>越高通常越好</span></div><canvas id="aucChart" aria-label="验证 ROC-AUC 曲线"></canvas></div>
+              </div></div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>Epoch 验证记录</h2><div class="card-description">每个完整 epoch 的训练与验证指标；最佳验证 ROC-AUC 行会标记出来。</div></div></div>
+              <div class="card-body"><div class="table-scroll"><table><thead><tr><th>Epoch</th><th>Train loss</th><th>Train AUC</th><th>Val AUC</th><th>Val Acc @ 0.5</th><th>Val F1 @ 0.5</th><th>骨干 LR</th><th>分类头 LR</th><th>耗时</th><th>状态</th></tr></thead><tbody id="epochTable"><tr><td colspan="10" class="empty-state">完成第一个 epoch 后显示记录。</td></tr></tbody></table></div></div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>最近一轮验证 · 数据集分项</h2><div class="card-description">视频级结果；F1、precision、recall 使用参考阈值 0.5。</div></div></div>
+              <div class="card-body"><div class="table-scroll"><table><thead><tr><th>数据集</th><th>视频数</th><th>AUC</th><th>F1</th><th>Precision</th><th>Recall</th></tr></thead><tbody id="validationTable"><tr><td colspan="6" class="empty-state">完成第一轮验证后显示分项结果。</td></tr></tbody></table></div></div>
+            </article>
+
+            <article class="card" id="finalResultsCard" hidden>
+              <div class="card-head"><div><h2>最终测试集结果</h2><div class="card-description">权重与三档阈值锁定后，在测试集上进行一次正式评估。</div></div><span class="tag protocol">TEST</span></div>
+              <div class="card-body">
+                <div class="table-scroll"><table><thead><tr><th>模式</th><th>阈值</th><th>验证目标分数</th><th>测试视频</th><th>TP/TN/FP/FN</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>Specificity</th><th>Balanced Acc</th><th>F0.5</th><th>F1</th><th>F2</th><th>ROC-AUC</th><th>Avg Precision</th></tr></thead><tbody id="testTable"></tbody></table></div>
+                <div class="table-note" id="testSummary"></div>
+                <div class="section-label" style="margin-top:17px">逐数据集测试表现</div>
+                <div class="field" style="max-width:250px;margin-bottom:8px"><label for="datasetTestMode">查看判定模式</label><select id="datasetTestMode"><option value="moderate">Moderate</option><option value="sensitive">Sensitive</option><option value="certain">Certain</option></select></div>
+                <div class="table-scroll"><table><thead><tr><th>数据集</th><th>样本数</th><th>TP/TN/FP/FN</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>Specificity</th><th>F1</th><th>ROC-AUC</th></tr></thead><tbody id="datasetTestTable"></tbody></table></div>
+              </div>
+            </article>
+          </div>
+        </div>
+        <div class="footer-note">训练与评测在本机 Python 子进程中运行；请保持此窗口和服务终端开启。</div>
+      </section>
+
+      <section class="page" id="page-reverse">
+        <div class="page-heading">
+          <div><div class="eyebrow">Model workspace / 02</div><h1>2 秒倒放拼接训练</h1><p class="subtitle">合并原有五个项目数据集与 UCF：原有数据保留现成的 train/val/test 划分，UCF 另按视频来源组划分 80/10/10；AIRTLab 与 GuardAId 只作外部测试。</p></div>
+          <div class="heading-tags"><span class="tag protocol">2 秒窗口 · 1 秒步长 · 8 帧</span><span class="tag">4 帧 / 秒</span><span class="tag">MC3-18 · Kinetics 初始化</span></div>
+        </div>
+        <div class="banner" id="reverseBanner" role="status"></div>
+        <div class="grid-main">
+          <div class="stack">
+            <article class="card">
+              <div class="card-head"><div><h2>数据来源与隔离规则</h2><div class="card-description">原有五个数据集沿用项目目录中的 split，UCF 单独按视频分组；AIRTLab 与 GuardAId 留作外部测试。程序只读取数据，不移动或改写视频。</div></div><span class="tag protocol">只属于本方案</span></div>
+              <div class="card-body">
+                <div class="form-grid">
+                  <div class="field full"><label for="reverseLegacyRoot">原有 MC3-18 数据集根目录</label><input class="path-field" id="reverseLegacyRoot" type="text" autocomplete="off"><div class="hint">应包含 RWF-2000、Real Life Violence Dataset、bus-violence、seymanurakti 数据集和 ShanghaiTech；每个数据集沿用 train/val/test/Fight/NonFight 文件夹。</div></div>
+                  <div class="field full"><label for="reverseUcfRoot">UCF 数据集文件夹</label><input class="path-field" id="reverseUcfRoot" type="text" autocomplete="off"><div class="hint">应包含 Violence 与 Non-Violence；Non-Violence 压缩包也可作后备读取来源。</div></div>
+                  <div class="field full"><label for="reverseAirRoot">AIRTLab 标签数据文件夹</label><input class="path-field" id="reverseAirRoot" type="text" autocomplete="off"><div class="hint">应能找到 violent 与 non-violent 两个子文件夹。</div></div>
+                  <div class="field full"><label for="reverseGuardRoot">GuardAId 留出视频文件夹</label><input class="path-field" id="reverseGuardRoot" type="text" autocomplete="off"><div class="hint">当前 15 段视频没有 ground-truth 标签；只显示模型预测及“假设全为 NonFight”的条件性误报情况。</div></div>
+                  <div class="field full"><label for="reverseOutputRoot">本方案输出文件夹</label><input class="path-field" id="reverseOutputRoot" type="text" autocomplete="off"><div class="hint">和现有 1 秒训练的模型、checkpoint、阈值及结果分开保存。</div></div>
+                </div>
+                <div class="source-summary-grid" id="reverseSourceSummary">
+                  <div class="source-summary"><strong>原有五个数据集 · 保留 split</strong><span>读取 train/val/test 样本数中……</span></div>
+                  <div class="source-summary"><strong>UCF · 80/10/10</strong><span>读取目录与压缩包中……</span></div>
+                  <div class="source-summary"><strong>AIRTLab · 最终有标签留出集</strong><span>读取类别样本数中……</span></div>
+                  <div class="source-summary"><strong>GuardAId · 最终无标签留出集</strong><span>读取视频数中……</span></div>
+                </div>
+                <div class="actions" style="margin-top:10px"><button class="button secondary" id="reverseRefreshDataButton">重新检查数据路径</button><span class="table-note" id="reverseStorageNote"></span></div>
+                <div class="reverse-protocol-note"><strong>防止数据泄漏：</strong>原有五个数据集不重新划分，沿用现有 split 文件夹；UCF 按视频来源组／子类别分层后划分 80/10/10。跨 split 的完全相同视频只保留在原有 test 优先的一个 split；与 AIRTLab/GuardAId 重复的模型样本排除。最终数量及排除原因保存到 <code>dataset_manifest.csv</code>。</div>
+                <div class="reverse-protocol-note"><strong>倒放拼接规则：</strong>所有训练数据中时长为 1–2 秒的片段，原片后接倒放后抽一个 2 秒／8 帧训练窗口；少于 1 秒排除。验证和测试保持自然播放，不足 2 秒的样本会排除并记入清单。</div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>本方案训练配置</h2><div class="card-description">参数独立于上方原有 1 秒训练页面；先使用推荐设置，检查完数据后再开始。</div></div><span class="tag protocol">2 秒 / 8 帧</span></div>
+              <div class="card-body">
+                <div class="form-grid three">
+                  <div class="field"><label for="reverseHistoryRun">查看运行结果</label><select id="reverseHistoryRun"><option value="">正在读取运行列表…</option></select><div class="hint">切换后显示该运行的曲线、阈值和测试报告。</div></div>
+                  <div class="field"><label for="reverseResumeRun">恢复本方案运行</label><select id="reverseResumeRun"><option value="">新建运行</option></select><div class="hint">从最近完成的 last.pt 继续。</div></div>
+                  <div class="field"><label for="reverseEpochs">最多 Epoch</label><input id="reverseEpochs" type="number" min="1" max="500" step="1" value="30"></div>
+                  <div class="field"><label for="reversePatience">早停耐心值</label><input id="reversePatience" type="number" min="1" max="100" step="1" value="6"><div class="hint">验证 AUC 连续停滞轮数。</div></div>
+                  <div class="field"><label for="reverseMinDelta">早停最小提升</label><input id="reverseMinDelta" type="number" min="0" max="1" step="0.0001" value="0.001"></div>
+                  <div class="field"><label for="reverseBackboneLr">骨干学习率</label><input id="reverseBackboneLr" type="number" min="0.0000001" max="1" step="0.000001" value="0.00002"></div>
+                  <div class="field"><label for="reverseHeadLr">分类头学习率</label><input id="reverseHeadLr" type="number" min="0.0000001" max="1" step="0.000001" value="0.0001"></div>
+                  <div class="field"><label for="reverseWeightDecay">Weight decay</label><input id="reverseWeightDecay" type="number" min="0" max="1" step="0.00001" value="0.0001"></div>
+                  <div class="field"><label for="reverseGradAccum">梯度累积包数</label><input id="reverseGradAccum" type="number" min="1" max="128" step="1" value="8"></div>
+                  <div class="field"><label for="reverseWindowBatchSize">窗口推理批量</label><input id="reverseWindowBatchSize" type="number" min="1" max="64" step="1" value="4"><div class="hint">8 帧输入；较低数值可减少显存使用。</div></div>
+                  <div class="field"><label for="reverseSeed">随机种子</label><input id="reverseSeed" type="number" min="0" max="2147483647" step="1" value="2026"></div>
+                  <div class="field"><label for="reverseDevice">计算设备</label><select id="reverseDevice"><option value="auto">自动选择</option><option value="cuda">CUDA 显卡</option><option value="cpu">CPU</option></select></div>
+                  <div class="field"><label for="reverseCacheDir">帧缓存目录（可选）</label><input class="path-field" id="reverseCacheDir" type="text" autocomplete="off" placeholder="使用本方案独立默认缓存"></div>
+                </div>
+                <div class="toggle-row"><label class="check-chip"><input id="reverseAmp" type="checkbox" checked> CUDA 混合精度</label><label class="check-chip"><input id="reverseAllowCpu" type="checkbox"> 允许慢速 CPU 训练</label></div>
+                <div class="actions">
+                  <button class="button primary" id="reverseStartButton">开始 2 秒方案训练</button>
+                  <button class="button secondary" id="reversePauseButton" disabled>本轮结束后暂停</button>
+                  <button class="button subtle" id="reverseCancelPauseButton" hidden>取消暂停</button>
+                  <button class="button danger" id="reverseStopButton" disabled>立即停止</button>
+                  <button class="button subtle" id="reverseRefreshRunsButton">刷新运行列表</button>
+                  <button class="button subtle" id="reverseCopyRunButton">复制运行路径</button>
+                </div>
+                <div class="resume-box" id="reverseCheckpointBox"><div class="resume-title">最近完整 checkpoint</div><div class="path" id="reverseCheckpointPath">—</div></div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>倒放方案训练日志</h2><div class="card-description">数据清单、帧缓存、逐轮训练、验证阈值与最终留出测试的实时输出。</div></div></div>
+              <div class="card-body"><div class="log-wrap"><div class="log-head"><span>REVERSE-CONCAT RUN</span><span class="log-lights"><i></i><i></i><i></i></span></div><div class="console empty" id="reverseConsole">尚未启动倒放拼接方案。</div></div><div class="table-note" id="reverseRunPathLabel">运行目录尚未创建</div></div>
+            </article>
+          </div>
+
+          <div class="stack">
+            <article class="card progress-card">
+              <div class="progress-top">
+                <div class="progress-title-row"><div class="big-status"><i class="dot" id="reverseStatusDot"></i><span id="reverseStatusText">尚未开始</span></div><span class="status-pill" id="reverseStatusPill">空闲</span></div>
+                <div class="progress-stage"><span id="reverseStageText">等待启动训练</span><strong id="reverseProgressPercent">0%</strong></div>
+                <div class="progress-track"><div class="progress-fill" id="reverseProgressFill"></div></div>
+                <div class="epoch-line"><span id="reverseEpochText">Epoch — / —</span><span id="reverseElapsedText">已用时间 —</span><span id="reverseEtaText">预计剩余时间 —</span></div>
+              </div>
+              <div class="metric-grid">
+                <div class="metric-tile"><div class="metric-name">当前训练损失</div><div class="metric-value" id="reverseMetricLoss">—</div><div class="metric-detail">以原视频为训练包</div></div>
+                <div class="metric-tile"><div class="metric-name">验证 ROC-AUC</div><div class="metric-value" id="reverseMetricAuc">—</div><div class="metric-detail">用于最佳 epoch 和早停</div></div>
+                <div class="metric-tile"><div class="metric-name">最佳验证 AUC</div><div class="metric-value" id="reverseMetricBest">—</div><div class="metric-detail" id="reverseBestEpoch">最佳 epoch —</div></div>
+                <div class="metric-tile"><div class="metric-name">纳入训练与评估</div><div class="metric-value" id="reverseMetricSamples">—</div><div class="metric-detail">按自然／增强规则过滤后</div></div>
+                <div class="metric-tile"><div class="metric-name">倒放拼接样本</div><div class="metric-value" id="reverseMetricAugmented">—</div><div class="metric-detail">所有训练集中的 1–2 秒样本</div></div>
+                <div class="metric-tile"><div class="metric-name">排除样本</div><div class="metric-value" id="reverseMetricExcluded">—</div><div class="metric-detail">短时长、重复或冲突项</div></div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>训练曲线</h2><div class="card-description">每个完整 epoch 刷新；模型按验证 ROC-AUC 保存最佳权重。</div></div><span class="run-meta" id="reverseHistoryCount">0 个 epoch</span></div>
+              <div class="card-body"><div class="chart-stack"><div class="chart-panel"><div class="chart-title"><span>Training loss</span><span>越低通常越好</span></div><canvas id="reverseLossChart" aria-label="倒放方案训练损失"></canvas></div><div class="chart-panel"><div class="chart-title"><span>Validation ROC-AUC</span><span>越高通常越好</span></div><canvas id="reverseAucChart" aria-label="倒放方案验证 AUC"></canvas></div></div></div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>逐 Epoch 记录</h2><div class="card-description">包含训练损失、验证指标、学习率与耗时。</div></div></div>
+              <div class="card-body"><div class="table-scroll"><table><thead><tr><th>Epoch</th><th>Train loss</th><th>Train AUC</th><th>Val AUC</th><th>Val F1 @ 0.5</th><th>耗时</th><th>状态</th></tr></thead><tbody id="reverseEpochTable"><tr><td colspan="7" class="empty-state">完成第一个 epoch 后显示记录。</td></tr></tbody></table></div></div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>最终阈值与有标签测试结果</h2><div class="card-description">三档阈值由原有五个数据集与 UCF 的合并验证集选择；测试表按来源分别呈现原有 test、UCF test 和 AIRTLab 外部测试结果。</div></div><span class="tag protocol">VAL → TEST</span></div>
+              <div class="card-body"><div class="table-scroll"><table><thead><tr><th>模式</th><th>阈值目标</th><th>阈值</th><th>验证目标分</th><th>Val P</th><th>Val R</th><th>Val F1</th><th>Val AUC</th><th>测试 N</th><th>Test P</th><th>Test R</th><th>Test F1</th><th>Test AUC</th></tr></thead><tbody id="reverseThresholdTable"><tr><td colspan="13" class="empty-state">完成训练及最终评估后显示。</td></tr></tbody></table></div></div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>按测试来源查看</h2><div class="card-description">原有数据集与 UCF 的 test、AIRTLab 外部有标签测试分开显示；GuardAId 仅作无标签预测。</div></div></div>
+              <div class="card-body"><div class="table-scroll"><table><thead><tr><th>测试来源</th><th>标签情况</th><th>样本数</th><th>判定模式</th><th>TP/TN/FP/FN 或条件误报</th><th>Precision</th><th>Recall</th><th>F1</th><th>ROC-AUC</th></tr></thead><tbody id="reverseDatasetTestTable"><tr><td colspan="9" class="empty-state">完成最终测试后显示。</td></tr></tbody></table></div><div class="table-note" id="reverseTestNote"></div></div>
+            </article>
+          </div>
+        </div>
+        <div class="footer-note">本方案的模型与评估记录保存在独立输出目录，不会改写原 1 秒训练项目。单视频推理页现在可按所选 checkpoint 自动切换到相符的 1 秒或 2 秒窗口协议。</div>
+      </section>
+
+      <section class="page" id="page-four">
+        <div class="page-heading">
+          <div><div class="eyebrow">Model workspace / 03</div><h1>4 秒滑动窗口训练</h1><p class="subtitle">合并使用 RWF-2000、Real Life Violence Dataset、ShanghaiTech、UCF 与 AIRTLab；原数据保留现有划分，UCF 与 AIRTLab 按组划分 80/10/10；GuardAId 独立作为额外测试集。</p></div>
+          <div class="heading-tags"><span class="tag protocol">4 秒窗口 · 2 秒步长 · 16 帧</span><span class="tag">4 帧 / 秒</span><span class="tag">MC3-18 · Kinetics 初始化</span></div>
+        </div>
+        <div class="banner" id="fourBanner" role="status"></div>
+        <div class="grid-main">
+          <div class="stack">
+            <article class="card">
+              <div class="card-head"><div><h2>数据来源与隔离规则</h2><div class="card-description">使用 RWF-2000、Real Life Violence Dataset、ShanghaiTech、UCF 与 AIRTLab；保留原有 split，UCF 与 AIRTLab 按来源组 80/10/10 划分。GuardAId 只在最终评估后作为独立额外测试。程序只读取数据，不移动或改写视频。</div></div><span class="tag protocol">只属于本方案</span></div>
+              <div class="card-body">
+                <div class="form-grid">
+                  <div class="field full"><label for="fourLegacyRoot">原有 MC3-18 数据集根目录</label><input class="path-field" id="fourLegacyRoot" type="text" autocomplete="off"><div class="hint">应包含 RWF-2000、Real Life Violence Dataset 与 ShanghaiTech；每个数据集沿用 train/val/test/Fight/NonFight 文件夹。bus-violence 和 Seymanurakti 不会读取。</div></div>
+                  <div class="field full"><label for="fourUcfRoot">UCF 数据集文件夹</label><input class="path-field" id="fourUcfRoot" type="text" autocomplete="off"><div class="hint">应包含 Violence 与 Non-Violence；Non-Violence 压缩包也可作后备读取来源。</div></div>
+                  <div class="field full"><label for="fourAirRoot">AIRTLab 标签数据文件夹</label><input class="path-field" id="fourAirRoot" type="text" autocomplete="off"><div class="hint">应能找到 violent 与 non-violent；同一类别中相同文件名的 cam1/cam2 视频会绑定到同一 train、val 或 test split。</div></div>
+                  <div class="field full"><label for="fourGuardRoot">GuardAId 独立额外测试文件夹</label><input class="path-field" id="fourGuardRoot" type="text" autocomplete="off"><div class="hint">不进入 train/validation/test，也不参与阈值选择；最终模型锁定后另作无标签推理。</div></div>
+                  <div class="field full"><label for="fourOutputRoot">本方案输出文件夹</label><input class="path-field" id="fourOutputRoot" type="text" autocomplete="off"><div class="hint">和现有 1 秒训练的模型、checkpoint、阈值及结果分开保存。</div></div>
+                </div>
+                <div class="source-summary-grid" id="fourSourceSummary">
+                  <div class="source-summary"><strong>三个原有数据集 · 保留 split</strong><span>读取 train/val/test 样本数中……</span></div>
+                  <div class="source-summary"><strong>UCF · 80/10/10</strong><span>读取目录与压缩包中……</span></div>
+                  <div class="source-summary"><strong>AIRTLab · 同名视角分组 80/10/10</strong><span>读取类别与 split 数量中……</span></div>
+                  <div class="source-summary"><strong>GuardAId · 独立额外测试集</strong><span>读取视频数中……</span></div>
+                </div>
+                <div class="actions" style="margin-top:10px"><button class="button secondary" id="fourRefreshDataButton">重新检查数据路径</button><span class="table-note" id="fourStorageNote"></span></div>
+                <div class="four-protocol-note"><strong>防止数据泄漏：</strong>RWF-2000、Real Life Violence Dataset 与 ShanghaiTech 沿用现有 split；UCF 和 AIRTLab 分别按来源组划分 80/10/10。同一类别中相同文件名的 AIRTLab 视频（包括 cam1/cam2 视角）会进入同一 split。跨 split 的完全相同视频只保留一个副本；与 GuardAId 重复的模型样本排除。GuardAId 不进入三个常规 split，在常规测试结束后单独评估。最终数量及原因保存在 <code>dataset_manifest.csv</code>。</div>
+                <div class="four-protocol-note"><strong>四秒窗口规则：</strong>4 秒窗口、2 秒步长，每窗 16 帧。Real Life Violence Dataset 中短于 4 秒的样本排除；其他至少 1 秒的短片按真实时长均匀采样 16 帧，不倒放也不补黑帧。长视频在尾部需要时增加一个末尾对齐窗口。</div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>本方案训练配置</h2><div class="card-description">参数和输出独立于其他训练方案；检查路径后即可开始。</div></div><span class="tag protocol">4 秒 / 16 帧</span></div>
+              <div class="card-body">
+                <div class="form-grid three">
+                  <div class="field"><label for="fourHistoryRun">查看运行结果</label><select id="fourHistoryRun"><option value="">正在读取运行列表…</option></select><div class="hint">切换后显示该运行的曲线、阈值和测试报告。</div></div>
+                  <div class="field"><label for="fourResumeRun">恢复本方案运行</label><select id="fourResumeRun"><option value="">新建运行</option></select><div class="hint">仅在数据清单和配置一致时可恢复；数据集划分改变后请新建运行，旧模型与记录会保留。</div></div>
+                  <div class="field"><label for="fourEpochs">最多 Epoch</label><input id="fourEpochs" type="number" min="1" max="500" step="1" value="30"></div>
+                  <div class="field"><label for="fourPatience">早停耐心值</label><input id="fourPatience" type="number" min="1" max="100" step="1" value="6"><div class="hint">验证 AUC 连续停滞轮数。</div></div>
+                  <div class="field"><label for="fourMinDelta">早停最小提升</label><input id="fourMinDelta" type="number" min="0" max="1" step="0.0001" value="0.001"></div>
+                  <div class="field"><label for="fourBackboneLr">骨干学习率</label><input id="fourBackboneLr" type="number" min="0.0000001" max="1" step="0.000001" value="0.00002"></div>
+                  <div class="field"><label for="fourHeadLr">分类头学习率</label><input id="fourHeadLr" type="number" min="0.0000001" max="1" step="0.000001" value="0.0001"></div>
+                  <div class="field"><label for="fourWeightDecay">Weight decay</label><input id="fourWeightDecay" type="number" min="0" max="1" step="0.00001" value="0.0001"></div>
+                  <div class="field"><label for="fourGradAccum">梯度累积包数</label><input id="fourGradAccum" type="number" min="1" max="128" step="1" value="8"></div>
+                  <div class="field"><label for="fourWindowBatchSize">每批处理窗口数</label><input id="fourWindowBatchSize" type="number" min="1" max="64" step="1" value="2"><div class="hint">每个窗口含 16 帧；默认 2，适合先在 8 GiB 显存上尝试，较低数值可减少显存使用。</div></div>
+                  <div class="field"><label for="fourSeed">随机种子</label><input id="fourSeed" type="number" min="0" max="2147483647" step="1" value="2026"></div>
+                  <div class="field"><label for="fourDevice">计算设备</label><select id="fourDevice"><option value="auto">自动选择</option><option value="cuda">CUDA 显卡</option><option value="cpu">CPU</option></select></div>
+                  <div class="field"><label for="fourCacheDir">补充帧缓存目录（上限 5 GiB）</label><input class="path-field" id="fourCacheDir" type="text" autocomplete="off" placeholder="只保存两秒缓存缺少的帧；最多 5 GiB，超出部分按需读取"></div>
+                </div>
+                <div class="toggle-row"><label class="check-chip"><input id="fourAmp" type="checkbox" checked> CUDA 混合精度</label><label class="check-chip"><input id="fourAllowCpu" type="checkbox"> 允许慢速 CPU 训练</label></div>
+                <div class="actions">
+                  <button class="button primary" id="fourStartButton">开始 4 秒方案训练</button>
+                  <button class="button secondary" id="fourPauseButton" disabled>本轮结束后暂停</button>
+                  <button class="button subtle" id="fourCancelPauseButton" hidden>取消暂停</button>
+                  <button class="button danger" id="fourStopButton" disabled>立即停止</button>
+                  <button class="button subtle" id="fourRefreshRunsButton">刷新运行列表</button>
+                  <button class="button subtle" id="fourCopyRunButton">复制运行路径</button>
+                </div>
+                <div class="resume-box" id="fourCheckpointBox"><div class="resume-title">最近完整 checkpoint</div><div class="path" id="fourCheckpointPath">—</div></div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>四秒方案训练日志</h2><div class="card-description">数据清单、帧缓存、逐轮训练、验证阈值与最终留出测试的实时输出。</div></div></div>
+              <div class="card-body"><div class="log-wrap"><div class="log-head"><span>FOUR-SECOND MIL RUN</span><span class="log-lights"><i></i><i></i><i></i></span></div><div class="console empty" id="fourConsole">尚未启动四秒窗口方案。</div></div><div class="table-note" id="fourRunPathLabel">运行目录尚未创建</div></div>
+            </article>
+          </div>
+
+          <div class="stack">
+            <article class="card progress-card">
+              <div class="progress-top">
+                <div class="progress-title-row"><div class="big-status"><i class="dot" id="fourStatusDot"></i><span id="fourStatusText">尚未开始</span></div><span class="status-pill" id="fourStatusPill">空闲</span></div>
+                <div class="progress-stage"><span id="fourStageText">等待启动训练</span><strong id="fourProgressPercent">0%</strong></div>
+                <div class="progress-track"><div class="progress-fill" id="fourProgressFill"></div></div>
+                <div class="epoch-line"><span id="fourEpochText">Epoch — / —</span><span id="fourElapsedText">已用时间 —</span><span id="fourEtaText">预计剩余时间 —</span></div>
+              </div>
+              <div class="metric-grid">
+                <div class="metric-tile"><div class="metric-name">当前训练损失</div><div class="metric-value" id="fourMetricLoss">—</div><div class="metric-detail">以原视频为训练包</div></div>
+                <div class="metric-tile"><div class="metric-name">验证 ROC-AUC</div><div class="metric-value" id="fourMetricAuc">—</div><div class="metric-detail">用于最佳 epoch 和早停</div></div>
+                <div class="metric-tile"><div class="metric-name">最佳验证 AUC</div><div class="metric-value" id="fourMetricBest">—</div><div class="metric-detail" id="fourBestEpoch">最佳 epoch —</div></div>
+                <div class="metric-tile"><div class="metric-name">纳入训练与评估</div><div class="metric-value" id="fourMetricSamples">—</div><div class="metric-detail">按自然／增强规则过滤后</div></div>
+                <div class="metric-tile"><div class="metric-name">按短尾规则纳入</div><div class="metric-value" id="fourMetricAugmented">—</div><div class="metric-detail">短于 4 秒并按真实时长采样的视频</div></div>
+                <div class="metric-tile"><div class="metric-name">排除样本</div><div class="metric-value" id="fourMetricExcluded">—</div><div class="metric-detail">短时长、重复或冲突项</div></div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>训练曲线</h2><div class="card-description">每个完整 epoch 刷新；模型按验证 ROC-AUC 保存最佳权重。</div></div><span class="run-meta" id="fourHistoryCount">0 个 epoch</span></div>
+              <div class="card-body"><div class="chart-stack"><div class="chart-panel"><div class="chart-title"><span>Training loss</span><span>越低通常越好</span></div><canvas id="fourLossChart" aria-label="四秒方案训练损失"></canvas></div><div class="chart-panel"><div class="chart-title"><span>Validation ROC-AUC</span><span>越高通常越好</span></div><canvas id="fourAucChart" aria-label="四秒方案验证 AUC"></canvas></div></div></div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>逐 Epoch 记录</h2><div class="card-description">包含训练损失、验证指标、学习率与耗时。</div></div></div>
+              <div class="card-body"><div class="table-scroll"><table><thead><tr><th>Epoch</th><th>Train loss</th><th>Train AUC</th><th>Val AUC</th><th>Val F1 @ 0.5</th><th>耗时</th><th>状态</th></tr></thead><tbody id="fourEpochTable"><tr><td colspan="7" class="empty-state">完成第一个 epoch 后显示记录。</td></tr></tbody></table></div></div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>最终阈值与有标签测试结果</h2><div class="card-description">三档阈值由原有数据集、UCF 与 AIRTLab 的合并验证集选择；常规测试表按来源显示各自 test split，GuardAId 另列为独立额外测试。</div></div><span class="tag protocol">VAL → TEST</span></div>
+              <div class="card-body"><div class="table-scroll"><table><thead><tr><th>模式</th><th>阈值目标</th><th>阈值</th><th>验证目标分</th><th>Val P</th><th>Val R</th><th>Val F1</th><th>Val AUC</th><th>测试 N</th><th>Test P</th><th>Test R</th><th>Test F1</th><th>Test AUC</th></tr></thead><tbody id="fourThresholdTable"><tr><td colspan="13" class="empty-state">完成训练及最终评估后显示。</td></tr></tbody></table></div></div>
+            </article>
+
+            <article class="card">
+              <div class="card-head"><div><h2>按测试来源查看</h2><div class="card-description">原有数据集、UCF 和 AIRTLab 的 test split 单独列出；GuardAId 在表格中标为独立额外测试，仅作无标签预测。</div></div></div>
+              <div class="card-body"><div class="table-scroll"><table><thead><tr><th>测试来源</th><th>标签情况</th><th>样本数</th><th>判定模式</th><th>TP/TN/FP/FN 或条件误报</th><th>Precision</th><th>Recall</th><th>F1</th><th>ROC-AUC</th></tr></thead><tbody id="fourDatasetTestTable"><tr><td colspan="9" class="empty-state">完成最终测试后显示。</td></tr></tbody></table></div><div class="table-note" id="fourTestNote"></div></div>
+            </article>
+          </div>
+        </div>
+        <div class="footer-note">本方案的模型与评估记录保存在独立输出目录，不会改写原 1 秒或 2 秒训练项目。单视频推理页会按所选 checkpoint 自动切换到对应窗口协议。</div>
+      </section>
+
+      <section class="page" id="page-inference">
+              <div class="page-heading">
+              <div><div class="eyebrow">Model workspace / 04</div><h1>单视频推理</h1><p class="subtitle">选择已完成训练的 MC3-18 模型，上传一条 MP4 或 AVI 视频；播放时，画面角落会同步显示当前窗口的 Fight 概率。</p></div>
+          <div class="heading-tags"><span class="tag protocol" id="inferProtocolTag">等待选择模型</span><span class="tag">支持 MP4 / AVI</span></div>
+        </div>
+        <div class="banner" id="inferBanner" role="status"></div>
+        <div class="inference-layout">
+          <article class="card">
+            <div class="card-head"><div><h2>分析视频</h2><div class="card-description">选择训练运行、判定模式和本地视频文件。</div></div></div>
+            <div class="card-body">
+              <div class="field"><label for="inferOutputRoot">模型项目文件夹</label><input class="path-field" id="inferOutputRoot" type="text" autocomplete="off"><div class="hint">填写模型输出项目根目录。四数据集黑底骨架模型请选择 <code>model_runs\mc3_multidataset_skeleton_4s16f2</code>；各 Epoch 的验证集 checkpoint 会分别列出。AIRT Lab 对照实验请选 <code>model_runs\mc3_airtlab_modalities_4s16f2</code>。</div></div>
+              <div class="field" style="margin-top:13px"><label for="inferRun">已完成的模型</label><select id="inferRun"><option value="">正在加载模型运行…</option></select></div>
+              <div class="section-label">判定模式</div>
+              <div class="field"><select id="inferMode"><option value="sensitive">Sensitive · 优先减少漏报</option><option value="moderate" selected>Moderate · 平衡 Precision 与 Recall</option><option value="certain">Certain · 优先减少误报</option></select></div>
+              <p class="mode-help" id="modeHelp">Moderate：从验证集选择 F1 最高的阈值，平衡 Precision 与 Recall。三个模式只改变阈值，使用同一模型。</p>
+              <div class="section-label">选择视频</div>
+              <div class="drop-zone" id="dropZone">
+                <input type="file" id="videoFile" accept="video/mp4,video/x-msvideo,.mp4,.avi" aria-label="选择 MP4 或 AVI 视频">
+                <div><div class="drop-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="drop-title">点击选择，或将视频拖到这里</div><div class="drop-subtitle">MP4 / AVI · 最大 300 MB · 时长按模型协议校验</div><div class="file-name" id="fileName">尚未选择文件</div></div>
+              </div>
+              <div class="video-stage" id="videoStage">
+                <div class="video-canvas" id="videoCanvas">
+                <video class="preview" id="videoPreview" controls controlsList="nofullscreen" playsinline></video>
+                <div class="live-score-overlay" id="liveScoreOverlay" hidden aria-live="off" aria-label="当前窗口暴力概率">
+                  <div class="live-score-top"><span class="live-score-dot"></span><span id="liveScoreState">等待分析</span></div>
+                  <strong class="live-score-number" id="liveScoreNumber">—</strong>
+                  <div class="live-score-meta"><span id="liveScoreWindow">当前窗口 —</span><span id="liveScoreThreshold">阈值 —</span><span id="liveScoreMode">—</span></div>
+                </div>
+                <div class="video-stage-controls">
+                  <button class="video-fullscreen-button" id="videoFullscreenButton" type="button" aria-label="全屏播放" title="全屏播放">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span id="videoFullscreenLabel">全屏</span>
+                  </button>
+                  <button class="video-audio-button" id="videoAudioButton" type="button" aria-label="静音视频" title="静音视频"></button>
+                </div>
+                <div class="video-sound-controls">
+                  <label for="videoVolume">音量</label>
+                  <input id="videoVolume" type="range" min="0" max="100" step="1" value="80" aria-label="视频音量">
+                  <output id="videoVolumeValue" for="videoVolume">80%</output>
+                  <label><input id="alertBeepEnabled" type="checkbox" checked>警示音</label>
+                  <button id="alertBeepTest" class="beep-test-button" type="button">试听</button>
+                </div>
+                </div>
+              </div>
+              <div id="audioStatus" class="audio-status" role="status">选择视频后会自动准备兼容音轨。</div>
+              <div class="video-playback-note">播放时跨过阈值会响一次短提示音，持续处于警示状态不会重复鸣响。视频音量与警示音开关分别控制；全屏时也能调节。</div>
+              <div class="privacy-note"><svg viewBox="0 0 24 24" fill="none"><rect x="5" y="10" width="14" height="11" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8 10V7a4 4 0 1 1 8 0v3m-4 4v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>视频只发送至本机服务，用于准备兼容预览和推理。切换视频或关闭页面会清理预览副本；原视频不修改。</span></div>
+              <div class="actions"><button class="button primary" id="inferButton"><svg viewBox="0 0 24 24" fill="none"><circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4.2 4.2M10.8 7.5v6.6m-3.3-3.3h6.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>开始分析</button><button class="button secondary" id="clearVideoButton">清除视频</button></div>
+              <div class="infer-progress" id="inferProgress"><div class="progress-stage"><span id="inferStage">等待推理</span><strong id="inferPercent">0%</strong></div><div class="progress-track"><div class="progress-fill" id="inferProgressFill"></div></div><div class="hint" id="uploadProgressText">准备上传</div></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-head"><div><h2>分析结果</h2><div class="card-description">先以窗口最大 Fight 概率作为整条视频的分数，再应用所选模式阈值。</div></div><span class="tag" id="resultModelTag">等待视频分析</span></div>
+            <div class="result-card-body" id="resultBody"><div class="result-placeholder"><div><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="m10 9 5 3-5 3V9Z" fill="currentColor"/></svg><strong>结果会显示在这里</strong><span>选择一个已完成的模型和视频后开始分析。</span></div></div></div>
+          </article>
+        </div>
+        <div class="footer-note" id="inferProtocolNote">选择模型后会显示对应的窗口、步长、帧数和短视频处理规则。</div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const app = {health: null, runs: [], status: null, inferenceJob: null, inferenceResult: null, inferenceSelectionId: 0, videoSelectionId: 0, selectedVideo: null, mediaJob: null, pollTimer: null, uploadUrl: null, lastLog: "", lastChartKey: "", selectedRunsRoot: ""};
+  const reverseApp = {summary: null, runs: [], status: null, lastLog: "", lastChartKey: "", selectedRunsRoot: "", polling: false, configCheckpoint: ""};
+  const fourApp = {summary: null, runs: [], status: null, lastLog: "", lastChartKey: "", selectedRunsRoot: "", polling: false, configCheckpoint: ""};
+  const modeDescriptions = {
+    sensitive: "Sensitive：从验证集选择 F2 最高的阈值，优先提高 Recall、减少漏报，通常会增加误报。",
+    moderate: "Moderate：从验证集选择 F1 最高的阈值，平衡 Precision 与 Recall。",
+    certain: "Certain：从验证集选择 F0.5 最高的阈值，更重视 Precision、减少误报，通常会增加漏报。"
+  };
+  const inferenceModeLabels = {
+    sensitive: "Sensitive · 优先减少漏报",
+    moderate: "Moderate · 验证集 F1 最佳",
+    certain: "Certain · 优先减少误报",
+    fixed_0_5: "固定阈值 · 0.500",
+    validation_best_f1: "验证集最佳 F1 阈值"
+  };
+  const airtlabModeDescriptions = {
+    fixed_0_5: "固定使用阈值 0.500，方便与本次实验报告中的固定阈值结果对照。",
+    validation_best_f1: "使用该模型单独在验证集上选出的 video-level F1 最佳阈值；测试集不参与阈值选择。"
+  };
+  const iconCheck = (ok) => ok ? "good" : "bad";
+  function showBanner(id, message, type="info") { const el=$(id); el.textContent=message; el.className=`banner show ${type}`; }
+  function hideBanner(id) { $(id).className="banner"; $(id).textContent=""; }
+  function fmt(value, digits=3) { if(value===null||value===undefined||value==="")return "—";const n=Number(value); return Number.isFinite(n) ? n.toFixed(digits) : "—"; }
+  function pct(value, digits=1) { if(value===null||value===undefined||value==="")return "—";const n=Number(value); return Number.isFinite(n) ? `${(n*100).toFixed(digits)}%` : "—"; }
+  function escapeHtml(s) { return String(s ?? "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+  async function api(url, options={}) {
+    const response=await fetch(url, options); let payload={};
+    try { payload=await response.json(); } catch (_) { payload={error:`服务器返回 HTTP ${response.status}`}; }
+    if(!response.ok) throw new Error(payload.error || `请求失败（HTTP ${response.status}）`);
+    return payload;
+  }
+  function switchPage(name) {
+    document.querySelectorAll(".page").forEach(el=>el.classList.toggle("active",el.id===`page-${name}`));
+    document.querySelectorAll(".nav-button").forEach(el=>{ const active=el.dataset.page===name; el.classList.toggle("active",active); if(active) el.setAttribute("aria-current","page"); else el.removeAttribute("aria-current"); });
+    if(name==="inference") loadRuns(true).then(()=>{
+      const query=new URLSearchParams(location.search), requested=query.get("checkpoint");
+      if(query.get("page")==="inference"&&requested&&[...$("inferRun").options].some(option=>option.value===requested)){
+        $("inferRun").value=requested;$("inferRun").dispatchEvent(new Event("change"));
+      }
+    });
+    if(name==="reverse") { loadReverseDatasetSummary(); pollReverseStatus(); }
+    if(name==="four") { loadFourDatasetSummary(); pollFourStatus(); }
+  }
+  document.querySelectorAll(".nav-button[data-page]").forEach(button=>button.addEventListener("click",()=>switchPage(button.dataset.page)));
+
+  function reverseRoots() {
+    return {
+      legacy_dataset_root:$("reverseLegacyRoot").value.trim(),
+      ucf_root:$("reverseUcfRoot").value.trim(),
+      airtlab_root:$("reverseAirRoot").value.trim(),
+      guardaid_root:$("reverseGuardRoot").value.trim(),
+      output_root:$("reverseOutputRoot").value.trim()
+    };
+  }
+  async function loadReverseDatasetSummary() {
+    try {
+      const query=new URLSearchParams(reverseRoots());
+      const summary=await api(`/api/reverse/summary?${query.toString()}`);
+      reverseApp.summary=summary;
+      if(!$("reverseLegacyRoot").value) $("reverseLegacyRoot").value=summary.roots.legacy;
+      if(!$("reverseUcfRoot").value) $("reverseUcfRoot").value=summary.roots.ucf;
+      if(!$("reverseAirRoot").value) $("reverseAirRoot").value=summary.roots.airtlab;
+      if(!$("reverseGuardRoot").value) $("reverseGuardRoot").value=summary.roots["guardaid"];
+      if(!$("reverseOutputRoot").value) $("reverseOutputRoot").value=summary.roots.output;
+      renderReverseDatasetSummary(summary);
+      if(!summary.ready) showBanner("reverseBanner","数据路径尚未齐全。请确认三个所选数据集目录、UCF 两类目录、外部测试路径，以及既有两秒帧缓存。","warn");
+      else if($("reverseBanner").classList.contains("warn") && !reverseApp.status?.process_active) hideBanner("reverseBanner");
+      await loadReverseRuns(true);
+    } catch(err) {
+      showBanner("reverseBanner",`无法读取数据路径：${err.message}`,"error");
+      $("reverseSourceSummary").innerHTML='<div class="source-summary"><strong>数据路径检查失败</strong><span>请确认路径存在且本地服务仍在运行。</span></div>';
+      reverseApp.summary=null;
+      updateReverseControls();
+    }
+  }
+  function renderReverseDatasetSummary(data) {
+    const u=data.ucf||{}, a=data.airtlab||{}, g=data["guardaid"]||{}, splits=u.split_preview||{};
+    const legacy=data.legacy||{}, legacyDatasets=legacy.datasets||[];
+    const fightSplits=["train","val","test"].map(key=>`${({train:"Train",val:"Val",test:"Test"})[key]} ${splits[key]?.Fight??"—"}`).join(" · ");
+    const normalSplits=["train","val","test"].map(key=>`${({train:"Train",val:"Val",test:"Test"})[key]} ${splits[key]?.NonFight??"—"}`).join(" · ");
+    const archives=(u.normal_archives||[]).reduce((total,row)=>total+Number(row.videos||0),0);
+    const legacyCards=legacyDatasets.map(item=>{
+      const splitLine=(split,label)=>`${({train:"Train",val:"Val",test:"Test"})[split]} ${label} ${Number(item.splits?.[split]?.[label]||0).toLocaleString()}`;
+      return `<div class="source-summary"><strong>${escapeHtml(item.name)} · 保留原 split</strong><span class="source-count">${Number(item.total||0).toLocaleString()} 段</span><span>${splitLine("train","Fight")} / ${splitLine("train","NonFight")}<br>${splitLine("val","Fight")} / ${splitLine("val","NonFight")}<br>${splitLine("test","Fight")} / ${splitLine("test","NonFight")}${item.missing?.length?`<br><span class="text-danger">缺少 ${item.missing.length} 个类别目录</span>`:""}</span></div>`;
+    }).join("");
+    $("reverseSourceSummary").innerHTML=`${legacyCards}
+      <div class="source-summary"><strong>UCF · 80/10/10</strong><span class="source-count">${Number(u.raw_fight||0).toLocaleString()} Fight · ${Number(u.raw_nonfight_including_archive||0).toLocaleString()} NonFight</span><span>暴力子类：Assault ${Number(u.assault_videos||0).toLocaleString()} · Fighting ${Number(u.fighting_videos||0).toLocaleString()}。正常视频文件夹 ${Number(u.nonfight_folder_videos||0).toLocaleString()}${archives?` · 压缩包 ${archives.toLocaleString()}`:""}<br>${fightSplits}<br>${normalSplits}</span></div>
+      <div class="source-summary"><strong>AIRTLab · 有标签外部测试</strong><span class="source-count">${Number(a.total||0).toLocaleString()} 段</span><span>Fight ${Number(a.fight||0).toLocaleString()} · NonFight ${Number(a.nonfight||0).toLocaleString()}<br>仅在训练后评估，不参与训练、验证或阈值选择。</span></div>
+      <div class="source-summary"><strong>GuardAId · 无标签外部测试</strong><span class="source-count">${Number(g.videos||0).toLocaleString()} 段</span><span>没有 ground truth 标签，只保存预测；可另列“假设全为 NonFight”的条件性误报率。</span></div>`;
+    const free=data.storage?.free_gib, uncompressed=data.storage?.normal_archive_uncompressed_gib;
+    const normalFolder=Number(u.nonfight_folder_videos||0);
+    let storageText=`可用空间 ${free===null||free===undefined?"—":`${fmt(free,1)} GiB`}`;
+    if(normalFolder) storageText+=` · 已识别 Non-Violence 文件夹中的 ${normalFolder.toLocaleString()} 段视频`;
+    else if(Number(u.normal_archive_videos||0)) storageText+=` · 程序逐条临时读取压缩包，无需完整解压${uncompressed?`（整包解压约 ${fmt(uncompressed,1)} GiB）`:""}`;
+    $("reverseStorageNote").textContent=storageText;
+    updateReverseControls();
+  }
+  function updateReverseControls() {
+    const status=reverseApp.status?.status||"idle";
+    const active=Boolean(reverseApp.status?.process_active)||["starting","running","pause_requested","stopping"].includes(status);
+    const resumeSelected=Boolean($("reverseResumeRun")?.value);
+    $("reverseStartButton").disabled=active||!reverseApp.summary?.ready||!app.health?.model_ready;
+    $("reversePauseButton").disabled=!active||status==="pause_requested"||status==="stopping";
+    $("reverseCancelPauseButton").hidden=status!=="pause_requested";
+    $("reverseStopButton").disabled=!active;
+    $("reverseResumeRun").disabled=active;
+    $("reverseHistoryRun").disabled=active;
+    $("reverseStartButton").textContent=resumeSelected?"从 checkpoint 恢复训练":"开始 2 秒方案训练";
+    const locked=resumeSelected;
+    ["reverseLegacyRoot","reverseUcfRoot","reverseAirRoot","reverseGuardRoot","reverseOutputRoot","reverseEpochs","reversePatience","reverseMinDelta","reverseBackboneLr","reverseHeadLr","reverseWeightDecay","reverseGradAccum","reverseWindowBatchSize","reverseSeed","reverseDevice","reverseCacheDir","reverseAmp","reverseAllowCpu"].forEach(id=>$(id).disabled=active||locked);
+  }
+
+  async function loadHealth() {
+    try {
+      const h=await api("/api/health"); app.health=h;
+      $("pythonVersion").textContent=`Python ${h.python_version} · ${h.python}`;
+      $("datasetRoot").value ||= h.dataset_root;
+      $("outputRoot").value ||= h.output_root;
+      $("inferOutputRoot").value ||= h.output_root;
+      const missing=Object.entries(h.dependencies).filter(([,ok])=>!ok).map(([name])=>name);
+      $("healthDot").className=`dot ${missing.length?"warn":"good"}`;
+      $("healthText").textContent=missing.length?`缺少依赖：${missing.join(", ")}`:"本机服务已连接";
+      if(missing.length) showBanner("trainBanner",`当前 Python 环境缺少：${missing.join(", ")}。页面可以打开，但训练或视频推理无法开始。请在此 Python 环境安装 model_code/requirements-mc3.txt，并安装匹配版本的 PyTorch 与 TorchVision。`,"warn");
+      else hideBanner("trainBanner");
+      updateReverseControls();
+    } catch(err) {
+      $("healthDot").className="dot bad"; $("healthText").textContent="本机服务未连接"; $("pythonVersion").textContent="请确认 dashboard 终端仍在运行";
+    }
+  }
+  function activeRunValue(select) { return select.value; }
+  function updateInferenceProtocol(run) {
+    const tag=$("inferProtocolTag"), note=$("inferProtocolNote");
+    if(!run) { tag.textContent="等待选择模型"; note.textContent="选择模型后会显示对应的窗口、步长、帧数和短视频处理规则。"; return; }
+    const seconds=Number(run.window_seconds), stride=Number(run.stride_seconds), frames=Number(run.frames_per_window);
+    if(seconds===4 && stride===2 && frames===16) {
+      tag.textContent=run.input_representation==="black_background_skeleton"?"黑底骨架 · 4 秒窗口 · 2 秒步长 · 每窗 16 帧":run.input_representation==="native_video"?"原生视频 · 4 秒窗口 · 2 秒步长 · 每窗 16 帧":"4 秒窗口 · 2 秒步长 · 每窗 16 帧";
+      const windowRule="长视频按 2 秒步长滑动，必要时追加末尾对齐窗口；短片在真实时长内均匀采样 16 帧，不补帧。";
+      const missingPose=Object.entries(app.health?.pose_dependencies||{}).filter(([,available])=>!available).map(([name])=>name);
+      const poseDependencyNote=missingPose.length?" 当前 Dashboard Python 环境缺少 "+missingPose.join("、")+"；黑底骨架推理需先在同一环境安装这些依赖（rtmlib 固定 0.0.16）。":"";
+      note.textContent=run.input_representation==="black_background_skeleton"
+        ? "推理前先按训练时相同的帧索引，用 YOLOX-m + RTMPose-m 抽取所有采样帧并绘制黑底骨架，再送入 MC3-18。"+windowRule+"骨架临时文件在任务结束后清理。"+poseDependencyNote
+        : run.input_representation==="native_video"?"原始上传视频直接送入 MC3-18，不做骨架转换。"+windowRule:windowRule;
+    } else if(seconds===2 && frames===8) {
+      tag.textContent="2 秒窗口 · 1 秒步长 · 每窗 8 帧";
+      note.textContent="按完整的 2 秒自然视频窗口、1 秒步长、每窗 8 帧进行推理；不足 2 秒的视频不会补帧，尾部不完整窗口会舍弃。";
+    } else if(seconds===1 && frames===4) {
+      tag.textContent="1 秒窗口 · 0.5 秒步长 · 每窗 4 帧";
+      note.textContent="按完整的 1 秒自然视频窗口、0.5 秒步长、每窗 4 帧进行推理；不足 1 秒的视频不会补帧。";
+    } else {
+      tag.textContent="模型协议已读取";
+      note.textContent=`模型窗口 ${Number.isFinite(seconds)?seconds:"—"} 秒 · 步长 ${Number.isFinite(stride)?stride:"—"} 秒 · 每窗 ${Number.isFinite(frames)?frames:"—"} 帧。`;
+    }
+  }
+  function updateInferenceModes(run) {
+    const select=$("inferMode"), previous=select.value;
+    const modes=run?.threshold_modes?.length?run.threshold_modes:["sensitive","moderate","certain"];
+    select.innerHTML=modes.map(mode=>`<option value="${escapeHtml(mode)}">${escapeHtml(inferenceModeLabels[mode]||mode)}</option>`).join("");
+    const fallback=run?.default_threshold_mode||modes[0];
+    select.value=modes.includes(previous)?previous:fallback;
+    const description=airtlabModeDescriptions[select.value]||modeDescriptions[select.value]||"此模型使用其报告中已保存的验证集阈值。";
+    $("modeHelp").textContent=description;
+  }
+  async function loadRuns(force=false) {
+    const inferencePageActive=$("page-inference").classList.contains("active");
+    const outputRoot=inferencePageActive
+      ? ($("inferOutputRoot").value.trim() || $("outputRoot").value.trim() || app.health?.output_root || "")
+      : ($("outputRoot").value.trim() || app.health?.output_root || "");
+    const runsContext=`${outputRoot}|${inferencePageActive?"inference":"training"}`;
+    const rootChanged=app.selectedRunsRoot!==runsContext;
+    if(!force && !rootChanged && app.lastRunsLoad && Date.now()-app.lastRunsLoad<12000) return;
+    app.selectedRunsRoot=runsContext; app.lastRunsLoad=Date.now();
+    try {
+      const encoded=encodeURIComponent(outputRoot);
+      const inferenceQuery=inferencePageActive?"&inference=1":"";
+      const {runs}=await api(`/api/runs?output_root=${encoded}${inferenceQuery}`); app.runs=runs;
+      const resumeSelect=$("resumeRun"), oldResume=resumeSelect.value;
+      resumeSelect.innerHTML='<option value="">新建训练</option>';
+      runs.filter(run=>run.last_checkpoint && run.status!=="completed").forEach(run=>{
+        const option=document.createElement("option"); option.value=run.last_checkpoint; option.textContent=`${run.name} · ${run.status==="resumable"?"可恢复":"进行中/未完成"}`; resumeSelect.appendChild(option);
+      });
+      if([...resumeSelect.options].some(option=>option.value===oldResume)) resumeSelect.value=oldResume;
+      const inferSelect=$("inferRun"), oldInfer=inferSelect.value;
+      const inferRuns=runs.filter(run=>run.can_infer);
+      inferSelect.innerHTML=inferRuns.length?"":'<option value="">没有已完成的可推理模型</option>';
+      inferRuns.forEach(run=>{const option=document.createElement("option");option.value=run.best_model;const protocol=run.window_seconds===4?" · 4秒/16帧":run.window_seconds===2?" · 2秒/8帧":run.window_seconds===1?" · 1秒/4帧":"";option.textContent=`${run.name}${run.best_epoch?` · 最佳 Epoch ${run.best_epoch}`:""}${protocol}`;inferSelect.appendChild(option);});
+      if([...inferSelect.options].some(option=>option.value===oldInfer)) inferSelect.value=oldInfer;
+      const selectedRun=inferRuns.find(run=>run.best_model===inferSelect.value);
+      updateInferenceProtocol(selectedRun);updateInferenceModes(selectedRun);
+      if(!inferRuns.length && runs.length) $("resultModelTag").textContent="需要完成验证与测试";
+      refreshResumeHint();
+    } catch(err) { /* keep the current choices; the folder may not exist yet */ }
+  }
+  function refreshResumeHint() {
+    const checkpoint=$("resumeRun").value;
+    const selected=app.runs.find(run=>run.last_checkpoint===checkpoint);
+    $("startButton").querySelector("span").textContent=checkpoint?"继续训练":"开始训练";
+    $("resumeBox").classList.toggle("show",Boolean(checkpoint || app.status?.last_checkpoint));
+    if(checkpoint) $("checkpointPath").textContent=checkpoint;
+    else if(app.status?.last_checkpoint) $("checkpointPath").textContent=app.status.last_checkpoint;
+    if(selected) loadResumeConfig(selected).catch(err=>showBanner("trainBanner",err.message,"error"));
+    setResumeFields(Boolean(checkpoint));
+  }
+  let resumeFetchPath="";
+  async function loadResumeConfig(run) {
+    if(resumeFetchPath===run.last_checkpoint) return;
+    resumeFetchPath=run.last_checkpoint;
+    const root=encodeURIComponent($("outputRoot").value.trim() || app.health?.output_root || "");
+    const url=`/api/run-config?run_dir=${encodeURIComponent(run.run_dir)}&output_root=${root}`;
+    const {config}=await api(url);
+    $("datasetRoot").value=config.dataset_root || $("datasetRoot").value;
+    $("cacheDir").value=config.cache_dir || "";
+    const device=String(config.device||"auto"); $("device").value=device.startsWith("cpu")?"cpu":device.startsWith("cuda")?"cuda":"auto";
+    $("epochs").value=config.epochs??30; $("patience").value=config.patience??6; $("minDelta").value=config.min_delta??0.001;
+    $("backboneLr").value=config.backbone_lr??0.00002; $("headLr").value=config.head_lr??0.0001; $("weightDecay").value=config.weight_decay??0.0001;
+    $("gradAccum").value=config.grad_accum??8; $("windowBatchSize").value=config.window_batch_size??8; $("seed").value=config.seed??42;
+    $("amp").checked=Boolean(config.amp); $("allowCpu").checked=$("device").value==="cpu";
+    showBanner("trainBanner","已加载 checkpoint 的数据路径与训练参数。恢复时会继续使用保存状态。","info");
+  }
+  function setResumeFields(resuming) {
+    ["datasetRoot","outputRoot","cacheDir","epochs","patience","minDelta","backboneLr","headLr","weightDecay","gradAccum","windowBatchSize","seed","device","amp","allowCpu"].forEach(id=>$(id).disabled=resuming);
+    if(!resuming && !$("trainBanner").classList.contains("error")) hideBanner("trainBanner");
+  }
+  $("resumeRun").addEventListener("change",()=>{resumeFetchPath="";refreshResumeHint();});
+  $("outputRoot").addEventListener("change",()=>{app.lastRunsLoad=0;loadRuns(true);});
+  $("inferOutputRoot").addEventListener("change",()=>{app.selectedRunsRoot="";loadRuns(true);});
+  $("refreshRunsButton").addEventListener("click",()=>{app.lastRunsLoad=0;loadRuns(true);});
+
+  async function loadReverseRuns(force=false) {
+    const outputRoot=$("reverseOutputRoot").value.trim()||reverseApp.summary?.roots?.output||"";
+    if(!outputRoot)return;
+    if(!force&&reverseApp.selectedRunsRoot===outputRoot&&reverseApp.lastRunsLoad&&Date.now()-reverseApp.lastRunsLoad<10000)return;
+    reverseApp.selectedRunsRoot=outputRoot;reverseApp.lastRunsLoad=Date.now();
+    try {
+      const {runs}=await api(`/api/reverse/runs?output_root=${encodeURIComponent(outputRoot)}`);
+      reverseApp.runs=runs||[];
+      const historySelect=$("reverseHistoryRun"),oldHistory=historySelect.value;
+      historySelect.innerHTML=reverseApp.runs.length?"":'<option value="">尚无倒放拼接运行记录</option>';
+      reverseApp.runs.forEach(run=>{
+        const option=document.createElement("option");option.value=run.run_dir;
+        const result=run.best_validation_roc_auc===null||run.best_validation_roc_auc===undefined?"":` · 最佳 AUC ${fmt(run.best_validation_roc_auc,3)}`;
+        option.textContent=`${run.name} · ${run.status}${result}`;historySelect.appendChild(option);
+      });
+      if([...historySelect.options].some(option=>option.value===oldHistory))historySelect.value=oldHistory;
+      else if(reverseApp.runs.length)historySelect.value=reverseApp.runs[0].run_dir;
+      const select=$("reverseResumeRun"),old=select.value;
+      select.innerHTML='<option value="">新建运行</option>';
+      reverseApp.runs.filter(run=>run.last_checkpoint&&run.status!=="completed").forEach(run=>{
+        const option=document.createElement("option");option.value=run.last_checkpoint;
+        option.textContent=`${run.name} · ${run.status==="resumable"?"可恢复":"未完成"}`;select.appendChild(option);
+      });
+      if([...select.options].some(option=>option.value===old))select.value=old;
+      updateReverseControls();
+      if(historySelect.value&&historySelect.value!==oldHistory)pollReverseStatus();
+      if(select.value)await loadReverseResumeConfig();
+    } catch(err) { /* keep the last visible history if the output folder is temporarily unavailable */ }
+  }
+  async function loadReverseResumeConfig() {
+    const checkpoint=$("reverseResumeRun").value;
+    if(!checkpoint){reverseApp.configCheckpoint="";updateReverseControls();return;}
+    if(reverseApp.configCheckpoint===checkpoint){updateReverseControls();return;}
+    const root=$("reverseOutputRoot").value.trim()||reverseApp.summary?.roots?.output||"";
+    const runDir=checkpoint.replace(/[\\/][^\\/]+$/,"" );
+    const {config}=await api(`/api/reverse/run-config?run_dir=${encodeURIComponent(runDir)}&output_root=${encodeURIComponent(root)}`);
+    const roots=config.preprocessing?.source_roots||{};
+    $("reverseLegacyRoot").value=roots.legacy||reverseApp.summary?.roots?.legacy||$("reverseLegacyRoot").value;
+    $("reverseUcfRoot").value=roots.ucf||$("reverseUcfRoot").value;
+    $("reverseAirRoot").value=roots.airtlab||$("reverseAirRoot").value;
+    $("reverseGuardRoot").value=roots["guardaid"]||$("reverseGuardRoot").value;
+    $("reverseOutputRoot").value=root;
+    $("reverseEpochs").value=config.epochs??30;$("reversePatience").value=config.patience??6;$("reverseMinDelta").value=config.min_delta??0.001;
+    $("reverseBackboneLr").value=config.backbone_lr??0.00002;$("reverseHeadLr").value=config.head_lr??0.0001;$("reverseWeightDecay").value=config.weight_decay??0.0001;
+    $("reverseGradAccum").value=config.grad_accum??8;$("reverseWindowBatchSize").value=config.window_batch_size??4;$("reverseSeed").value=config.seed??2026;
+    const device=String(config.device||"auto");$("reverseDevice").value=device.startsWith("cpu")?"cpu":device.startsWith("cuda")?"cuda":"auto";
+    $("reverseAmp").checked=Boolean(config.amp);$("reverseAllowCpu").checked=$("reverseDevice").value==="cpu";
+    $("reverseCacheDir").value=config.cache_dir||"";
+    reverseApp.configCheckpoint=checkpoint;updateReverseControls();
+    showBanner("reverseBanner","已载入所选运行的训练配置和数据来源；恢复时沿用原 checkpoint 设置。","info");
+  }
+  function collectReverseConfig() {
+    return {
+      ...reverseRoots(),resume_checkpoint:$("reverseResumeRun").value,
+      epochs:$("reverseEpochs").value,patience:$("reversePatience").value,min_delta:$("reverseMinDelta").value,
+      backbone_lr:$("reverseBackboneLr").value,head_lr:$("reverseHeadLr").value,weight_decay:$("reverseWeightDecay").value,
+      grad_accum:$("reverseGradAccum").value,window_batch_size:$("reverseWindowBatchSize").value,seed:$("reverseSeed").value,
+      device:$("reverseDevice").value,cache_dir:$("reverseCacheDir").value.trim(),amp:$("reverseAmp").checked,allow_cpu:$("reverseAllowCpu").checked
+    };
+  }
+  $("reverseResumeRun").addEventListener("change",()=>{reverseApp.configCheckpoint="";loadReverseResumeConfig().catch(err=>showBanner("reverseBanner",err.message,"error"));updateReverseControls();});
+  $("reverseHistoryRun").addEventListener("change",()=>pollReverseStatus());
+  ["reverseLegacyRoot","reverseUcfRoot","reverseAirRoot","reverseGuardRoot"].forEach(id=>$(id).addEventListener("change",()=>loadReverseDatasetSummary()));
+  $("reverseOutputRoot").addEventListener("change",()=>{reverseApp.selectedRunsRoot="";reverseApp.configCheckpoint="";loadReverseDatasetSummary();loadReverseRuns(true);pollReverseStatus();});
+  $("reverseRefreshDataButton").addEventListener("click",()=>loadReverseDatasetSummary());
+  $("reverseRefreshRunsButton").addEventListener("click",()=>loadReverseRuns(true));
+  $("reverseStartButton").addEventListener("click",async()=>{
+    const button=$("reverseStartButton");button.disabled=true;hideBanner("reverseBanner");
+    try {
+      const result=await postJson("/api/reverse/training/start",collectReverseConfig());
+      showBanner("reverseBanner",result.resuming?"倒放拼接训练已恢复，将从 checkpoint 的下一个完整 epoch 继续。":"倒放拼接训练已启动，正在建立视频清单并准备帧缓存。","info");
+      $("reverseRunPathLabel").textContent=`运行目录：${result.run_dir}`;
+      if(![...$("reverseHistoryRun").options].some(option=>option.value===result.run_dir)){const option=document.createElement("option");option.value=result.run_dir;option.textContent=result.run_dir.split(/[\\/]/).pop()+" · running";$("reverseHistoryRun").appendChild(option);}
+      $("reverseHistoryRun").value=result.run_dir;
+      reverseApp.selectedRunsRoot="";await pollReverseStatus();
+    } catch(err) { showBanner("reverseBanner",err.message,"error"); }
+    finally { updateReverseControls(); }
+  });
+  $("reversePauseButton").addEventListener("click",async()=>{try{const result=await postJson("/api/reverse/training/pause");showBanner("reverseBanner",result.message,"info");await pollReverseStatus();}catch(err){showBanner("reverseBanner",err.message,"error");}});
+  $("reverseCancelPauseButton").addEventListener("click",async()=>{try{const result=await postJson("/api/reverse/training/cancel-pause");showBanner("reverseBanner",result.message,"info");await pollReverseStatus();}catch(err){showBanner("reverseBanner",err.message,"error");}});
+  $("reverseStopButton").addEventListener("click",async()=>{
+    if(!window.confirm("立即停止会中断当前 epoch；最近一次完整 checkpoint 可供恢复。确定停止吗？"))return;
+    try{const result=await postJson("/api/reverse/training/stop");showBanner("reverseBanner",result.message,"warn");await pollReverseStatus();}catch(err){showBanner("reverseBanner",err.message,"error");}
+  });
+  $("reverseCopyRunButton").addEventListener("click",async()=>{
+    const path=reverseApp.status?.run_dir;if(!path)return;
+    try{await navigator.clipboard.writeText(path);$("reverseCopyRunButton").textContent="已复制";setTimeout(()=>$("reverseCopyRunButton").textContent="复制运行路径",1400);}
+    catch(_){showBanner("reverseBanner",`运行目录：${path}`,"info");}
+  });
+  function renderReverseEpochTable(history,bestEpoch) {
+    const body=$("reverseEpochTable");
+    if(!history.length){body.innerHTML='<tr><td colspan="7" class="empty-state">完成第一个 epoch 后显示记录。</td></tr>';return;}
+    body.innerHTML=[...history].reverse().map(row=>`<tr><td>${row.epoch??"—"}</td><td>${fmt(row.train_loss,4)}</td><td>${fmt(row.train_roc_auc,3)}</td><td>${fmt(row.val_roc_auc,4)}</td><td>${fmt(row.val_f1_at_0_5,3)}</td><td>${fmt(row.seconds,1)} s</td><td>${Number(row.epoch)===Number(bestEpoch)?'<span class="tag protocol">最佳</span>':Number(row.improved)===1?"提升":"—"}</td></tr>`).join("");
+  }
+  function renderReverseHistory(history,bestEpoch) {
+    $("reverseHistoryCount").textContent=`${history.length} 个 epoch${bestEpoch?` · 最佳 ${bestEpoch}`:""}`;
+    const key=history.map(row=>`${row.epoch}:${row.train_loss}:${row.val_roc_auc}`).join("|");
+    if(key===reverseApp.lastChartKey)return;reverseApp.lastChartKey=key;
+    drawLineChart($("reverseLossChart"),history.map(row=>row.train_loss===null?NaN:Number(row.train_loss)),"#087f78",false);
+    drawLineChart($("reverseAucChart"),history.map(row=>row.val_roc_auc===null?NaN:Number(row.val_roc_auc)),"#328e67",true);
+  }
+  function renderReverseFinalReport(report) {
+    const thresholds=report?.thresholds||{},validation=report?.validation_metrics||{},testing=report?.test_metrics||{};
+    const modes=["sensitive","moderate","certain"],names={sensitive:"Sensitive",moderate:"Moderate",certain:"Certain"};
+    if(!Object.keys(thresholds).length){$("reverseThresholdTable").innerHTML='<tr><td colspan="13" class="empty-state">完成训练及最终评估后显示。</td></tr>';}
+    else $("reverseThresholdTable").innerHTML=modes.map(mode=>{
+      const t=thresholds[mode]||{},v=validation[mode]||{},m=testing[mode]||{};
+      return `<tr><td>${names[mode]}</td><td>${escapeHtml(t.objective||"—")}</td><td>${fmt(t.threshold,4)}</td><td>${fmt(t.validation_score,3)}</td><td>${fmt(v.precision,3)}</td><td>${fmt(v.recall,3)}</td><td>${fmt(v.f1,3)}</td><td>${fmt(v.roc_auc,3)}</td><td>${m.n??"—"}</td><td>${fmt(m.precision,3)}</td><td>${fmt(m.recall,3)}</td><td>${fmt(m.f1,3)}</td><td>${fmt(m.roc_auc,3)}</td></tr>`;
+    }).join("");
+    const byDataset=report?.test_metrics_by_dataset||{},rows=[];
+    for(const [dataset,data] of Object.entries(byDataset)) {
+      if(data?.ground_truth_available===false||data?.conditional_if_all_nonfight){
+        for(const mode of modes){const conditional=data.conditional_if_all_nonfight?.[mode]||{};rows.push(`<tr><td>${escapeHtml(dataset)}</td><td>无标签</td><td>${conditional.n_unlabeled??data.unlabeled_video_count??"—"}</td><td>${names[mode]}</td><td>${conditional.predicted_positive_count??"—"} 条被判 Fight（假设全为 NonFight） · ${pct(conditional.conditional_false_positive_rate_if_all_nonfight)}</td><td colspan="4">不计算真实分类指标</td></tr>`);}
+      } else {
+        for(const mode of modes){const m=data?.[mode]||{};rows.push(`<tr><td>${escapeHtml(dataset)}</td><td>有标签</td><td>${m.n??"—"}</td><td>${names[mode]}</td><td>${m.tp??"—"}/${m.tn??"—"}/${m.fp??"—"}/${m.fn??"—"}</td><td>${fmt(m.precision,3)}</td><td>${fmt(m.recall,3)}</td><td>${fmt(m.f1,3)}</td><td>${fmt(m.roc_auc,3)}</td></tr>`);}
+      }
+    }
+    $("reverseDatasetTestTable").innerHTML=rows.length?rows.join(""):'<tr><td colspan="9" class="empty-state">最终测试后显示原有数据集 test、UCF test、AIRTLab 与 GuardAId 的分来源结果。</td></tr>';
+    $("reverseTestNote").textContent=report?.best_epoch?`最佳 epoch ${report.best_epoch} · 验证 AUC ${fmt(report.best_validation_roc_auc,4)} · 测试视频 ${report.test_video_count??"—"} 条 · 测试窗口 ${report.test_window_count??"—"} 个。阈值由原有五个数据集与 UCF 的合并 validation split 选择。`:"GuardAId 没有真实标签，因此只报告预测数和假设全为 NonFight 时的条件性误报率。";
+  }
+  function renderReverseStatus(status) {
+    const previous=reverseApp.status?.status;reverseApp.status=status;
+    const s=status.status||"idle",labels={idle:"空闲",starting:"正在启动",running:"运行中",pause_requested:"待安全暂停",stopping:"正在停止",paused:"已暂停",stopped:"已停止",resumable:"可恢复",completed:"已完成",failed:"运行失败",incomplete:"尚未完成"};
+    const active=["starting","running","pause_requested","stopping"].includes(s),p=Math.round(100*(status.stage_progress||0));
+    $("reverseStatusText").textContent=labels[s]||s;$("reverseStatusPill").textContent=labels[s]||s;
+    $("reverseStatusPill").className=`status-pill ${active?"running":s==="completed"?"completed":["failed","stopped"].includes(s)?s:""}`;
+    $("reverseStatusDot").className=`dot ${active?"good":["failed","stopped"].includes(s)?"bad":s==="completed"?"good":""}`;
+    $("reverseStageText").textContent=status.stage||"等待启动训练";$("reverseProgressPercent").textContent=`${p}%`;$("reverseProgressFill").style.width=`${p}%`;
+    $("reverseEpochText").textContent=status.total_epochs?`Epoch ${status.current_epoch||0} / ${status.total_epochs} · 已完成 ${status.completed_epochs||0} 轮`:"Epoch — / —";
+    $("reverseElapsedText").textContent=status.elapsed_seconds===null||status.elapsed_seconds===undefined?"已用时间 —":`已用 ${duration(status.elapsed_seconds)}`;
+    $("reverseEtaText").textContent=status.eta_seconds===null||status.eta_seconds===undefined?"预计剩余时间 —":`预计剩余 ${duration(status.eta_seconds)}`;
+    const history=status.history||[],latest=status.latest_epoch||{};
+    $("reverseMetricLoss").textContent=fmt(latest.train_loss,4);$("reverseMetricAuc").textContent=fmt(latest.val_roc_auc,4);
+    const best=status.final_report?.best_validation_roc_auc??Math.max(-Infinity,...history.map(row=>Number(row.val_roc_auc)).filter(Number.isFinite));
+    $("reverseMetricBest").textContent=Number.isFinite(best)?fmt(best,4):"—";
+    const bestEpoch=status.final_report?.best_epoch??history.reduce((bestRow,row)=>Number(row.val_roc_auc)>Number(bestRow?.val_roc_auc??-Infinity)?row:bestRow,null)?.epoch;
+    $("reverseBestEpoch").textContent=bestEpoch?`最佳 epoch ${bestEpoch}`:"最佳 epoch —";
+    $("reverseMetricSamples").textContent=status.manifest_count?Number(status.sample_total||0).toLocaleString():"—";
+    $("reverseMetricAugmented").textContent=status.manifest_count?Number(status.reverse_concat_sample_total||0).toLocaleString():"—";
+    $("reverseMetricExcluded").textContent=status.manifest_count?Number(status.excluded_total||0).toLocaleString():"—";
+    $("reversePauseButton").disabled=!active||s==="pause_requested"||s==="stopping";$("reverseCancelPauseButton").hidden=s!=="pause_requested";$("reverseStopButton").disabled=!active;
+    $("reverseResumeRun").disabled=active;$("reverseStartButton").disabled=active||!reverseApp.summary?.ready||!app.health?.model_ready;
+    if(status.last_checkpoint){$("reverseCheckpointBox").classList.add("show");$("reverseCheckpointPath").textContent=status.last_checkpoint;}
+    if(status.run_dir)$("reverseRunPathLabel").textContent=`运行目录：${status.run_dir}`;
+    renderReverseHistory(history,bestEpoch);renderReverseEpochTable(history,bestEpoch);renderReverseFinalReport(status.final_report||{});
+    const log=status.log_text||status.console?.join("\n")||"";
+    if(log!==reverseApp.lastLog){const el=$("reverseConsole"),nearBottom=el.scrollHeight-el.scrollTop-el.clientHeight<70;el.textContent=log||"等待控制台输出。";el.classList.toggle("empty",!log);if(nearBottom)el.scrollTop=el.scrollHeight;reverseApp.lastLog=log;}
+    if(s==="failed"&&status.return_code!==null)showBanner("reverseBanner",`倒放拼接训练进程已结束（退出代码 ${status.return_code}）。请查看日志末尾。`,"error");
+    if(s==="paused")showBanner("reverseBanner","训练已在完整 epoch 边界安全暂停；可以从此 checkpoint 恢复。","info");
+    if(s==="completed"){showBanner("reverseBanner","训练、验证集阈值选择及最终留出评估均已完成，结果已保存在本方案运行目录。","info");if(previous!==s){reverseApp.selectedRunsRoot="";loadReverseRuns(true);}}
+    if(s==="stopped"&&previous!==s){reverseApp.selectedRunsRoot="";loadReverseRuns(true);}
+    updateReverseControls();
+  }
+  async function pollReverseStatus() {
+    if(reverseApp.polling)return;reverseApp.polling=true;
+    try {const root=$("reverseOutputRoot").value.trim();const params=new URLSearchParams();if(root)params.set("output_root",root);if($("reverseHistoryRun").value)params.set("run_dir",$("reverseHistoryRun").value);const query=params.toString()?`?${params.toString()}`:"";const status=await api(`/api/reverse/status${query}`);renderReverseStatus(status);await loadReverseRuns(false);}
+    catch(_){ /* the main 1-second page remains available when the reverse API is not ready */ }
+    finally {reverseApp.polling=false;}
+  }
+  window.addEventListener("resize",()=>{reverseApp.lastChartKey="";if(reverseApp.status)renderReverseHistory(reverseApp.status.history||[],reverseApp.status.final_report?.best_epoch);});
+
+  function fourRoots() {
+    return {
+      legacy_dataset_root:$("fourLegacyRoot").value.trim(),
+      ucf_root:$("fourUcfRoot").value.trim(),
+      airtlab_root:$("fourAirRoot").value.trim(),
+      guardaid_root:$("fourGuardRoot").value.trim(),
+      cache_dir:$("fourCacheDir").value.trim(),
+      output_root:$("fourOutputRoot").value.trim()
+    };
+  }
+  async function loadFourDatasetSummary() {
+    try {
+      const query=new URLSearchParams(fourRoots());
+      const summary=await api(`/api/four/summary?${query.toString()}`);
+      fourApp.summary=summary;
+      if(!$("fourLegacyRoot").value) $("fourLegacyRoot").value=summary.roots.legacy;
+      if(!$("fourUcfRoot").value) $("fourUcfRoot").value=summary.roots.ucf;
+      if(!$("fourAirRoot").value) $("fourAirRoot").value=summary.roots.airtlab;
+      if(!$("fourGuardRoot").value) $("fourGuardRoot").value=summary.roots["guardaid"];
+      if(!$("fourOutputRoot").value) $("fourOutputRoot").value=summary.roots.output;
+      if(!$("fourCacheDir").value) $("fourCacheDir").value=summary.cache?.supplemental||"";
+      renderFourDatasetSummary(summary);
+      if(!summary.ready) showBanner("fourBanner","数据或缓存检查未通过。请确认原有数据集、UCF 两类目录、AIRTLab 标签目录、GuardAId 独立额外测试目录、只读两秒缓存，以及与其分开的 5 GiB 补充缓存。","warn");
+      else if($("fourBanner").classList.contains("warn") && !fourApp.status?.process_active) hideBanner("fourBanner");
+      await loadFourRuns(true);
+    } catch(err) {
+      showBanner("fourBanner",`无法读取数据路径：${err.message}`,"error");
+      $("fourSourceSummary").innerHTML='<div class="source-summary"><strong>数据路径检查失败</strong><span>请确认路径存在且本地服务仍在运行。</span></div>';
+      fourApp.summary=null;
+      updateFourControls();
+    }
+  }
+  function renderFourDatasetSummary(data) {
+    const u=data.ucf||{}, a=data.airtlab||{}, g=data["guardaid"]||{}, splits=u.split_preview||{};
+    const airSplits=a.split_preview||{};
+    const legacy=data.legacy||{}, legacyDatasets=legacy.datasets||[];
+    const fightSplits=["train","val","test"].map(key=>`${({train:"Train",val:"Val",test:"Test"})[key]} ${splits[key]?.Fight??"—"}`).join(" · ");
+    const normalSplits=["train","val","test"].map(key=>`${({train:"Train",val:"Val",test:"Test"})[key]} ${splits[key]?.NonFight??"—"}`).join(" · ");
+    const airFightSplits=["train","val","test"].map(key=>`${({train:"Train",val:"Val",test:"Test"})[key]} ${Number(airSplits[key]?.Fight||0).toLocaleString()}`).join(" · ");
+    const airNormalSplits=["train","val","test"].map(key=>`${({train:"Train",val:"Val",test:"Test"})[key]} ${Number(airSplits[key]?.NonFight||0).toLocaleString()}`).join(" · ");
+    const archives=(u.normal_archives||[]).reduce((total,row)=>total+Number(row.videos||0),0);
+    const legacyCards=legacyDatasets.map(item=>{
+      const splitLine=(split,label)=>`${({train:"Train",val:"Val",test:"Test"})[split]} ${label} ${Number(item.splits?.[split]?.[label]||0).toLocaleString()}`;
+      return `<div class="source-summary"><strong>${escapeHtml(item.name)} · 保留原 split</strong><span class="source-count">${Number(item.total||0).toLocaleString()} 段</span><span>${splitLine("train","Fight")} / ${splitLine("train","NonFight")}<br>${splitLine("val","Fight")} / ${splitLine("val","NonFight")}<br>${splitLine("test","Fight")} / ${splitLine("test","NonFight")}${item.missing?.length?`<br><span class="text-danger">缺少 ${item.missing.length} 个类别目录</span>`:""}</span></div>`;
+    }).join("");
+    $("fourSourceSummary").innerHTML=`${legacyCards}
+      <div class="source-summary"><strong>UCF · 80/10/10</strong><span class="source-count">${Number(u.raw_fight||0).toLocaleString()} Fight · ${Number(u.raw_nonfight_including_archive||0).toLocaleString()} NonFight</span><span>暴力子类：Assault ${Number(u.assault_videos||0).toLocaleString()} · Fighting ${Number(u.fighting_videos||0).toLocaleString()}。正常视频文件夹 ${Number(u.nonfight_folder_videos||0).toLocaleString()}${archives?` · 压缩包 ${archives.toLocaleString()}`:""}<br>${fightSplits}<br>${normalSplits}</span></div>
+      <div class="source-summary"><strong>AIRTLab · 文件名组 80/10/10</strong><span class="source-count">${Number(a.total||0).toLocaleString()} 段 · ${Number(a.source_groups||0).toLocaleString()} 组</span><span>同名 cam1/cam2 视角固定同 split；已配对 ${Number(a.paired_filename_groups||0).toLocaleString()} 组。<br>Fight：${airFightSplits}<br>NonFight：${airNormalSplits}</span></div>
+      <div class="source-summary"><strong>GuardAId · 独立额外测试</strong><span class="source-count">${Number(g.videos||0).toLocaleString()} 段</span><span>不进入 train/val/test，也不参与选阈值；常规测试完成后另作无标签推理。</span></div>`;
+    const free=data.storage?.free_gib, uncompressed=data.storage?.normal_archive_uncompressed_gib;
+    const normalFolder=Number(u.nonfight_folder_videos||0);
+    let storageText=`可用空间 ${free===null||free===undefined?"—":`${fmt(free,1)} GiB`}`;
+    if(normalFolder) storageText+=` · 已识别 Non-Violence 文件夹中的 ${normalFolder.toLocaleString()} 段视频`;
+    else if(Number(u.normal_archive_videos||0)) storageText+=` · 程序逐条临时读取压缩包，无需完整解压${uncompressed?`（整包解压约 ${fmt(uncompressed,1)} GiB）`:""}`;
+    const cache=data.cache||{};
+    storageText+=" · 两秒缓存只读 "+fmt(cache.legacy_gib,2)+" GiB · 补充缓存 "+fmt(cache.supplemental_gib,2)+" / 5.00 GiB";
+    $("fourStorageNote").textContent=storageText;
+    updateFourControls();
+  }
+  function updateFourControls() {
+    const status=fourApp.status?.status||"idle";
+    const active=Boolean(fourApp.status?.process_active)||["starting","running","pause_requested","stopping"].includes(status);
+    const resumeSelected=Boolean($("fourResumeRun")?.value);
+    $("fourStartButton").disabled=active||!fourApp.summary?.ready||!app.health?.model_ready;
+    $("fourPauseButton").disabled=!active||status==="pause_requested"||status==="stopping";
+    $("fourCancelPauseButton").hidden=status!=="pause_requested";
+    $("fourStopButton").disabled=!active;
+    $("fourResumeRun").disabled=active;
+    $("fourHistoryRun").disabled=active;
+    $("fourStartButton").textContent=resumeSelected?"从 checkpoint 恢复训练":"开始 4 秒方案训练";
+    const locked=resumeSelected;
+    ["fourLegacyRoot","fourUcfRoot","fourAirRoot","fourGuardRoot","fourOutputRoot","fourEpochs","fourPatience","fourMinDelta","fourBackboneLr","fourHeadLr","fourWeightDecay","fourGradAccum","fourWindowBatchSize","fourSeed","fourDevice","fourCacheDir","fourAmp","fourAllowCpu"].forEach(id=>$(id).disabled=active||locked);
+  }
+
+  async function loadFourRuns(force=false) {
+    const outputRoot=$("fourOutputRoot").value.trim()||fourApp.summary?.roots?.output||"";
+    if(!outputRoot)return;
+    if(!force&&fourApp.selectedRunsRoot===outputRoot&&fourApp.lastRunsLoad&&Date.now()-fourApp.lastRunsLoad<10000)return;
+    fourApp.selectedRunsRoot=outputRoot;fourApp.lastRunsLoad=Date.now();
+    try {
+      const {runs}=await api(`/api/four/runs?output_root=${encodeURIComponent(outputRoot)}`);
+      fourApp.runs=runs||[];
+      const historySelect=$("fourHistoryRun"),oldHistory=historySelect.value;
+      historySelect.innerHTML=fourApp.runs.length?"":'<option value="">尚无四秒窗口运行记录</option>';
+      fourApp.runs.forEach(run=>{
+        const option=document.createElement("option");option.value=run.run_dir;
+        const result=run.best_validation_roc_auc===null||run.best_validation_roc_auc===undefined?"":` · 最佳 AUC ${fmt(run.best_validation_roc_auc,3)}`;
+        option.textContent=`${run.name} · ${run.status}${result}`;historySelect.appendChild(option);
+      });
+      if([...historySelect.options].some(option=>option.value===oldHistory))historySelect.value=oldHistory;
+      else if(fourApp.runs.length)historySelect.value=fourApp.runs[0].run_dir;
+      const select=$("fourResumeRun"),old=select.value;
+      select.innerHTML='<option value="">新建运行</option>';
+      fourApp.runs.filter(run=>run.last_checkpoint&&run.status!=="completed").forEach(run=>{
+        const option=document.createElement("option");option.value=run.last_checkpoint;
+        option.textContent=`${run.name} · ${run.status==="resumable"?"可恢复":"未完成"}`;select.appendChild(option);
+      });
+      if([...select.options].some(option=>option.value===old))select.value=old;
+      updateFourControls();
+      if(historySelect.value&&historySelect.value!==oldHistory)pollFourStatus();
+      if(select.value)await loadFourResumeConfig();
+    } catch(err) { /* keep the last visible history if the output folder is temporarily unavailable */ }
+  }
+  async function loadFourResumeConfig() {
+    const checkpoint=$("fourResumeRun").value;
+    if(!checkpoint){fourApp.configCheckpoint="";updateFourControls();return;}
+    if(fourApp.configCheckpoint===checkpoint){updateFourControls();return;}
+    const root=$("fourOutputRoot").value.trim()||fourApp.summary?.roots?.output||"";
+    const runDir=checkpoint.replace(/[\\/][^\\/]+$/,"" );
+    const {config}=await api(`/api/four/run-config?run_dir=${encodeURIComponent(runDir)}&output_root=${encodeURIComponent(root)}`);
+    const roots=config.preprocessing?.source_roots||{};
+    $("fourLegacyRoot").value=roots.legacy||fourApp.summary?.roots?.legacy||$("fourLegacyRoot").value;
+    $("fourUcfRoot").value=roots.ucf||$("fourUcfRoot").value;
+    $("fourAirRoot").value=roots.airtlab||$("fourAirRoot").value;
+    $("fourGuardRoot").value=roots["guardaid"]||$("fourGuardRoot").value;
+    $("fourOutputRoot").value=root;
+    $("fourEpochs").value=config.epochs??30;$("fourPatience").value=config.patience??6;$("fourMinDelta").value=config.min_delta??0.001;
+    $("fourBackboneLr").value=config.backbone_lr??0.00002;$("fourHeadLr").value=config.head_lr??0.0001;$("fourWeightDecay").value=config.weight_decay??0.0001;
+    $("fourGradAccum").value=config.grad_accum??8;$("fourWindowBatchSize").value=config.window_batch_size??2;$("fourSeed").value=config.seed??2026;
+    const device=String(config.device||"auto");$("fourDevice").value=device.startsWith("cpu")?"cpu":device.startsWith("cuda")?"cuda":"auto";
+    $("fourAmp").checked=Boolean(config.amp);$("fourAllowCpu").checked=$("fourDevice").value==="cpu";
+    $("fourCacheDir").value=config.cache_dir||"";
+    fourApp.configCheckpoint=checkpoint;updateFourControls();
+    showBanner("fourBanner","已载入所选运行的训练配置和数据来源；恢复时沿用原 checkpoint 设置。","info");
+  }
+  function collectFourConfig() {
+    return {
+      ...fourRoots(),resume_checkpoint:$("fourResumeRun").value,
+      epochs:$("fourEpochs").value,patience:$("fourPatience").value,min_delta:$("fourMinDelta").value,
+      backbone_lr:$("fourBackboneLr").value,head_lr:$("fourHeadLr").value,weight_decay:$("fourWeightDecay").value,
+      grad_accum:$("fourGradAccum").value,window_batch_size:$("fourWindowBatchSize").value,seed:$("fourSeed").value,
+      device:$("fourDevice").value,cache_dir:$("fourCacheDir").value.trim(),amp:$("fourAmp").checked,allow_cpu:$("fourAllowCpu").checked
+    };
+  }
+  $("fourResumeRun").addEventListener("change",()=>{fourApp.configCheckpoint="";loadFourResumeConfig().catch(err=>showBanner("fourBanner",err.message,"error"));updateFourControls();});
+  $("fourHistoryRun").addEventListener("change",()=>pollFourStatus());
+  ["fourLegacyRoot","fourUcfRoot","fourAirRoot","fourGuardRoot"].forEach(id=>$(id).addEventListener("change",()=>loadFourDatasetSummary()));
+  $("fourCacheDir").addEventListener("change",()=>loadFourDatasetSummary());
+  $("fourOutputRoot").addEventListener("change",()=>{fourApp.selectedRunsRoot="";fourApp.configCheckpoint="";loadFourDatasetSummary();loadFourRuns(true);pollFourStatus();});
+  $("fourRefreshDataButton").addEventListener("click",()=>loadFourDatasetSummary());
+  $("fourRefreshRunsButton").addEventListener("click",()=>loadFourRuns(true));
+  $("fourStartButton").addEventListener("click",async()=>{
+    const button=$("fourStartButton");button.disabled=true;hideBanner("fourBanner");
+    try {
+      const result=await postJson("/api/four/training/start",collectFourConfig());
+      showBanner("fourBanner",result.resuming?"四秒窗口训练已恢复，将从 checkpoint 的下一个完整 epoch 继续。":"四秒窗口训练已启动，正在建立视频清单并准备帧缓存。","info");
+      $("fourRunPathLabel").textContent=`运行目录：${result.run_dir}`;
+      if(![...$("fourHistoryRun").options].some(option=>option.value===result.run_dir)){const option=document.createElement("option");option.value=result.run_dir;option.textContent=result.run_dir.split(/[\\/]/).pop()+" · running";$("fourHistoryRun").appendChild(option);}
+      $("fourHistoryRun").value=result.run_dir;
+      fourApp.selectedRunsRoot="";await pollFourStatus();
+    } catch(err) { showBanner("fourBanner",err.message,"error"); }
+    finally { updateFourControls(); }
+  });
+  $("fourPauseButton").addEventListener("click",async()=>{try{const result=await postJson("/api/four/training/pause");showBanner("fourBanner",result.message,"info");await pollFourStatus();}catch(err){showBanner("fourBanner",err.message,"error");}});
+  $("fourCancelPauseButton").addEventListener("click",async()=>{try{const result=await postJson("/api/four/training/cancel-pause");showBanner("fourBanner",result.message,"info");await pollFourStatus();}catch(err){showBanner("fourBanner",err.message,"error");}});
+  $("fourStopButton").addEventListener("click",async()=>{
+    if(!window.confirm("立即停止会中断当前 epoch；最近一次完整 checkpoint 可供恢复。确定停止吗？"))return;
+    try{const result=await postJson("/api/four/training/stop");showBanner("fourBanner",result.message,"warn");await pollFourStatus();}catch(err){showBanner("fourBanner",err.message,"error");}
+  });
+  $("fourCopyRunButton").addEventListener("click",async()=>{
+    const path=fourApp.status?.run_dir;if(!path)return;
+    try{await navigator.clipboard.writeText(path);$("fourCopyRunButton").textContent="已复制";setTimeout(()=>$("fourCopyRunButton").textContent="复制运行路径",1400);}
+    catch(_){showBanner("fourBanner",`运行目录：${path}`,"info");}
+  });
+  function renderFourEpochTable(history,bestEpoch) {
+    const body=$("fourEpochTable");
+    if(!history.length){body.innerHTML='<tr><td colspan="7" class="empty-state">完成第一个 epoch 后显示记录。</td></tr>';return;}
+    body.innerHTML=[...history].reverse().map(row=>`<tr><td>${row.epoch??"—"}</td><td>${fmt(row.train_loss,4)}</td><td>${fmt(row.train_roc_auc,3)}</td><td>${fmt(row.val_roc_auc,4)}</td><td>${fmt(row.val_f1_at_0_5,3)}</td><td>${fmt(row.seconds,1)} s</td><td>${Number(row.epoch)===Number(bestEpoch)?'<span class="tag protocol">最佳</span>':Number(row.improved)===1?"提升":"—"}</td></tr>`).join("");
+  }
+  function renderFourHistory(history,bestEpoch) {
+    $("fourHistoryCount").textContent=`${history.length} 个 epoch${bestEpoch?` · 最佳 ${bestEpoch}`:""}`;
+    const key=history.map(row=>`${row.epoch}:${row.train_loss}:${row.val_roc_auc}`).join("|");
+    if(key===fourApp.lastChartKey)return;fourApp.lastChartKey=key;
+    drawLineChart($("fourLossChart"),history.map(row=>row.train_loss===null?NaN:Number(row.train_loss)),"#087f78",false);
+    drawLineChart($("fourAucChart"),history.map(row=>row.val_roc_auc===null?NaN:Number(row.val_roc_auc)),"#328e67",true);
+  }
+  function renderFourFinalReport(report) {
+    const thresholds=report?.thresholds||{},validation=report?.validation_metrics||{},testing=report?.test_metrics||{};
+    const modes=["sensitive","moderate","certain"],names={sensitive:"Sensitive",moderate:"Moderate",certain:"Certain"};
+    if(!Object.keys(thresholds).length){$("fourThresholdTable").innerHTML='<tr><td colspan="13" class="empty-state">完成训练及最终评估后显示。</td></tr>';}
+    else $("fourThresholdTable").innerHTML=modes.map(mode=>{
+      const t=thresholds[mode]||{},v=validation[mode]||{},m=testing[mode]||{};
+      return `<tr><td>${names[mode]}</td><td>${escapeHtml(t.objective||"—")}</td><td>${fmt(t.threshold,4)}</td><td>${fmt(t.validation_score,3)}</td><td>${fmt(v.precision,3)}</td><td>${fmt(v.recall,3)}</td><td>${fmt(v.f1,3)}</td><td>${fmt(v.roc_auc,3)}</td><td>${m.n??"—"}</td><td>${fmt(m.precision,3)}</td><td>${fmt(m.recall,3)}</td><td>${fmt(m.f1,3)}</td><td>${fmt(m.roc_auc,3)}</td></tr>`;
+    }).join("");
+    const byDataset=report?.test_metrics_by_dataset||{},extraByDataset=report?.extra_test_metrics_by_dataset||{},rows=[];
+    for(const [dataset,data] of [...Object.entries(byDataset),...Object.entries(extraByDataset).map(([name,value])=>[`${name}（独立额外测试）`,value])]) {
+      if(data?.ground_truth_available===false||data?.conditional_if_all_nonfight){
+        for(const mode of modes){const conditional=data.conditional_if_all_nonfight?.[mode]||{};rows.push(`<tr><td>${escapeHtml(dataset)}</td><td>无标签</td><td>${conditional.n_unlabeled??data.unlabeled_video_count??"—"}</td><td>${names[mode]}</td><td>${conditional.predicted_positive_count??"—"} 条被判 Fight（假设全为 NonFight） · ${pct(conditional.conditional_false_positive_rate_if_all_nonfight)}</td><td colspan="4">不计算真实分类指标</td></tr>`);}
+      } else {
+        for(const mode of modes){const m=data?.[mode]||{};rows.push(`<tr><td>${escapeHtml(dataset)}</td><td>有标签</td><td>${m.n??"—"}</td><td>${names[mode]}</td><td>${m.tp??"—"}/${m.tn??"—"}/${m.fp??"—"}/${m.fn??"—"}</td><td>${fmt(m.precision,3)}</td><td>${fmt(m.recall,3)}</td><td>${fmt(m.f1,3)}</td><td>${fmt(m.roc_auc,3)}</td></tr>`);}
+      }
+    }
+    $("fourDatasetTestTable").innerHTML=rows.length?rows.join(""):'<tr><td colspan="9" class="empty-state">完成最终评估后显示常规 test split 及独立 GuardAId 额外测试结果。</td></tr>';
+    const extra=report?.extra_test_summary;
+    $("fourTestNote").textContent=report?.best_epoch?`最佳 epoch ${report.best_epoch} · 验证 AUC ${fmt(report.best_validation_roc_auc,4)} · 常规测试视频 ${report.test_video_count??"—"} 条 · 测试窗口 ${report.test_window_count??"—"} 个。阈值由原有数据集、UCF 与 AIRTLab 的合并 validation split 选择。${extra?` GuardAId 另作独立额外测试：${extra.video_count} 段、${extra.window_count} 个窗口。`:""}`:"GuardAId 没有真实标签，因此只报告预测数和假设全为 NonFight 时的条件性误报率。";
+  }
+  function renderFourStatus(status) {
+    const previous=fourApp.status?.status;fourApp.status=status;
+    const s=status.status||"idle",labels={idle:"空闲",starting:"正在启动",running:"运行中",pause_requested:"待安全暂停",stopping:"正在停止",paused:"已暂停",stopped:"已停止",resumable:"可恢复",completed:"已完成",failed:"运行失败",incomplete:"尚未完成"};
+    const active=["starting","running","pause_requested","stopping"].includes(s),p=Math.round(100*(status.stage_progress||0));
+    $("fourStatusText").textContent=labels[s]||s;$("fourStatusPill").textContent=labels[s]||s;
+    $("fourStatusPill").className=`status-pill ${active?"running":s==="completed"?"completed":["failed","stopped"].includes(s)?s:""}`;
+    $("fourStatusDot").className=`dot ${active?"good":["failed","stopped"].includes(s)?"bad":s==="completed"?"good":""}`;
+    $("fourStageText").textContent=status.stage||"等待启动训练";$("fourProgressPercent").textContent=`${p}%`;$("fourProgressFill").style.width=`${p}%`;
+    $("fourEpochText").textContent=status.total_epochs?`Epoch ${status.current_epoch||0} / ${status.total_epochs} · 已完成 ${status.completed_epochs||0} 轮`:"Epoch — / —";
+    $("fourElapsedText").textContent=status.elapsed_seconds===null||status.elapsed_seconds===undefined?"已用时间 —":`已用 ${duration(status.elapsed_seconds)}`;
+    $("fourEtaText").textContent=status.eta_seconds===null||status.eta_seconds===undefined?"预计剩余时间 —":`预计剩余 ${duration(status.eta_seconds)}`;
+    const history=status.history||[],latest=status.latest_epoch||{};
+    $("fourMetricLoss").textContent=fmt(latest.train_loss,4);$("fourMetricAuc").textContent=fmt(latest.val_roc_auc,4);
+    const best=status.final_report?.best_validation_roc_auc??Math.max(-Infinity,...history.map(row=>Number(row.val_roc_auc)).filter(Number.isFinite));
+    $("fourMetricBest").textContent=Number.isFinite(best)?fmt(best,4):"—";
+    const bestEpoch=status.final_report?.best_epoch??history.reduce((bestRow,row)=>Number(row.val_roc_auc)>Number(bestRow?.val_roc_auc??-Infinity)?row:bestRow,null)?.epoch;
+    $("fourBestEpoch").textContent=bestEpoch?`最佳 epoch ${bestEpoch}`:"最佳 epoch —";
+    $("fourMetricSamples").textContent=status.manifest_count?Number(status.sample_total||0).toLocaleString():"—";
+    $("fourMetricAugmented").textContent=status.manifest_count?Number(status.short_tail_sample_total||0).toLocaleString():"—";
+    $("fourMetricExcluded").textContent=status.manifest_count?Number(status.excluded_total||0).toLocaleString():"—";
+    $("fourPauseButton").disabled=!active||s==="pause_requested"||s==="stopping";$("fourCancelPauseButton").hidden=s!=="pause_requested";$("fourStopButton").disabled=!active;
+    $("fourResumeRun").disabled=active;$("fourStartButton").disabled=active||!fourApp.summary?.ready||!app.health?.model_ready;
+    if(status.last_checkpoint){$("fourCheckpointBox").classList.add("show");$("fourCheckpointPath").textContent=status.last_checkpoint;}
+    if(status.run_dir)$("fourRunPathLabel").textContent=`运行目录：${status.run_dir}`;
+    renderFourHistory(history,bestEpoch);renderFourEpochTable(history,bestEpoch);renderFourFinalReport(status.final_report||{});
+    const log=status.log_text||status.console?.join("\n")||"";
+    if(log!==fourApp.lastLog){const el=$("fourConsole"),nearBottom=el.scrollHeight-el.scrollTop-el.clientHeight<70;el.textContent=log||"等待控制台输出。";el.classList.toggle("empty",!log);if(nearBottom)el.scrollTop=el.scrollHeight;fourApp.lastLog=log;}
+    if(s==="failed"&&status.return_code!==null)showBanner("fourBanner",`四秒窗口训练进程已结束（退出代码 ${status.return_code}）。请查看日志末尾。`,"error");
+    if(s==="paused")showBanner("fourBanner","训练已在完整 epoch 边界安全暂停；可以从此 checkpoint 恢复。","info");
+    if(s==="completed"){showBanner("fourBanner","训练、验证集阈值选择、常规 test 与 GuardAId 独立额外测试均已完成，结果已保存在本方案运行目录。","info");if(previous!==s){fourApp.selectedRunsRoot="";loadFourRuns(true);}}
+    if(s==="stopped"&&previous!==s){fourApp.selectedRunsRoot="";loadFourRuns(true);}
+    updateFourControls();
+  }
+  async function pollFourStatus() {
+    if(fourApp.polling)return;fourApp.polling=true;
+    try {const root=$("fourOutputRoot").value.trim();const params=new URLSearchParams();if(root)params.set("output_root",root);if($("fourHistoryRun").value)params.set("run_dir",$("fourHistoryRun").value);const query=params.toString()?`?${params.toString()}`:"";const status=await api(`/api/four/status${query}`);renderFourStatus(status);await loadFourRuns(false);}
+    catch(_){ /* the main 1-second page remains available when the four API is not ready */ }
+    finally {fourApp.polling=false;}
+  }
+  window.addEventListener("resize",()=>{fourApp.lastChartKey="";if(fourApp.status)renderFourHistory(fourApp.status.history||[],fourApp.status.final_report?.best_epoch);});
+
+  function collectTrainingConfig() {
+    return {
+      dataset_root:$("datasetRoot").value.trim(), output_root:$("outputRoot").value.trim(), cache_dir:$("cacheDir").value.trim(),
+      resume_checkpoint:$("resumeRun").value, epochs:$("epochs").value, patience:$("patience").value, min_delta:$("minDelta").value,
+      backbone_lr:$("backboneLr").value, head_lr:$("headLr").value, weight_decay:$("weightDecay").value,
+      grad_accum:$("gradAccum").value, window_batch_size:$("windowBatchSize").value, seed:$("seed").value,
+      device:$("device").value, amp:$("amp").checked, allow_cpu:$("allowCpu").checked
+    };
+  }
+  async function postJson(path, payload={}) { return api(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); }
+  $("startButton").addEventListener("click",async()=>{
+    const button=$("startButton"); button.disabled=true; hideBanner("trainBanner");
+    try {
+      const result=await postJson("/api/training/start",collectTrainingConfig());
+      showBanner("trainBanner",result.resuming?"训练已恢复，将从下一个完整 epoch 继续。":"训练已启动。正在检查数据并准备训练。","info");
+      $("runPathLabel").textContent=`运行目录：${result.run_dir}`;
+      app.lastRunsLoad=0;
+    } catch(err) { showBanner("trainBanner",err.message,"error"); }
+    finally { button.disabled=false; await pollStatus(); }
+  });
+  $("pauseButton").addEventListener("click",async()=>{try{const r=await postJson("/api/training/pause");showBanner("trainBanner",r.message,"info");await pollStatus();}catch(e){showBanner("trainBanner",e.message,"error");}});
+  $("cancelPauseButton").addEventListener("click",async()=>{try{const r=await postJson("/api/training/cancel-pause");showBanner("trainBanner",r.message,"info");await pollStatus();}catch(e){showBanner("trainBanner",e.message,"error");}});
+  $("stopButton").addEventListener("click",async()=>{
+    if(!window.confirm("立即停止会中断当前 epoch；只保留最近一个已完成 epoch 的 checkpoint。确定停止吗？")) return;
+    try{const r=await postJson("/api/training/stop");showBanner("trainBanner",r.message,"warn");await pollStatus();}catch(e){showBanner("trainBanner",e.message,"error");}
+  });
+  $("copyRunButton").addEventListener("click",async()=>{
+    const path=app.status?.run_dir; if(!path) return;
+    try{await navigator.clipboard.writeText(path);$("copyRunButton").textContent="已复制";setTimeout(()=>$("copyRunButton").textContent="复制路径",1400);}catch(_){showBanner("trainBanner",`运行目录：${path}`,"info");}
+  });
+
+  function renderStatus(status) {
+    const previousStatus=app.status?.status;
+    app.status=status;
+    const s=status.status||"idle";
+    const labels={idle:"空闲",starting:"正在启动",running:"运行中",pause_requested:"待安全暂停",stopping:"正在停止",paused:"已暂停",stopped:"已停止",completed:"已完成",failed:"运行失败"};
+    $("trainStatusText").textContent=labels[s]||"准备中";
+    $("trainStatusPill").textContent=labels[s]||s;
+    $("trainStatusPill").className=`status-pill ${["running","pause_requested"].includes(s)?"running":["completed"].includes(s)?"completed":["failed","stopped"].includes(s)?s:""}`;
+    $("trainStatusDot").className=`dot ${["running","pause_requested"].includes(s)?"good":["failed","stopped"].includes(s)?"bad":s==="completed"?"good":""}`;
+    const p=Math.round(100*(status.stage_progress||0));
+    $("stageText").textContent=status.stage||"等待启动训练"; $("progressPercent").textContent=`${p}%`; $("progressFill").style.width=`${p}%`;
+    $("epochText").textContent=status.total_epochs?`Epoch ${status.current_epoch||0} / ${status.total_epochs} · 已完成 ${status.completed_epochs||0} 轮`:"Epoch — / —";
+    $("etaText").textContent=status.eta_seconds!==null&&status.eta_seconds!==undefined&&Number.isFinite(Number(status.eta_seconds))?`预计本阶段剩余 ${duration(status.eta_seconds)}`:"预计剩余时间 —";
+    const latest=status.latest_epoch||{}; $("metricLoss").textContent=fmt(latest.train_loss,4); $("metricAuc").textContent=fmt(latest.val_roc_auc,4); $("metricF1").textContent=fmt(latest.val_f1_at_0_5,4);
+    const best=status.final_report?.best_validation_roc_auc ?? Math.max(-Infinity,...(status.history||[]).map(row=>Number(row.val_roc_auc)).filter(Number.isFinite));
+    $("metricBest").textContent=Number.isFinite(best)?fmt(best,4):"—";
+    const bestEpoch=status.final_report?.best_epoch ?? ((status.history||[]).reduce((bestRow,row)=>Number(row.val_roc_auc)>Number(bestRow?.val_roc_auc??-Infinity)?row:bestRow,null)?.epoch);
+    $("bestEpochDetail").textContent=bestEpoch?`最佳 epoch ${bestEpoch}`:"最佳 epoch —";
+    $("metricSamples").textContent=status.manifest_count?Number(status.sample_total||0).toLocaleString():"—";
+    $("metricExcluded").textContent=status.manifest_count?Number(status.excluded_total||0).toLocaleString():"—";
+    const active=["starting","running","pause_requested","stopping"].includes(s);
+    $("pauseButton").disabled=!active || s==="pause_requested" || s==="stopping";
+    $("cancelPauseButton").hidden=s!=="pause_requested";
+    $("stopButton").disabled=!active;
+    $("startButton").disabled=active;
+    if(status.last_checkpoint) { $("resumeBox").classList.add("show"); $("checkpointPath").textContent=status.last_checkpoint; }
+    if(status.run_dir) $("runPathLabel").textContent=`运行目录：${status.run_dir}`;
+    renderHistory(status.history||[]); renderEpochTable(status.history||[],bestEpoch); renderValidationTable(status.validation_by_dataset||[]); renderFinalReport(status.final_report||{});
+    const log=status.log_text||"";
+    if(log!==app.lastLog) { const el=$("consoleLog"); const nearBottom=el.scrollHeight-el.scrollTop-el.clientHeight<70; el.textContent=log||"等待控制台输出。"; el.classList.toggle("empty",!log); if(nearBottom) el.scrollTop=el.scrollHeight; app.lastLog=log; }
+    if(s==="failed" && status.return_code!==null) showBanner("trainBanner",`训练进程已结束（退出代码 ${status.return_code}）。请查看控制台日志末尾了解原因。`,`error`);
+    if(s==="paused") { showBanner("trainBanner","训练已在 epoch 边界安全暂停。选择“继续训练”可从此 checkpoint 恢复。","info"); if(previousStatus!==s)app.lastRunsLoad=0; }
+    if(s==="completed") { showBanner("trainBanner","训练、验证阈值校准与最终测试均已完成。模型和报告已保存到运行目录。","info"); if(previousStatus!==s)app.lastRunsLoad=0; }
+    if(s==="stopped"&&previousStatus!==s)app.lastRunsLoad=0;
+  }
+  function duration(seconds) { const n=Math.max(0,Math.round(Number(seconds)||0)); if(n<60)return `${n} 秒`;const m=Math.floor(n/60),s=n%60; if(m<60)return `${m} 分 ${s} 秒`;return `${Math.floor(m/60)} 小时 ${m%60} 分`; }
+  async function pollStatus() { if(app.polling)return;app.polling=true;try { const status=await api("/api/status"); renderStatus(status); await loadRuns(false); } catch(err) { /* transient refresh error */ } finally { app.polling=false; } }
+  function renderHistory(history) {
+    $("historyCount").textContent=`${history.length} 个 epoch`;
+    const key=history.map(row=>`${row.epoch}:${row.train_loss}:${row.val_roc_auc}`).join("|");
+    if(key===app.lastChartKey)return; app.lastChartKey=key;
+    drawLineChart($("lossChart"),history.map(row=>Number(row.train_loss)),"#087f78",false);
+    drawLineChart($("aucChart"),history.map(row=>Number(row.val_roc_auc)),"#328e67",true);
+  }
+  function drawLineChart(canvas, raw, color, clampAuc) {
+    const values=raw.filter(Number.isFinite); const rect=canvas.getBoundingClientRect(); const scale=window.devicePixelRatio||1;
+    const width=Math.max(260,rect.width),height=112; canvas.width=Math.floor(width*scale); canvas.height=Math.floor(height*scale);
+    const ctx=canvas.getContext("2d"); ctx.scale(scale,scale); ctx.clearRect(0,0,width,height);
+    const pad={l:31,r:8,t:9,b:19},plotW=width-pad.l-pad.r,plotH=height-pad.t-pad.b;
+    let min,max;
+    if(clampAuc){min=0;max=1;} else if(values.length){min=Math.min(...values);max=Math.max(...values);const span=max-min||Math.max(.08,Math.abs(max)*.1);min=Math.max(0,min-span*.17);max=max+span*.17;} else {min=0;max=1;}
+    ctx.font="9px system-ui"; ctx.lineWidth=1; ctx.strokeStyle="#eaf0ed"; ctx.fillStyle="#8c9a98";
+    for(let i=0;i<3;i++){const y=pad.t+plotH*i/2;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(width-pad.r,y);ctx.stroke();const label=max-(max-min)*i/2;ctx.fillText(label.toFixed(clampAuc?1:2),2,y+3);}
+    if(values.length===0){ctx.fillStyle="#91a09e";ctx.fillText("训练后显示曲线",pad.l+10,height/2);return;}
+    ctx.strokeStyle=color;ctx.lineWidth=2;ctx.lineJoin="round";ctx.lineCap="round";ctx.beginPath();
+    values.forEach((value,index)=>{const x=pad.l+(values.length===1?plotW/2:plotW*index/(values.length-1));const y=pad.t+plotH*(max-value)/(max-min||1);if(index===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();
+    values.forEach((value,index)=>{const x=pad.l+(values.length===1?plotW/2:plotW*index/(values.length-1));const y=pad.t+plotH*(max-value)/(max-min||1);ctx.beginPath();ctx.fillStyle="#fff";ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=1.7;ctx.stroke();});
+    ctx.fillStyle="#8c9a98";ctx.fillText("1",pad.l,height-3);ctx.fillText(String(values.length),Math.max(pad.l,width-pad.r-7),height-3);
+  }
+  window.addEventListener("resize",()=>{app.lastChartKey="";if(app.status)renderHistory(app.status.history||[]);});
+  function renderValidationTable(rows) {
+    const body=$("validationTable");
+    if(!rows.length){body.innerHTML='<tr><td colspan="6" class="empty-state">完成第一轮验证后显示分项结果。</td></tr>';return;}
+    body.innerHTML=rows.map(row=>`<tr><td>${escapeHtml(row.dataset)}</td><td>${row.n??"—"}</td><td>${fmt(row.roc_auc,3)}</td><td>${fmt(row.f1,3)}</td><td>${fmt(row.precision,3)}</td><td>${fmt(row.recall,3)}</td></tr>`).join("");
+  }
+  function renderEpochTable(history,bestEpoch) {
+    const body=$("epochTable");
+    if(!history.length){body.innerHTML='<tr><td colspan="10" class="empty-state">完成第一个 epoch 后显示记录。</td></tr>';return;}
+    body.innerHTML=[...history].reverse().map(row=>{
+      const isBest=Number(row.epoch)===Number(bestEpoch);
+      return `<tr><td>${row.epoch??"—"}</td><td>${fmt(row.train_loss,4)}</td><td>${fmt(row.train_roc_auc,3)}</td><td>${fmt(row.val_roc_auc,4)}</td><td>${fmt(row.val_accuracy_at_0_5,3)}</td><td>${fmt(row.val_f1_at_0_5,3)}</td><td>${fmt(row.learning_rate_backbone,2)}</td><td>${fmt(row.learning_rate_head,2)}</td><td>${fmt(row.seconds,1)} s</td><td>${isBest?'<span class="tag protocol">最佳</span>':Number(row.improved)===1?"提升":"—"}</td></tr>`;
+    }).join("");
+  }
+  function renderFinalReport(report) {
+    const card=$("finalResultsCard"); if(!report || !report.test_metrics){card.hidden=true;return;} card.hidden=false;
+    const modeNames={sensitive:"Sensitive",moderate:"Moderate",certain:"Certain"}; const metrics=report.test_metrics,thresholds=report.thresholds||{};
+    $("testTable").innerHTML=["sensitive","moderate","certain"].map(mode=>{
+      const m=metrics[mode]||{},t=thresholds[mode]||{};
+      return `<tr><td>${modeNames[mode]}</td><td>${fmt(t.threshold,4)}</td><td>${fmt(t.validation_score,3)} ${escapeHtml(t.objective||"")}</td><td>${m.n??"—"}</td><td>${m.tp??"—"}/${m.tn??"—"}/${m.fp??"—"}/${m.fn??"—"}</td><td>${fmt(m.accuracy,3)}</td><td>${fmt(m.precision,3)}</td><td>${fmt(m.recall,3)}</td><td>${fmt(m.specificity,3)}</td><td>${fmt(m.balanced_accuracy,3)}</td><td>${fmt(m.f0_5,3)}</td><td>${fmt(m.f1,3)}</td><td>${fmt(m.f2,3)}</td><td>${fmt(m.roc_auc,3)}</td><td>${fmt(m.average_precision,3)}</td></tr>`;
+    }).join("");
+    $("testSummary").textContent=`最佳 Epoch ${report.best_epoch??"—"} · 验证 ROC-AUC ${fmt(report.best_validation_roc_auc,4)} · 测试视频 ${report.test_video_count??"—"} 条 · 测试窗口 ${report.test_window_count??"—"} 个 · 推理 ${fmt(report.test_seconds_per_video,3)} 秒/视频`;
+    const mode=$("datasetTestMode").value||"moderate";
+    const byDataset=report.test_metrics_by_dataset||{};
+    const rows=Object.entries(byDataset).sort(([a],[b])=>a.localeCompare(b)).map(([dataset,byMode])=>{
+      const m=byMode?.[mode]||{};
+      return `<tr><td>${escapeHtml(dataset)}</td><td>${m.n??"—"}</td><td>${m.tp??"—"}/${m.tn??"—"}/${m.fp??"—"}/${m.fn??"—"}</td><td>${fmt(m.accuracy,3)}</td><td>${fmt(m.precision,3)}</td><td>${fmt(m.recall,3)}</td><td>${fmt(m.specificity,3)}</td><td>${fmt(m.f1,3)}</td><td>${fmt(m.roc_auc,3)}</td></tr>`;
+    });
+    $("datasetTestTable").innerHTML=rows.length?rows.join(""):'<tr><td colspan="9" class="empty-state">没有逐数据集测试数据。</td></tr>';
+  }
+  $("datasetTestMode").addEventListener("change",()=>{if(app.status?.final_report)renderFinalReport(app.status.final_report);});
+
+  const fileInput=$("videoFile"),drop=$("dropZone"),videoPreview=$("videoPreview"),videoStage=$("videoStage"),videoCanvas=$("videoCanvas"),liveScoreOverlay=$("liveScoreOverlay");
+  const videoAudioButton=$("videoAudioButton");
+  let alertAudioContext=null,alertLatched=false;
+  function setAudioStatus(message,warning=false) {
+    $("audioStatus").textContent=message;
+    $("audioStatus").classList.toggle("warning",warning);
+  }
+  async function unlockAlertAudio() {
+    const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+    if(!AudioContextClass)throw new Error("此浏览器不支持提示音");
+    if(!alertAudioContext)alertAudioContext=new AudioContextClass();
+    if(alertAudioContext.state==="suspended")await alertAudioContext.resume();
+  }
+  function playAlertBeep() {
+    if(!alertAudioContext||alertAudioContext.state!=="running")return;
+    const now=alertAudioContext.currentTime,oscillator=alertAudioContext.createOscillator(),gain=alertAudioContext.createGain();
+    oscillator.type="sine";oscillator.frequency.value=880;
+    gain.gain.setValueAtTime(0.0001,now);
+    gain.gain.exponentialRampToValueAtTime(0.5,now+0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001,now+0.22);
+    oscillator.connect(gain);gain.connect(alertAudioContext.destination);
+    oscillator.onended=()=>{oscillator.disconnect();gain.disconnect();};
+    oscillator.start(now);oscillator.stop(now+0.24);
+  }
+  videoStage.addEventListener("pointerdown",()=>unlockAlertAudio().catch(()=>{}),{capture:true});
+  videoStage.addEventListener("keydown",()=>unlockAlertAudio().catch(()=>{}),{capture:true});
+  $("alertBeepTest").addEventListener("click",async()=>{
+    try{await unlockAlertAudio();playAlertBeep();}
+    catch(_){setAudioStatus("浏览器阻止了音频输出，请允许此页面播放声音。",true);}
+  });
+  $("alertBeepEnabled").addEventListener("change",()=>unlockAlertAudio().catch(()=>{}));
+  async function releaseBrowserPreview(jobId) {
+    if(jobId)await api("/api/media/release",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({job_id:jobId})}).catch(()=>{});
+  }
+  async function prepareBrowserPreview(file,selectionId) {
+    setAudioStatus("正在准备兼容预览与音轨…");
+    let jobId=null;
+    try {
+      const created=await api("/api/media/prepare?filename="+encodeURIComponent(file.name),{method:"POST",headers:{"Content-Type":"application/octet-stream"},body:file});
+      jobId=created.job_id;
+      if(selectionId!==app.videoSelectionId){await releaseBrowserPreview(jobId);return;}
+      app.mediaJob=jobId;
+      while(selectionId===app.videoSelectionId){
+        const state=await api("/api/media/status?id="+encodeURIComponent(jobId));
+        if(state.status==="failed")throw new Error(state.error||"兼容预览准备失败");
+        if(state.status==="completed"){
+          const position=videoPreview.currentTime,wasPlaying=!videoPreview.paused&&!videoPreview.ended;
+          videoPreview.pause();
+          videoPreview.addEventListener("loadedmetadata",()=>{
+            if(selectionId!==app.videoSelectionId)return;
+            videoPreview.currentTime=Math.min(position,Math.max(0,videoPreview.duration-0.01));
+            if(wasPlaying)videoPreview.play().catch(()=>{});
+          },{once:true});
+          videoPreview.src=state.url;videoPreview.load();
+          setAudioStatus(state.has_audio?"兼容音轨已就绪 · 可调节音量或静音":"此视频没有音轨；视频仍可分析，警示提示音可正常使用。",!state.has_audio);
+          return;
+        }
+        await new Promise(resolve=>setTimeout(resolve,700));
+      }
+      await releaseBrowserPreview(jobId);
+    } catch(err) {
+      if(selectionId===app.videoSelectionId)setAudioStatus("兼容音轨未就绪："+err.message+"。当前保留原文件预览。",true);
+      await releaseBrowserPreview(jobId);
+    }
+  }
+  window.addEventListener("pagehide",()=>{
+    if(app.mediaJob)navigator.sendBeacon("/api/media/release",new Blob([JSON.stringify({job_id:app.mediaJob})],{type:"application/json"}));
+  });
+  function updateAudioControl() {
+    const silent=videoPreview.muted||videoPreview.volume===0;
+    videoAudioButton.innerHTML=silent
+      ? '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m16 9 5 6m0-6-5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 0 1 0 7m2-9a8 8 0 0 1 0 11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+    videoAudioButton.setAttribute("aria-label",silent?"打开视频声音":"静音视频");
+    videoAudioButton.title=silent?"打开声音":"静音视频";
+    videoAudioButton.setAttribute("aria-pressed",String(silent));
+    $("videoVolume").value=String(Math.round(videoPreview.volume*100));
+    $("videoVolumeValue").textContent=silent?"静音":Math.round(videoPreview.volume*100)+"%";
+  }
+  videoPreview.volume=0.8;
+  videoPreview.muted=false;
+  videoAudioButton.addEventListener("click",()=>{
+    const silent=videoPreview.muted||videoPreview.volume===0;
+    if(silent){if(videoPreview.volume===0)videoPreview.volume=0.8;videoPreview.muted=false;}
+    else videoPreview.muted=true;
+    updateAudioControl();
+  });
+  videoPreview.addEventListener("volumechange",updateAudioControl);
+  $("videoVolume").addEventListener("input",()=>{
+    videoPreview.volume=Number($("videoVolume").value)/100;
+    videoPreview.muted=videoPreview.volume===0;
+    updateAudioControl();
+  });
+  videoPreview.addEventListener("error",()=>{
+    if(app.selectedVideo)setAudioStatus("浏览器无法解码当前预览。请等待兼容音轨准备完成；若仍失败，请检查下方提示。",true);
+  });
+  updateAudioControl();
+  fileInput.addEventListener("change",()=>selectVideo(fileInput.files?.[0]||null));
+  function resetLiveScore() {
+    app.inferenceResult=null;
+    alertLatched=false;
+    liveScoreOverlay.hidden=true;
+    liveScoreOverlay.classList.remove("alert");
+    $("liveScoreState").textContent="等待分析";
+    $("liveScoreNumber").textContent="—";
+    $("liveScoreWindow").textContent="当前窗口 —";
+    $("liveScoreThreshold").textContent="阈值 —";
+    $("liveScoreMode").textContent="—";
+  }
+  function updateLiveScore(allowBeep=false) {
+    const result=app.inferenceResult,windows=result?.windows||[];
+    if(!result||!windows.length){liveScoreOverlay.hidden=true;return;}
+    const time=Number(videoPreview.currentTime)||0;
+    let selected=null,held=false;
+    for(const item of windows){
+      const start=Number(item.start_seconds),end=Number(item.end_seconds);
+      if(time+1e-6>=start&&time<end-1e-7&&(!selected||start>=Number(selected.start_seconds)))selected=item;
+    }
+    if(!selected&&time>=Number(windows[windows.length-1].end_seconds)){
+      selected=windows[windows.length-1];held=true;
+    }
+    if(!selected){
+      selected=windows.reduce((previous,item)=>Number(item.end_seconds)<=time+1e-6?item:previous,null);
+      held=Boolean(selected);
+    }
+    const modeNames={sensitive:"Sensitive",moderate:"Moderate",certain:"Certain"};
+    liveScoreOverlay.hidden=false;
+    if(!selected){
+      liveScoreOverlay.classList.remove("alert");
+      $("liveScoreState").textContent="等待首个完整窗口";
+      $("liveScoreNumber").textContent="—";
+      $("liveScoreWindow").textContent=`模型至少需要 ${fmt(result.window_seconds,0)} 秒画面`;
+      $("liveScoreThreshold").textContent=`阈值 ${pct(result.threshold)}`;
+      $("liveScoreMode").textContent=modeNames[result.mode]||String(result.mode||"");
+      return;
+    }
+    const probability=Number(selected.probability_fight),threshold=Number(result.threshold);
+    const alert=Number.isFinite(probability)&&Number.isFinite(threshold)&&probability>=threshold;
+    if(allowBeep&&!videoPreview.paused&&!videoPreview.seeking){
+      if(alert&&!alertLatched&&$("alertBeepEnabled").checked)playAlertBeep();
+      alertLatched=alert;
+    }
+    liveScoreOverlay.classList.toggle("alert",alert);
+    $("liveScoreState").textContent=alert?"ALERT · 达到阈值":held?"当前时间超出窗口":"当前窗口 Fight 概率";
+    $("liveScoreNumber").textContent=pct(probability);
+    $("liveScoreWindow").textContent=`窗口 ${fmt(selected.start_seconds,2)}–${fmt(selected.end_seconds,2)} s${held?" · 保持末窗分数":""}`;
+    $("liveScoreThreshold").textContent=`阈值 ${pct(result.threshold)}`;
+    $("liveScoreMode").textContent=`${modeNames[result.mode]||String(result.mode||"")} · 验证集阈值`;
+  }
+  videoPreview.addEventListener("timeupdate",()=>updateLiveScore(true));
+  videoPreview.addEventListener("play",()=>{unlockAlertAudio().then(()=>updateLiveScore(true)).catch(()=>{});});
+  videoPreview.addEventListener("seeked",()=>{updateLiveScore();alertLatched=liveScoreOverlay.classList.contains("alert");});
+  ["loadedmetadata","durationchange"].forEach(name=>videoPreview.addEventListener(name,()=>{fitFullscreenVideo();updateLiveScore();}));
+  videoPreview.addEventListener("ended",()=>{updateLiveScore();alertLatched=false;});
+  function setFullscreenPresentation() {
+    const active=document.fullscreenElement===videoStage||videoStage.classList.contains("fullscreen-fallback");
+    if(active)fitFullscreenVideo();
+    else{videoCanvas.style.width="";videoCanvas.style.height="";}
+    const label=active?"退出全屏":"全屏";
+    $("videoFullscreenLabel").textContent=label;
+    $("videoFullscreenButton").setAttribute("aria-label",active?"退出全屏播放":"全屏播放");
+    $("videoFullscreenButton").title=active?"退出全屏播放":"全屏播放";
+    document.body.classList.toggle("video-fullscreen-fallback",videoStage.classList.contains("fullscreen-fallback"));
+  }
+  function fitFullscreenVideo() {
+    if(!(document.fullscreenElement===videoStage||videoStage.classList.contains("fullscreen-fallback")))return;
+    const width=videoPreview.videoWidth,height=videoPreview.videoHeight;
+    if(!width||!height)return;
+    const scale=Math.min(window.innerWidth/width,window.innerHeight/height);
+    videoCanvas.style.width=String(Math.max(1,Math.round(width*scale)))+"px";
+    videoCanvas.style.height=String(Math.max(1,Math.round(height*scale)))+"px";
+  }
+  async function toggleVideoFullscreen() {
+    if(document.fullscreenElement===videoStage){await document.exitFullscreen();return;}
+    if(videoStage.classList.contains("fullscreen-fallback")){videoStage.classList.remove("fullscreen-fallback");setFullscreenPresentation();return;}
+    if(videoStage.requestFullscreen){
+      try{await videoStage.requestFullscreen({navigationUI:"hide"});return;}
+      catch(_){try{await videoStage.requestFullscreen();return;}catch(__){}}
+    }
+    videoStage.classList.add("fullscreen-fallback");setFullscreenPresentation();
+  }
+  $("videoFullscreenButton").addEventListener("click",()=>toggleVideoFullscreen().catch(()=>{}));
+  document.addEventListener("fullscreenchange",setFullscreenPresentation);
+  window.addEventListener("resize",()=>{if(document.fullscreenElement===videoStage||videoStage.classList.contains("fullscreen-fallback"))fitFullscreenVideo();});
+  document.addEventListener("keydown",event=>{if(event.key==="Escape"&&videoStage.classList.contains("fullscreen-fallback")){videoStage.classList.remove("fullscreen-fallback");setFullscreenPresentation();}});
+  videoPreview.addEventListener("dblclick",event=>{event.preventDefault();toggleVideoFullscreen().catch(()=>{});});
+  function selectVideo(file) {
+    if(file){
+      const ext=file.name.split(".").pop().toLowerCase();
+      if(!["mp4","avi"].includes(ext)){fileInput.value="";showBanner("inferBanner","格式不支持。请选择 MP4 或 AVI 视频。","error");return;}
+      if(file.size>300*1024*1024){fileInput.value="";showBanner("inferBanner","文件超过 300 MB 限制，请选择较小的视频。","error");return;}
+    }
+    app.videoSelectionId++;
+    app.selectedVideo=file;
+    const previousMediaJob=app.mediaJob;app.mediaJob=null;
+    releaseBrowserPreview(previousMediaJob);
+    resetLiveScore();
+    if(app.uploadUrl)URL.revokeObjectURL(app.uploadUrl);app.uploadUrl=null;
+    if(!file){
+      setAudioStatus("选择视频后会自动准备兼容音轨。");
+      $("fileName").textContent="尚未选择文件";videoPreview.pause();videoPreview.removeAttribute("src");videoPreview.load();videoStage.classList.remove("show");
+      $("resultModelTag").textContent="等待视频分析";
+      $("resultBody").innerHTML='<div class="result-placeholder"><div><strong>结果会显示在这里</strong><span>选择一个已完成的模型和视频后开始分析。</span></div></div>';
+      return;
+    }
+    hideBanner("inferBanner");$("fileName").textContent=`${file.name} · ${(file.size/1024/1024).toFixed(1)} MB`;
+    $("resultModelTag").textContent="等待视频分析";
+    $("resultBody").innerHTML='<div class="result-placeholder"><div><strong>视频已载入</strong><span>开始分析后，播放时会在画面上显示当前窗口概率。</span></div></div>';
+    updateAudioControl();
+    app.uploadUrl=URL.createObjectURL(file);videoPreview.src=app.uploadUrl;videoPreview.load();videoStage.classList.add("show");
+    prepareBrowserPreview(file,app.videoSelectionId);
+  }
+  ["dragenter","dragover"].forEach(name=>drop.addEventListener(name,event=>{event.preventDefault();drop.classList.add("drag");}));
+  ["dragleave","drop"].forEach(name=>drop.addEventListener(name,event=>{event.preventDefault();drop.classList.remove("drag");}));
+  drop.addEventListener("drop",event=>{const file=event.dataTransfer.files?.[0];if(file){try{const transfer=new DataTransfer();transfer.items.add(file);fileInput.files=transfer.files;}catch(_){}selectVideo(file);}});
+  $("clearVideoButton").addEventListener("click",()=>{fileInput.value="";selectVideo(null);hideBanner("inferBanner");});
+  function setInferProgress(progress,stage,detail="") {
+    $("inferProgress").classList.add("show"); const p=Math.max(0,Math.min(100,Math.round((Number(progress)||0)*100)));
+    $("inferStage").textContent=stage||"处理中";$("inferPercent").textContent=`${p}%`;$("inferProgressFill").style.width=`${p}%`;$("uploadProgressText").textContent=detail||"";
+  }
+  $("inferButton").addEventListener("click",()=>{
+    const file=app.selectedVideo;const checkpoint=$("inferRun").value;
+    if(!checkpoint){showBanner("inferBanner","请先选择一个已经完成训练、验证和测试的模型。","warn");return;}
+    if(!file){showBanner("inferBanner","请先选择 MP4 或 AVI 视频。","warn");return;}
+    app.inferenceSelectionId=app.videoSelectionId;resetLiveScore();
+    hideBanner("inferBanner");$("inferButton").disabled=true;$("resultBody").innerHTML='<div class="result-placeholder"><div><strong>正在准备推理</strong><span>上传完成后会逐窗口显示进度。</span></div></div>';
+    const form=new FormData();form.append("video",file,file.name);form.append("output_root",$("inferOutputRoot").value.trim()||$("outputRoot").value.trim());form.append("checkpoint",checkpoint);form.append("mode",$("inferMode").value);
+    const xhr=new XMLHttpRequest();xhr.open("POST","/api/inference/start");xhr.upload.onprogress=event=>{if(event.lengthComputable)setInferProgress(event.loaded/event.total*.18,"正在上传视频",`${(event.loaded/1024/1024).toFixed(1)} / ${(event.total/1024/1024).toFixed(1)} MB`);};
+    xhr.onerror=()=>{showBanner("inferBanner","无法连接本机推理服务，请确认 dashboard 仍在运行。","error");$("inferButton").disabled=false;};
+    xhr.onload=()=>{let result={};try{result=JSON.parse(xhr.responseText);}catch(_){}if(xhr.status<200||xhr.status>=300){showBanner("inferBanner",result.error||`推理请求失败（HTTP ${xhr.status}）`,"error");$("inferButton").disabled=false;return;}app.inferenceJob=result.job_id;setInferProgress(.2,"视频已接收","开始读取模型与视频帧");pollInference();};
+    setInferProgress(0,"准备上传","视频将发送至本机服务");xhr.send(form);
+  });
+  async function pollInference() {
+    if(!app.inferenceJob)return;
+    try {
+      const state=await api("/api/inference/status");if(state.job_id!==app.inferenceJob){setTimeout(pollInference,800);return;}
+      setInferProgress(state.progress||0,state.stage||"处理中",state.detail||(state.total_windows?`已处理 ${state.processed_windows||0} / ${state.total_windows} 个窗口`:""));
+      if(state.status==="completed"){if(app.inferenceSelectionId===app.videoSelectionId)renderInferenceResult(state.result);$("inferButton").disabled=false;return;}
+      if(state.status==="failed"){
+        if(app.inferenceSelectionId===app.videoSelectionId){
+          showBanner("inferBanner",state.error||"视频推理失败。","error");
+          $("resultBody").innerHTML='<div class="result-placeholder"><div><strong>本次分析未完成</strong><span>请检查格式、视频解码和服务端日志。</span></div></div>';
+        }
+        $("inferButton").disabled=false;
+        return;
+      }
+      setTimeout(pollInference,700);
+    } catch(err) { showBanner("inferBanner",err.message,"error");$("inferButton").disabled=false; }
+  }
+  function renderInferenceResult(result) {
+    if(!result)return;hideBanner("inferBanner");
+    app.inferenceResult=result;
+    const fight=result.prediction==="Fight",modeNames={sensitive:"Sensitive",moderate:"Moderate",certain:"Certain",fixed_0_5:"固定阈值 0.500",validation_best_f1:"验证集最佳 F1 阈值"};
+    $("resultModelTag").textContent=modeNames[result.mode]||result.mode;
+    const rows=(result.windows||[]).map((window,index)=>{
+      const high=Number(window.probability_fight)>=Number(result.threshold);
+      return `<tr><td>${String(index+1).padStart(2,"0")}</td><td>${fmt(window.start_seconds,2)}–${fmt(window.end_seconds,2)} s</td><td class="prob-cell"><span class="prob-track"><i class="prob-fill ${high?"high":""}" style="width:${Math.max(0,Math.min(100,Number(window.probability_fight)*100))}%"></i></span>${pct(window.probability_fight)}</td><td>${high?"达到阈值":"低于阈值"}</td></tr>`;
+    }).join("");
+    $("resultBody").innerHTML=`
+      <div class="decision-banner ${fight?"fight":""}"><div><div class="decision-label">${escapeHtml(result.filename)} · ${modeNames[result.mode]||escapeHtml(result.mode)} 判定</div><div class="decision-value">${fight?"Fight · 暴力":"NonFight · 非暴力"}</div></div><div class="score-pill"><strong>${pct(result.probability_fight)}</strong><span>视频分数 / 阈值 ${pct(result.threshold)}</span></div></div>
+      <div class="result-metrics"><div class="result-metric"><span>视频时长</span><strong>${fmt(result.duration_seconds,2)} 秒</strong></div><div class="result-metric"><span>分析窗口数</span><strong>${result.window_count} 个</strong></div><div class="result-metric"><span>分析耗时</span><strong>${fmt(result.elapsed_seconds,2)} 秒</strong></div><div class="result-metric"><span>计算设备</span><strong>${escapeHtml(result.device)}</strong></div></div>
+      <div class="chart-panel" style="margin-bottom:15px"><div class="chart-title"><span>各窗口 Fight 概率</span><span>虚线为所选模式阈值</span></div><canvas id="windowChart" aria-label="各时间窗口的暴力概率"></canvas></div>
+      <div class="section-label">窗口级结果 · ${result.window_count} 个片段</div>
+      <div class="table-scroll"><table class="window-table"><thead><tr><th>#</th><th>时间位置</th><th>Fight 概率</th><th>与阈值比较</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="table-note">${result.input_representation==="black_background_skeleton"?`本次先提取 ${result.skeleton_frames_extracted} 张骨架采样帧（${result.skeleton_frames_with_people} 张检测到人物，RTMPose 设备：${escapeHtml(result.pose_execution_provider)}），再进行 MC3-18 推理。`:result.input_representation==="native_video"?"原生视频输入，不进行骨架抽取。":""}${result.window_seconds===4?"4 秒模型：长片按 2 秒步长滑动，必要时追加末尾对齐窗口；短片按真实时长均匀采样 16 帧。":"整条视频分数取所有完整 "+fmt(result.window_seconds,0)+" 秒窗口的最大 Fight 概率；窗口按 "+fmt(result.stride_seconds,2)+" 秒步长滑动。"}</div>`;
+    drawWindowChart($("windowChart"),result.windows||[],Number(result.threshold));
+    updateLiveScore();
+    setInferProgress(1,"推理完成",`共分析 ${result.window_count} 个窗口`);
+  }
+  function drawWindowChart(canvas,windows,threshold) {
+    if(!canvas)return;const rect=canvas.getBoundingClientRect(),scale=window.devicePixelRatio||1,width=Math.max(260,rect.width),height=112;
+    canvas.width=Math.floor(width*scale);canvas.height=Math.floor(height*scale);const ctx=canvas.getContext("2d");ctx.scale(scale,scale);ctx.clearRect(0,0,width,height);
+    const pad={l:31,r:9,t:9,b:19},plotW=width-pad.l-pad.r,plotH=height-pad.t-pad.b;
+    ctx.font="9px system-ui";ctx.strokeStyle="#eaf0ed";ctx.fillStyle="#8c9a98";ctx.lineWidth=1;
+    [0,0.5,1].forEach((value,index)=>{const y=pad.t+plotH*(1-value);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(width-pad.r,y);ctx.stroke();ctx.fillText(`${Math.round(value*100)}%`,2,y+3);});
+    if(!windows.length){ctx.fillText("没有完整窗口",pad.l+10,height/2);return;}
+    const thresholdY=pad.t+plotH*(1-threshold);ctx.save();ctx.setLineDash([4,4]);ctx.strokeStyle="#c44d4e";ctx.beginPath();ctx.moveTo(pad.l,thresholdY);ctx.lineTo(width-pad.r,thresholdY);ctx.stroke();ctx.restore();
+    ctx.strokeStyle="#087f78";ctx.lineWidth=2;ctx.lineJoin="round";ctx.lineCap="round";ctx.beginPath();
+    windows.forEach((windowItem,index)=>{const x=pad.l+(windows.length===1?plotW/2:plotW*index/(windows.length-1));const y=pad.t+plotH*(1-Number(windowItem.probability_fight));if(index===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();
+    windows.forEach((windowItem,index)=>{const x=pad.l+(windows.length===1?plotW/2:plotW*index/(windows.length-1));const y=pad.t+plotH*(1-Number(windowItem.probability_fight));ctx.beginPath();ctx.fillStyle="#fff";ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#087f78";ctx.lineWidth=1.6;ctx.stroke();});
+    ctx.fillStyle="#8c9a98";ctx.fillText("1",pad.l,height-3);ctx.fillText(String(windows.length),Math.max(pad.l,width-pad.r-7),height-3);
+  }
+  $("inferRun").addEventListener("change",()=>{const run=app.runs.find(item=>item.best_model===$("inferRun").value);if(run){$("resultModelTag").textContent=run.name;updateInferenceProtocol(run);updateInferenceModes(run);}else{updateInferenceProtocol(null);updateInferenceModes(null);}});
+  $("inferMode").addEventListener("change",()=>{const mode=$("inferMode").value;$("modeHelp").textContent=airtlabModeDescriptions[mode]||modeDescriptions[mode]||"此模型使用其报告中已保存的验证集阈值。";});
+
+  loadHealth().then(()=>{
+    loadReverseDatasetSummary();
+    const query=new URLSearchParams(location.search);
+    if(query.get("page")==="inference"){
+      const root=query.get("output_root");if(root)$("inferOutputRoot").value=root;
+      switchPage("inference");
+    }else loadRuns(true);
+  });
+  pollStatus();
+  app.pollTimer=setInterval(()=>{pollStatus();pollReverseStatus();pollFourStatus();},1400);
+</script>
+</body>
+</html>

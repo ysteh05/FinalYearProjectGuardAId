@@ -1,0 +1,2504 @@
+{
+  "tables": [
+    {
+      "name": "users",
+      "purpose": "账号身份、状态、显示资料及所属个人Borderline偏好",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "firebase_uid",
+          "TEXT",
+          "NOT NULL",
+          "Firebase 官方规定 UID 为 1..128 字符；大小写敏感、唯一，不保存密码"
+        ],
+        [
+          "email_cache",
+          "TEXT",
+          "",
+          "Firebase 返回的显示缓存不等同于新建用户输入；不额外封死已有外部身份。管理员创建时仍沿用254字符 API 上限"
+        ],
+        [
+          "display_name",
+          "TEXT",
+          "",
+          "Firebase 登录会同步 provider displayName，其协议未规定80字符上限；本地创建/编辑仍在 API 限制80，DB不截断合法外部缓存"
+        ],
+        [
+          "status",
+          "TEXT",
+          "NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','active','disabled'))",
+          "保留审批、启用、停用三个状态"
+        ],
+        [
+          "borderline_enabled",
+          "INTEGER",
+          "CHECK(borderline_enabled IN (0,1))",
+          "NULL 表示尚无个人偏好，0/1 表示已经物化的有效开关"
+        ],
+        [
+          "borderline_source",
+          "TEXT",
+          "CHECK(borderline_source IN ('migration','role_default','role_bulk','individual'))",
+          "保留个人覆盖与整组覆盖来源"
+        ],
+        [
+          "borderline_updated_by_user_id",
+          "TEXT",
+          "",
+          "修改偏好的用户 ID；后台初始化时可空"
+        ],
+        [
+          "borderline_updated_at",
+          "TEXT",
+          "CHECK(borderline_updated_at IS NULL OR (length(borderline_updated_at)=27 AND borderline_updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(borderline_updated_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(borderline_updated_at,1,10),'+0 days')=substr(borderline_updated_at,1,10),0) AND CAST(substr(borderline_updated_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(borderline_updated_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(borderline_updated_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "updated_at",
+          "TEXT",
+          "NOT NULL CHECK(updated_at IS NULL OR (length(updated_at)=27 AND updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(updated_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(updated_at,1,10),'+0 days')=substr(updated_at,1,10),0) AND CAST(substr(updated_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(updated_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(updated_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(firebase_uid)",
+        "CHECK(updated_at >= created_at)",
+        "CHECK((borderline_enabled IS NULL AND borderline_source IS NULL AND borderline_updated_at IS NULL) OR (borderline_enabled IS NOT NULL AND borderline_source IS NOT NULL AND borderline_updated_at IS NOT NULL))",
+        "FOREIGN KEY (borderline_updated_by_user_id) REFERENCES users(id) ON DELETE RESTRICT",
+        "CHECK(length(firebase_uid) BETWEEN 1 AND 128)"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_users_email_lookup ON users(lower(trim(email_cache))) WHERE email_cache IS NOT NULL;"
+      ],
+      "why": "一个用户的一份偏好由同一个user_id决定；随账号存在，无独立生命周期。合并原borderline_user_settings，保留NULL=未物化、来源及独立修改时间。Firebase缓存不套用本地编辑80字符限制。",
+      "decision": "保留"
+    },
+    {
+      "name": "roles",
+      "purpose": "角色授权能力、通知敏感度及角色Borderline默认值",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "name",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(name)) > 0)",
+          "机器角色名唯一；历史 seed 名称和新的 slug 都保留"
+        ],
+        [
+          "display_name",
+          "TEXT",
+          "CHECK(length(display_name) <= 60)",
+          "新建/编辑接口要求 2..60 字符；历史行可空"
+        ],
+        [
+          "description",
+          "TEXT",
+          "CHECK(length(description) <= 200)",
+          "角色描述的当前接口上限为 200 字符"
+        ],
+        [
+          "sensitivity_mode",
+          "TEXT",
+          "NOT NULL DEFAULT 'moderate' CHECK(sensitivity_mode IN ('sensitive','moderate','certain'))",
+          "只决定普通推送资格，不作为警报可见性的授权条件"
+        ],
+        [
+          "is_system",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(is_system IN (0,1))",
+          "系统角色标记；保护删除逻辑仍在事务权限检查中"
+        ],
+        [
+          "can_manage_roles",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(can_manage_roles IN (0,1))",
+          "对应目前已有的角色管理权限"
+        ],
+        [
+          "can_manage_users",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(can_manage_users IN (0,1))",
+          "对应目前已有的用户管理权限"
+        ],
+        [
+          "can_manage_borderline_settings",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(can_manage_borderline_settings IN (0,1))",
+          "对应目前已有的 Borderline 管理权限"
+        ],
+        [
+          "borderline_default_enabled",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(borderline_default_enabled IN (0,1))",
+          "新成员默认值及整组覆盖操作的角色默认开关"
+        ],
+        [
+          "borderline_updated_by_user_id",
+          "TEXT",
+          "",
+          "默认值修改者，使用真实用户外键"
+        ],
+        [
+          "borderline_updated_at",
+          "TEXT",
+          "CHECK(borderline_updated_at IS NULL OR (length(borderline_updated_at)=27 AND borderline_updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(borderline_updated_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(borderline_updated_at,1,10),'+0 days')=substr(borderline_updated_at,1,10),0) AND CAST(substr(borderline_updated_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(borderline_updated_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(borderline_updated_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "compat_borderline_selected",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(compat_borderline_selected IN (0,1))",
+          "旧版 mobile_settings 的角色选择集合，逐角色保存，避免把活关系藏入 JSON"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "updated_at",
+          "TEXT",
+          "NOT NULL CHECK(updated_at IS NULL OR (length(updated_at)=27 AND updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(updated_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(updated_at,1,10),'+0 days')=substr(updated_at,1,10),0) AND CAST(substr(updated_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(updated_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(updated_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(name)",
+        "CHECK(updated_at >= created_at)",
+        "FOREIGN KEY (borderline_updated_by_user_id) REFERENCES users(id) ON DELETE RESTRICT"
+      ],
+      "indexes": [],
+      "why": "权限与角色默认偏好都由role_id决定。合并原borderline_role_settings；系统角色保护、授权上限由服务事务执行。compat选择标记替代单例设置中的活角色ID数组。",
+      "decision": "保留"
+    },
+    {
+      "name": "user_roles",
+      "purpose": "明确的用户↔角色分配关系",
+      "columns": [
+        [
+          "user_id",
+          "TEXT",
+          "NOT NULL",
+          "联合主键成员，所属用户"
+        ],
+        [
+          "role_id",
+          "TEXT",
+          "NOT NULL",
+          "联合主键成员，分配的角色"
+        ],
+        [
+          "assigned_by_user_id",
+          "TEXT",
+          "",
+          "系统首次初始化可空，否则记录分配者"
+        ],
+        [
+          "assigned_at",
+          "TEXT",
+          "NOT NULL CHECK(assigned_at IS NULL OR (length(assigned_at)=27 AND assigned_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(assigned_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(assigned_at,1,10),'+0 days')=substr(assigned_at,1,10),0) AND CAST(substr(assigned_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(assigned_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(assigned_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "PRIMARY KEY(user_id,role_id)",
+        "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
+        "FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (assigned_by_user_id) REFERENCES users(id) ON DELETE RESTRICT"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_user_roles_role ON user_roles(role_id,user_id);"
+      ],
+      "why": "用户与角色具有不同身份及生命周期，关系必须独立。当前UI单角色不成为数据库永久唯一限制；保留现有多角色关系能力。",
+      "decision": "保留"
+    },
+    {
+      "name": "devices",
+      "purpose": "当前设备归属、FCM注册值、启用及在线状态",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "user_id",
+          "TEXT",
+          "NOT NULL",
+          "当前设备归属；同一 token 重新登录可转移到另一用户"
+        ],
+        [
+          "installation_id",
+          "TEXT",
+          "CHECK(length(installation_id) <= 512)",
+          "沿用设备注册接口最大 512 字符"
+        ],
+        [
+          "fcm_registration_value",
+          "TEXT",
+          "NOT NULL CHECK(length(fcm_registration_value) BETWEEN 20 AND 4096)",
+          "沿用 DeviceRegistration 20..4096 范围；token 长度由供应商决定，不臆测固定长度"
+        ],
+        [
+          "platform",
+          "TEXT",
+          "NOT NULL CHECK(platform IN ('android','ios','web'))",
+          "现有受支持的平台集合"
+        ],
+        [
+          "device_label",
+          "TEXT",
+          "CHECK(length(device_label) <= 100)",
+          "沿用接口最大 100 字符"
+        ],
+        [
+          "enabled",
+          "INTEGER",
+          "NOT NULL DEFAULT 1 CHECK(enabled IN (0,1))",
+          "失效 token 或账号停用后置 0"
+        ],
+        [
+          "last_seen_at",
+          "TEXT",
+          "NOT NULL CHECK(last_seen_at IS NULL OR (length(last_seen_at)=27 AND last_seen_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(last_seen_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(last_seen_at,1,10),'+0 days')=substr(last_seen_at,1,10),0) AND CAST(substr(last_seen_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(last_seen_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(last_seen_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "updated_at",
+          "TEXT",
+          "NOT NULL CHECK(updated_at IS NULL OR (length(updated_at)=27 AND updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(updated_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(updated_at,1,10),'+0 days')=substr(updated_at,1,10),0) AND CAST(substr(updated_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(updated_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(updated_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(fcm_registration_value)",
+        "CHECK(updated_at >= created_at)",
+        "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_devices_user_enabled ON devices(user_id,enabled);"
+      ],
+      "why": "一用户可有多设备；token可以在重新登录时改变当前归属。与逐次通知结果分开，避免历史发送结果阻止token转移。",
+      "decision": "保留"
+    },
+    {
+      "name": "locations",
+      "purpose": "摄像头共享的地点主数据",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "保留地点历史 ID；与摄像头位置关联"
+        ],
+        [
+          "name",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(name)) > 0 AND length(name) <= 120)",
+          "当前摄像头位置接口上限 120；空位置应转为 Unspecified"
+        ],
+        [
+          "normalized_name",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(normalized_name)) > 0)",
+          "唯一检索键，由服务器按现有空白/大小写规则生成；不能由客户端单独提交"
+        ],
+        [
+          "building",
+          "TEXT",
+          "",
+          "现有 schema 无已定义业务长度；不臆造上限"
+        ],
+        [
+          "floor",
+          "TEXT",
+          "",
+          "文本允许 G、B1、Mezzanine 等，并非只允许整数"
+        ],
+        [
+          "description",
+          "TEXT",
+          "",
+          "保留地点说明，不臆造字符上限"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(normalized_name)"
+      ],
+      "indexes": [],
+      "why": "名称标准化去重、建筑/楼层/说明由地点决定，不重复塞进每台摄像头。normalized_name可能因Unicode casefold扩长，不强设与name相同长度。",
+      "decision": "保留"
+    },
+    {
+      "name": "cameras",
+      "purpose": "稳定摄像头身份、地点及分析状态",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "location_id",
+          "TEXT",
+          "NOT NULL",
+          "位置为独立共享实体"
+        ],
+        [
+          "name",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(name)) > 0 AND length(name) <= 80)",
+          "沿用 Camera.name 的 1..80 字符范围"
+        ],
+        [
+          "enabled",
+          "INTEGER",
+          "NOT NULL DEFAULT 1 CHECK(enabled IN (0,1))",
+          "启用状态"
+        ],
+        [
+          "status",
+          "TEXT",
+          "NOT NULL CHECK(status IN ('ready','analysing','paused','error'))",
+          "保持现有状态集合"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "updated_at",
+          "TEXT",
+          "NOT NULL CHECK(updated_at IS NULL OR (length(updated_at)=27 AND updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(updated_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(updated_at,1,10),'+0 days')=substr(updated_at,1,10),0) AND CAST(substr(updated_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(updated_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(updated_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE RESTRICT",
+        "CHECK(updated_at >= created_at)"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_cameras_location ON cameras(location_id);"
+      ],
+      "why": "摄像头身份与可以替换的视频来源分离；与可产生多个警报的关系独立。",
+      "decision": "保留"
+    },
+    {
+      "name": "media_files",
+      "purpose": "实际媒体文件的唯一元数据",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "relative_path",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(relative_path)) > 0)",
+          "服务器媒体根目录下的 POSIX 相对路径；SQL 防越界形态，服务仍须 realpath containment 检查"
+        ],
+        [
+          "original_filename",
+          "TEXT",
+          "",
+          "上传文件名只作元数据；不作为服务器文件路径"
+        ],
+        [
+          "media_kind",
+          "TEXT",
+          "NOT NULL CHECK(media_kind IN ('camera_source','evidence_clip','evidence_image'))",
+          "与当前文件分类保持一致"
+        ],
+        [
+          "content_type",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(content_type)) > 0)",
+          "MIME 类型由媒体处理器验证，不臆造固定长度"
+        ],
+        [
+          "size_bytes",
+          "INTEGER",
+          "NOT NULL CHECK(size_bytes >= 0)",
+          "字节大小非负；不存 BLOB 视频内容"
+        ],
+        [
+          "sha256",
+          "TEXT",
+          "CHECK(sha256 IS NULL OR (length(sha256)=64 AND sha256 NOT GLOB '*[^0-9a-f]*'))",
+          "文件内容摘要，可空表示未计算；SHA-256为64位小写hex，保持现有存储/API格式，不做无必要编码迁移"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(relative_path)",
+        "CHECK(substr(relative_path,1,1)<>'/' AND instr(relative_path,':')=0 AND instr(relative_path,char(92))=0 AND instr(relative_path,char(0))=0 AND instr('/'||relative_path||'/','/../')=0 AND instr('/'||relative_path||'/','/./')=0 AND instr(relative_path,'//')=0)"
+      ],
+      "indexes": [],
+      "why": "文件可被来源/证据引用。文件与使用关系、证据生命周期不同。视频保存在filesystem，数据库只记录元数据；relative_path唯一。",
+      "decision": "保留"
+    },
+    {
+      "name": "camera_sources",
+      "purpose": "摄像头输入来源及替换历史",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "camera_id",
+          "TEXT",
+          "NOT NULL",
+          "来源所属摄像头"
+        ],
+        [
+          "media_file_id",
+          "TEXT",
+          "",
+          "上传视频引用文件；RTSP不引用媒体文件"
+        ],
+        [
+          "source_type",
+          "TEXT",
+          "NOT NULL CHECK(source_type IN ('uploaded_video','rtsp'))",
+          "两个现有来源类型"
+        ],
+        [
+          "rtsp_endpoint_ref",
+          "TEXT",
+          "",
+          "仅保存服务器端点或secret引用，不保存URL密码"
+        ],
+        [
+          "duration_seconds",
+          "REAL",
+          "NOT NULL DEFAULT 0 CHECK(duration_seconds >= 0)",
+          "完整输入视频时长；RTSP可为0"
+        ],
+        [
+          "is_active",
+          "INTEGER",
+          "NOT NULL DEFAULT 1 CHECK(is_active IN (0,1))",
+          "每台摄像头最多一个当前来源"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "FOREIGN KEY (camera_id) REFERENCES cameras(id) ON DELETE CASCADE",
+        "FOREIGN KEY (media_file_id) REFERENCES media_files(id) ON DELETE RESTRICT",
+        "CHECK((source_type='uploaded_video' AND media_file_id IS NOT NULL AND rtsp_endpoint_ref IS NULL) OR (source_type='rtsp' AND media_file_id IS NULL AND rtsp_endpoint_ref IS NOT NULL))"
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX ux_active_camera_source ON camera_sources(camera_id) WHERE is_active=1;",
+        "CREATE INDEX ix_camera_source_file ON camera_sources(media_file_id) WHERE media_file_id IS NOT NULL;"
+      ],
+      "why": "来源替换修改active关系；文件元数据不重复。source并非证据：所有者、输入类型和保留/清理策略不同，因此不合并为多态media_usages。",
+      "decision": "保留"
+    },
+    {
+      "name": "model_versions",
+      "purpose": "按任务保存不可变模型版本身份与部署来源",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "task",
+          "TEXT",
+          "NOT NULL CHECK(task IN ('violence','physical_contact_bullying','weapon','borderline_binary','scene_description'))",
+          "现有模型用途及save_alert按AlertType登记的身体霸凌；身体霸凌也可共享violence模型"
+        ],
+        [
+          "model_name",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(model_name)) > 0)",
+          "模型或供应商名称是可变长不透明字符串；不臆造80/255上限"
+        ],
+        [
+          "version",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(version)) > 0)",
+          "模型版本身份，保持历史标签"
+        ],
+        [
+          "framework",
+          "TEXT",
+          "",
+          "历史模型登记可能未记录framework，允许空"
+        ],
+        [
+          "quantization",
+          "TEXT",
+          "",
+          "量化描述没有当前固定枚举，允许空"
+        ],
+        [
+          "checkpoint_ref",
+          "TEXT",
+          "",
+          "服务器控制的checkpoint逻辑引用；不能接收客户端电脑任意绝对路径"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(task,model_name,version)"
+      ],
+      "indexes": [],
+      "why": "多个检测/描述/复核共享版本；独立于策略及prompt生命周期。不与完整配置、全局偏好混成runtime_resources。历史未记录metadata不能伪造。",
+      "decision": "保留"
+    },
+    {
+      "name": "prompt_versions",
+      "purpose": "按用途保存提示词版本、内容及摘要",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "task",
+          "TEXT",
+          "NOT NULL CHECK(task IN ('borderline_binary','scene_description'))",
+          "现有两个VLM prompt任务"
+        ],
+        [
+          "version",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(version)) > 0)",
+          "保留原全局唯一prompt标签"
+        ],
+        [
+          "capture_state",
+          "TEXT",
+          "NOT NULL DEFAULT 'metadata_only' CHECK(capture_state IN ('metadata_only','frozen'))",
+          "明确区分历史缺失内容与已冻结内容"
+        ],
+        [
+          "content",
+          "TEXT",
+          "",
+          "真实prompt内容不按任意字符上限截断"
+        ],
+        [
+          "content_sha256",
+          "TEXT",
+          "CHECK(content_sha256 IS NULL OR (length(content_sha256)=64 AND content_sha256 NOT GLOB '*[^0-9a-f]*'))",
+          "完整prompt的内容摘要，服务计算；SHA-256为64位小写hex，保持现有存储/API格式，不做无必要编码迁移"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(version)",
+        "CHECK(capture_state='metadata_only' OR (content IS NOT NULL AND content_sha256 IS NOT NULL))"
+      ],
+      "indexes": [],
+      "why": "二元复核prompt与场景prompt分别版本化；被引用的历史内容不能原位改变。capture_state是迁移事实标记，不是替未来功能创建的独立entity。",
+      "decision": "保留"
+    },
+    {
+      "name": "config_versions",
+      "purpose": "同一版本的完整运行策略快照",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用cfg_000001等既有配置ID"
+        ],
+        [
+          "version_number",
+          "INTEGER",
+          "NOT NULL CHECK(version_number >= 1)",
+          "唯一递增配置版本；不是用户输入的任意标识"
+        ],
+        [
+          "created_by",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(created_by)) > 0)",
+          "保留local-demo、migration标签等来源；不能假定每个字符串都是user_id"
+        ],
+        [
+          "created_by_user_id",
+          "TEXT",
+          "",
+          "能够确认是已认证用户时额外登记真实FK；后台/本地配置允许空"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "validation_profile",
+          "TEXT",
+          "NOT NULL DEFAULT 'runtime' CHECK(validation_profile IN ('runtime','historical'))",
+          "新配置沿用当前API类别/精度；历史阈值和类别不重舍入"
+        ],
+        [
+          "detection_debug_mode_enabled",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(detection_debug_mode_enabled IN (0,1))",
+          "保持当前配置开关及默认关闭"
+        ],
+        [
+          "default_sensitivity",
+          "TEXT",
+          "NOT NULL CHECK(default_sensitivity IN ('sensitive','moderate','certain'))",
+          "保留默认敏感度"
+        ],
+        [
+          "violence_segment_seconds",
+          "REAL",
+          "NOT NULL CHECK(violence_segment_seconds >= 1 AND violence_segment_seconds <= 60)",
+          "沿用 ViolenceSettings 范围"
+        ],
+        [
+          "violence_stride_seconds",
+          "REAL",
+          "NOT NULL CHECK(violence_stride_seconds >= 0 AND violence_stride_seconds <= 60)",
+          "必须大于 0 且不大于 segment；表级约束另外执行"
+        ],
+        [
+          "violence_detector_input_frames",
+          "INTEGER",
+          "NOT NULL CHECK(violence_detector_input_frames >= 4 AND violence_detector_input_frames <= 128)",
+          "沿用输入帧预算"
+        ],
+        [
+          "violence_sensitive_threshold",
+          "REAL",
+          "NOT NULL CHECK(violence_sensitive_threshold >= 0 AND violence_sensitive_threshold <= 1)",
+          "置信度阈值；保留历史精度并保证三个模式排序"
+        ],
+        [
+          "violence_moderate_threshold",
+          "REAL",
+          "NOT NULL CHECK(violence_moderate_threshold >= 0 AND violence_moderate_threshold <= 1)",
+          "置信度阈值；保留历史精度并保证三个模式排序"
+        ],
+        [
+          "violence_certain_threshold",
+          "REAL",
+          "NOT NULL CHECK(violence_certain_threshold >= 0 AND violence_certain_threshold <= 1)",
+          "置信度阈值；保留历史精度并保证三个模式排序"
+        ],
+        [
+          "violence_cooldown_seconds",
+          "INTEGER",
+          "NOT NULL CHECK(violence_cooldown_seconds >= 0 AND violence_cooldown_seconds <= 3600)",
+          "保留当前兼容字段；不得恢复成丢弃新警报的旧策略"
+        ],
+        [
+          "violence_merge_gap_seconds",
+          "REAL",
+          "NOT NULL CHECK(violence_merge_gap_seconds >= 0 AND violence_merge_gap_seconds <= 120)",
+          "沿用当前事件合并间隔可配置范围"
+        ],
+        [
+          "weapon_sample_fps",
+          "REAL",
+          "NOT NULL CHECK(weapon_sample_fps >= 0.25 AND weapon_sample_fps <= 30)",
+          "沿用 WeaponSettings 采样范围"
+        ],
+        [
+          "weapon_confidence_threshold",
+          "REAL",
+          "NOT NULL CHECK(weapon_confidence_threshold >= 0 AND weapon_confidence_threshold <= 1)",
+          "保留旧 global threshold；实际通知仍用类别/模式阈值"
+        ],
+        [
+          "weapon_nms_candidate_floor",
+          "REAL",
+          "NOT NULL CHECK(weapon_nms_candidate_floor >= 0 AND weapon_nms_candidate_floor <= 0.1)",
+          "沿用 NMS 候选下限范围"
+        ],
+        [
+          "weapon_nms_iou_threshold",
+          "REAL",
+          "NOT NULL CHECK(weapon_nms_iou_threshold >= 0.1 AND weapon_nms_iou_threshold <= 0.95)",
+          "沿用 NMS IoU 范围"
+        ],
+        [
+          "weapon_n_required",
+          "INTEGER",
+          "NOT NULL CHECK(weapon_n_required >= 1 AND weapon_n_required <= 120)",
+          "N-of-M 参数；另约束 N<=M"
+        ],
+        [
+          "weapon_m_window",
+          "INTEGER",
+          "NOT NULL CHECK(weapon_m_window >= 1 AND weapon_m_window <= 120)",
+          "滑动窗口 M"
+        ],
+        [
+          "weapon_cooldown_seconds",
+          "INTEGER",
+          "NOT NULL CHECK(weapon_cooldown_seconds >= 0 AND weapon_cooldown_seconds <= 3600)",
+          "保留兼容参数"
+        ],
+        [
+          "weapon_merge_gap_seconds",
+          "REAL",
+          "NOT NULL CHECK(weapon_merge_gap_seconds >= 0 AND weapon_merge_gap_seconds <= 120)",
+          "武器事件合并间隔"
+        ],
+        [
+          "weapon_class_thresholds_json",
+          "TEXT",
+          "NOT NULL CHECK(weapon_class_thresholds_json IS NULL OR (CASE WHEN json_valid(weapon_class_thresholds_json) THEN json_type(weapon_class_thresholds_json)='object' ELSE 0 END))",
+          "三种 sensitivity 的类别→数值阈值映射；不是外键关系。历史五类与 long_gun 名称保留，由触发器校验每个分数"
+        ],
+        [
+          "vlm_model_id",
+          "TEXT",
+          "NOT NULL  CHECK(length(trim(vlm_model_id))>0)",
+          "外部模型供应商标识，沿用 VlmSettings.model_id；不是内部资源 ID"
+        ],
+        [
+          "vlm_quantization",
+          "TEXT",
+          "NOT NULL  CHECK(length(trim(vlm_quantization))>0)",
+          "VLM 量化设置"
+        ],
+        [
+          "vlm_input_fps",
+          "REAL",
+          "NOT NULL CHECK(vlm_input_fps >= 0.25 AND vlm_input_fps <= 12)",
+          "沿用 VLM 输入采样范围"
+        ],
+        [
+          "vlm_video_token_budget",
+          "INTEGER",
+          "NOT NULL CHECK(vlm_video_token_budget >= 256 AND vlm_video_token_budget <= 16384)",
+          "沿用 token 预算"
+        ],
+        [
+          "vlm_max_output_tokens",
+          "INTEGER",
+          "NOT NULL CHECK(vlm_max_output_tokens >= 32 AND vlm_max_output_tokens <= 2048)",
+          "沿用输出 token 预算"
+        ],
+        [
+          "vlm_scene_description_frames",
+          "INTEGER",
+          "NOT NULL CHECK(vlm_scene_description_frames >= 4 AND vlm_scene_description_frames <= 128)",
+          "还必须为偶数；与复核 input_fps 独立"
+        ],
+        [
+          "vlm_borderline_review_enabled",
+          "INTEGER",
+          "NOT NULL CHECK(vlm_borderline_review_enabled IN (0,1))",
+          "Web master switch；不同于账号接收偏好"
+        ],
+        [
+          "vlm_scene_description_enabled",
+          "INTEGER",
+          "NOT NULL CHECK(vlm_scene_description_enabled IN (0,1))",
+          "场景描述开关"
+        ],
+        [
+          "binary_prompt_version_id",
+          "TEXT",
+          "NOT NULL ",
+          "真实外键，指向 prompt/borderline_binary 资源"
+        ],
+        [
+          "scene_prompt_version_id",
+          "TEXT",
+          "NOT NULL ",
+          "真实外键，指向 prompt/scene_description 资源"
+        ],
+        [
+          "same_audience_repeat_after_seconds",
+          "INTEGER",
+          "NOT NULL CHECK(same_audience_repeat_after_seconds >= 15 AND same_audience_repeat_after_seconds <= 3600)",
+          "当前 Config API 的第一次重复范围"
+        ],
+        [
+          "all_users_escalation_after_seconds",
+          "INTEGER",
+          "NOT NULL CHECK(all_users_escalation_after_seconds >= 30 AND all_users_escalation_after_seconds <= 7200)",
+          "当前全体升级范围；必须晚于首次重复"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(version_number)",
+        "FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (binary_prompt_version_id) REFERENCES prompt_versions(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (scene_prompt_version_id) REFERENCES prompt_versions(id) ON DELETE RESTRICT",
+        "CHECK(violence_stride_seconds>0 AND violence_stride_seconds<=violence_segment_seconds)",
+        "CHECK(violence_sensitive_threshold<=violence_moderate_threshold AND violence_moderate_threshold<=violence_certain_threshold)",
+        "CHECK(weapon_n_required<=weapon_m_window)",
+        "CHECK(vlm_scene_description_frames%2=0)",
+        "CHECK(all_users_escalation_after_seconds>same_audience_repeat_after_seconds)"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_config_creator ON config_versions(created_by_user_id) WHERE created_by_user_id IS NOT NULL;",
+        "CREATE INDEX ix_config_binary_prompt ON config_versions(binary_prompt_version_id);",
+        "CREATE INDEX ix_config_scene_prompt ON config_versions(scene_prompt_version_id);"
+      ],
+      "why": "当前五张配置表的30个版本一一对应，save_settings同一事务写五行，get_settings同查。所有属性依赖同一配置版本，合并没有引入跨实体事实；减少缺一张明细就无法读取的故障点。模型/提示词仍独立。",
+      "decision": "合并config_versions+四张明细表"
+    },
+    {
+      "name": "alerts",
+      "purpose": "稳定事件及其当前唯一手机处理状态",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "camera_id",
+          "TEXT",
+          "NOT NULL",
+          "事件所属摄像头"
+        ],
+        [
+          "incident_type",
+          "TEXT",
+          "NOT NULL CHECK(incident_type IN ('violence','physical_contact_bullying','weapon'))",
+          "现有三种事件"
+        ],
+        [
+          "workflow_status",
+          "TEXT",
+          "NOT NULL CHECK(workflow_status IN ('awaiting_confirmation','confirmed_awaiting_handler','in_progress','resolved','dismissed','legacy_in_review','legacy_escalated'))",
+          "唯一当前状态来源；旧API status由固定映射计算"
+        ],
+        [
+          "sensitivity_mode",
+          "TEXT",
+          "NOT NULL CHECK(sensitivity_mode IN ('sensitive','moderate','certain'))",
+          "保留历史标签；不用于限制Active有角色用户浏览"
+        ],
+        [
+          "is_borderline_promoted",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(is_borderline_promoted IN (0,1))",
+          "保留提升标记"
+        ],
+        [
+          "is_provisional",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(is_provisional IN (0,1))",
+          "旧记录兼容；不恢复已停用的提前告警行为"
+        ],
+        [
+          "borderline_review_status",
+          "TEXT",
+          "NOT NULL CHECK(borderline_review_status IN ('not_applicable','disabled','queued','running','positive','negative','failed','cancelled','legacy_unknown'))",
+          "用于异步复核聚合展示；不同于人工处理状态"
+        ],
+        [
+          "evidence_status",
+          "TEXT",
+          "NOT NULL CHECK(evidence_status IN ('preparing','available','failed','legacy_unknown'))",
+          "证据准备状态，与事件解决状态独立"
+        ],
+        [
+          "opening_config_version_id",
+          "TEXT",
+          "NOT NULL",
+          "开场策略版本"
+        ],
+        [
+          "opening_model_version_id",
+          "TEXT",
+          "NOT NULL",
+          "开场detector模型版本"
+        ],
+        [
+          "binary_prompt_version_id",
+          "TEXT",
+          "",
+          "可选开场复核prompt版本"
+        ],
+        [
+          "handler_user_id",
+          "TEXT",
+          "",
+          "当前处理者；停用账号不删除其历史关联"
+        ],
+        [
+          "active_phase_id",
+          "TEXT",
+          "",
+          "指向同事件且仍active的phase"
+        ],
+        [
+          "broadcast_role_snapshot_json",
+          "TEXT",
+          "NOT NULL DEFAULT '[]' CHECK(broadcast_role_snapshot_json IS NULL OR (CASE WHEN json_valid(broadcast_role_snapshot_json) THEN json_type(broadcast_role_snapshot_json)='array' ELSE 0 END))",
+          "当时选择的角色ID展示快照；运行收件资格使用notification_phase_roles的真实FK"
+        ],
+        [
+          "revision",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(revision >= 0)",
+          "工作流程乐观并发token"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "workflow_updated_at",
+          "TEXT",
+          "NOT NULL CHECK(workflow_updated_at IS NULL OR (length(workflow_updated_at)=27 AND workflow_updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(workflow_updated_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(workflow_updated_at,1,10),'+0 days')=substr(workflow_updated_at,1,10),0) AND CAST(substr(workflow_updated_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(workflow_updated_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(workflow_updated_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "resolved_at",
+          "TEXT",
+          "CHECK(resolved_at IS NULL OR (length(resolved_at)=27 AND resolved_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(resolved_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(resolved_at,1,10),'+0 days')=substr(resolved_at,1,10),0) AND CAST(substr(resolved_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(resolved_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(resolved_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(id,camera_id)",
+        "FOREIGN KEY (camera_id) REFERENCES cameras(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (opening_config_version_id) REFERENCES config_versions(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (opening_model_version_id) REFERENCES model_versions(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (binary_prompt_version_id) REFERENCES prompt_versions(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (handler_user_id) REFERENCES users(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (active_phase_id,id) REFERENCES notification_phases(id,alert_id) ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED",
+        "CHECK(workflow_updated_at>=created_at)",
+        "CHECK(resolved_at IS NULL OR resolved_at>=created_at)",
+        "CHECK(workflow_status<>'in_progress' OR handler_user_id IS NOT NULL)"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_alert_camera_workflow ON alerts(camera_id,workflow_status);",
+        "CREATE INDEX ix_alert_active_phase ON alerts(active_phase_id) WHERE active_phase_id IS NOT NULL;",
+        "CREATE INDEX ix_alert_opening_config ON alerts(opening_config_version_id);",
+        "CREATE INDEX ix_alert_opening_model ON alerts(opening_model_version_id);",
+        "CREATE INDEX ix_alert_handler ON alerts(handler_user_id) WHERE handler_user_id IS NOT NULL;",
+        "CREATE INDEX ix_alert_prompt ON alerts(binary_prompt_version_id) WHERE binary_prompt_version_id IS NOT NULL;"
+      ],
+      "why": "workflow是每个alert恰好一条的当前状态，不具有独立身份/历史生命周期；并入alert。去掉可以由workflow确定的旧status重复真值，DTO仍返回原status。检测统计继续从events聚合；不要加入description或review次数。",
+      "decision": "合并alerts+mobile_alert_workflows；status改为派生API字段"
+    },
+    {
+      "name": "detection_events",
+      "purpose": "一次被警报接纳的检测事实",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "alert_id",
+          "TEXT",
+          "NOT NULL",
+          "可聚合进同一事件，但每次检测独立保存"
+        ],
+        [
+          "model_version_id",
+          "TEXT",
+          "NOT NULL",
+          "该次模型版本"
+        ],
+        [
+          "config_version_id",
+          "TEXT",
+          "NOT NULL",
+          "该次策略版本，不冒充opening版本"
+        ],
+        [
+          "confidence",
+          "REAL",
+          "NOT NULL CHECK(confidence >= 0 AND confidence <= 1)",
+          "模型概率分数"
+        ],
+        [
+          "decision_source",
+          "TEXT",
+          "NOT NULL CHECK(decision_source IN ('threshold','vlm_promoted','weapon_n_of_m'))",
+          "现有判定来源"
+        ],
+        [
+          "source_start_seconds",
+          "REAL",
+          "CHECK(source_start_seconds >= 0)",
+          "原视频窗口起点，可空表示旧记录未知"
+        ],
+        [
+          "source_end_seconds",
+          "REAL",
+          "CHECK(source_end_seconds >= 0)",
+          "原视频窗口终点"
+        ],
+        [
+          "detected_at",
+          "TEXT",
+          "NOT NULL CHECK(detected_at IS NULL OR (length(detected_at)=27 AND detected_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(detected_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(detected_at,1,10),'+0 days')=substr(detected_at,1,10),0) AND CAST(substr(detected_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(detected_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(detected_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "qualifications_json",
+          "TEXT",
+          "NOT NULL DEFAULT '{}' CHECK(qualifications_json IS NULL OR (CASE WHEN json_valid(qualifications_json) THEN json_type(qualifications_json)='object' ELSE 0 END))",
+          "当时资格计算结果，不能用来替代当前权限"
+        ],
+        [
+          "weapon_class_scores_json",
+          "TEXT",
+          "NOT NULL DEFAULT '{}' CHECK(weapon_class_scores_json IS NULL OR (CASE WHEN json_valid(weapon_class_scores_json) THEN json_type(weapon_class_scores_json)='object' ELSE 0 END))",
+          "类别→概率映射；触发器逐值限制数值0..1"
+        ]
+      ],
+      "rules": [
+        "FOREIGN KEY (alert_id) REFERENCES alerts(id) ON DELETE CASCADE",
+        "FOREIGN KEY (model_version_id) REFERENCES model_versions(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (config_version_id) REFERENCES config_versions(id) ON DELETE RESTRICT",
+        "CHECK(source_start_seconds IS NULL OR source_end_seconds IS NULL OR source_end_seconds>=source_start_seconds)"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_detection_alert_time ON detection_events(alert_id,detected_at);",
+        "CREATE INDEX ix_detection_model ON detection_events(model_version_id);",
+        "CREATE INDEX ix_detection_config ON detection_events(config_version_id);"
+      ],
+      "why": "检测事实与可运行/失败/重试的VLM任务不同；不合成inference_runs。多次检测的分数、来源窗口及版本不能被事件最高分覆盖。",
+      "decision": "保留"
+    },
+    {
+      "name": "borderline_reviews",
+      "purpose": "一次Borderline复核的输入、排队执行、结论及补充通知资格",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "任务沿用reviewtask ID，旧独立审计沿用review ID"
+        ],
+        [
+          "record_origin",
+          "TEXT",
+          "NOT NULL CHECK(record_origin IN ('task','audit_only'))",
+          "历史旧审计没有任务输入/执行时间；必须明确未知，不能捏造任务"
+        ],
+        [
+          "legacy_review_id",
+          "TEXT",
+          "",
+          "能证明同一事实的旧审计镜像合入task时保留原ID；不靠最近时间猜测合并"
+        ],
+        [
+          "camera_id",
+          "TEXT",
+          "NOT NULL",
+          "复核来源摄像头"
+        ],
+        [
+          "alert_id",
+          "TEXT",
+          "",
+          "task必填；旧negative审计允许没有警报"
+        ],
+        [
+          "detection_event_id",
+          "TEXT",
+          "",
+          "task必填且唯一；旧审计无已记录窗口key时可空"
+        ],
+        [
+          "model_version_id",
+          "TEXT",
+          "NOT NULL",
+          "实际复核模型版本，用FK取代任务中的松散标签"
+        ],
+        [
+          "prompt_version_id",
+          "TEXT",
+          "NOT NULL",
+          "实际二元复核prompt版本"
+        ],
+        [
+          "config_version_id",
+          "TEXT",
+          "NOT NULL",
+          "策略版本FK"
+        ],
+        [
+          "detector_confidence",
+          "REAL",
+          "NOT NULL CHECK(detector_confidence >= 0 AND detector_confidence <= 1)",
+          "保留输入detector分数"
+        ],
+        [
+          "source_start_seconds",
+          "REAL",
+          "CHECK(source_start_seconds >= 0)",
+          "task必填；旧审计可以未知"
+        ],
+        [
+          "source_end_seconds",
+          "REAL",
+          "CHECK(source_end_seconds >= 0)",
+          "结束不得早于开始"
+        ],
+        [
+          "context_path",
+          "TEXT",
+          "",
+          "服务器控制输入引用；迁移老绝对路径先验证归属，不允许客户端任意路径"
+        ],
+        [
+          "status",
+          "TEXT",
+          "NOT NULL CHECK(status IN ('queued','running','positive','negative','failed','cancelled'))",
+          "复核生命周期；audit_only只允许positive/negative"
+        ],
+        [
+          "attempt_count",
+          "INTEGER",
+          "CHECK(attempt_count >= 0 AND attempt_count <= 3)",
+          "task尝试最多3；旧审计未记录则NULL"
+        ],
+        [
+          "raise_alert",
+          "INTEGER",
+          "CHECK(raise_alert IN (0,1))",
+          "尚未得出结论为空；正/负分别1/0"
+        ],
+        [
+          "uncertainty",
+          "TEXT",
+          "CHECK(uncertainty IN ('low','medium','high'))",
+          "当前复核输出枚举"
+        ],
+        [
+          "brief_reason",
+          "TEXT",
+          "",
+          "保留原因，不臆造没有接口依据的长度"
+        ],
+        [
+          "error_code",
+          "TEXT",
+          "",
+          "错误分类允许扩展，不只保存一个failed布尔值"
+        ],
+        [
+          "vlm_settings_json",
+          "TEXT",
+          "CHECK(vlm_settings_json IS NULL OR (CASE WHEN json_valid(vlm_settings_json) THEN json_type(vlm_settings_json)='object' ELSE 0 END))",
+          "提交给worker的真正VLM参数快照，可能含对全局配置的覆盖；逐字段校验"
+        ],
+        [
+          "supplemental_notification_status",
+          "TEXT",
+          "NOT NULL DEFAULT 'not_applicable' CHECK(supplemental_notification_status IN ('not_applicable','eligible','handled','suppressed_disabled'))",
+          "持久标记防止重启/历史导入重放补充推送"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "started_at",
+          "TEXT",
+          "CHECK(started_at IS NULL OR (length(started_at)=27 AND started_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(started_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(started_at,1,10),'+0 days')=substr(started_at,1,10),0) AND CAST(substr(started_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(started_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(started_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "completed_at",
+          "TEXT",
+          "CHECK(completed_at IS NULL OR (length(completed_at)=27 AND completed_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(completed_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(completed_at,1,10),'+0 days')=substr(completed_at,1,10),0) AND CAST(substr(completed_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(completed_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(completed_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "reviewed_at",
+          "TEXT",
+          "CHECK(reviewed_at IS NULL OR (length(reviewed_at)=27 AND reviewed_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(reviewed_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(reviewed_at,1,10),'+0 days')=substr(reviewed_at,1,10),0) AND CAST(substr(reviewed_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(reviewed_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(reviewed_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "旧审计的原reviewed_at；task完成时间与镜像入账时间不同，分别保留"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(detection_event_id)",
+        "UNIQUE(legacy_review_id)",
+        "FOREIGN KEY (camera_id) REFERENCES cameras(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (alert_id,camera_id) REFERENCES alerts(id,camera_id) ON DELETE RESTRICT",
+        "FOREIGN KEY (detection_event_id) REFERENCES detection_events(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (model_version_id) REFERENCES model_versions(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (prompt_version_id) REFERENCES prompt_versions(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (config_version_id) REFERENCES config_versions(id) ON DELETE RESTRICT",
+        "CHECK(source_start_seconds IS NULL OR source_end_seconds IS NULL OR source_end_seconds>=source_start_seconds)",
+        "CHECK((record_origin='task' AND alert_id IS NOT NULL AND detection_event_id IS NOT NULL AND context_path IS NOT NULL AND length(trim(context_path))>0 AND vlm_settings_json IS NOT NULL AND attempt_count IS NOT NULL AND source_start_seconds IS NOT NULL AND source_end_seconds IS NOT NULL AND created_at IS NOT NULL) OR (record_origin='audit_only' AND detection_event_id IS NULL AND context_path IS NULL AND vlm_settings_json IS NULL AND attempt_count IS NULL AND created_at IS NULL AND started_at IS NULL AND completed_at IS NULL AND reviewed_at IS NOT NULL AND status IN ('positive','negative') AND supplemental_notification_status='not_applicable'))",
+        "CHECK(status NOT IN ('positive','negative') OR raise_alert IS NOT NULL)",
+        "CHECK(status<>'positive' OR raise_alert=1)",
+        "CHECK(status<>'negative' OR raise_alert=0)",
+        "CHECK(supplemental_notification_status='not_applicable' OR (record_origin='task' AND status='positive'))",
+        "CHECK(started_at IS NULL OR (created_at IS NOT NULL AND started_at>=created_at))",
+        "CHECK(completed_at IS NULL OR (created_at IS NOT NULL AND completed_at>=created_at AND (started_at IS NULL OR completed_at>=started_at)))"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_review_queue ON borderline_reviews(status,created_at) WHERE record_origin='task' AND status IN ('queued','running');",
+        "CREATE INDEX ix_review_alert_time ON borderline_reviews(alert_id,created_at);",
+        "CREATE INDEX ix_review_camera ON borderline_reviews(camera_id);",
+        "CREATE INDEX ix_review_model ON borderline_reviews(model_version_id);",
+        "CREATE INDEX ix_review_prompt ON borderline_reviews(prompt_version_id);",
+        "CREATE INDEX ix_review_config ON borderline_reviews(config_version_id);"
+      ],
+      "why": "原task与review审计主要镜像同一复核结果，属于同一review生命周期。保留audit_only形式来表达旧记录真正缺失的数据，不把legacy结果恢复成可执行任务；detector/description仍独立。",
+      "decision": "统一borderline_review_tasks和旧borderline_reviews"
+    },
+    {
+      "name": "evidence_records",
+      "purpose": "警报证据关系、来源区间及保留期限",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "alert_id",
+          "TEXT",
+          "NOT NULL",
+          "关联事件"
+        ],
+        [
+          "media_file_id",
+          "TEXT",
+          "NOT NULL",
+          "一份文件对应最多一条证据关系，保留原UNIQUE"
+        ],
+        [
+          "evidence_type",
+          "TEXT",
+          "NOT NULL CHECK(evidence_type IN ('violence_clip','bullying_clip','weapon_screenshot'))",
+          "当前证据类型"
+        ],
+        [
+          "source_start_seconds",
+          "REAL",
+          "CHECK(source_start_seconds >= 0)",
+          "来源视频起点；旧记录未知允许空"
+        ],
+        [
+          "source_end_seconds",
+          "REAL",
+          "CHECK(source_end_seconds >= 0)",
+          "来源视频终点"
+        ],
+        [
+          "captured_at",
+          "TEXT",
+          "NOT NULL CHECK(captured_at IS NULL OR (length(captured_at)=27 AND captured_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(captured_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(captured_at,1,10),'+0 days')=substr(captured_at,1,10),0) AND CAST(substr(captured_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(captured_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(captured_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "delete_after",
+          "TEXT",
+          "CHECK(delete_after IS NULL OR (length(delete_after)=27 AND delete_after GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(delete_after,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(delete_after,1,10),'+0 days')=substr(delete_after,1,10),0) AND CAST(substr(delete_after,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(delete_after,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(delete_after,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(media_file_id)",
+        "FOREIGN KEY (alert_id) REFERENCES alerts(id) ON DELETE CASCADE",
+        "FOREIGN KEY (media_file_id) REFERENCES media_files(id) ON DELETE RESTRICT",
+        "CHECK(source_start_seconds IS NULL OR source_end_seconds IS NULL OR source_end_seconds>=source_start_seconds)",
+        "CHECK(delete_after IS NULL OR delete_after>=captured_at)"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_evidence_alert ON evidence_records(alert_id);",
+        "CREATE INDEX ix_evidence_retention ON evidence_records(delete_after) WHERE delete_after IS NOT NULL;"
+      ],
+      "why": "证据有自身captured/retention事实；与camera_sources的输入类型/active关系不同，因此独立。删除证据关系并不让DB自动删除物理文件，服务仍协调filesystem清理。",
+      "decision": "保留"
+    },
+    {
+      "name": "vlm_descriptions",
+      "purpose": "场景描述生成状态、输出及重新生成历史",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "alert_id",
+          "TEXT",
+          "NOT NULL",
+          "所属事件"
+        ],
+        [
+          "model_version_id",
+          "TEXT",
+          "NOT NULL",
+          "场景模型版本"
+        ],
+        [
+          "prompt_version_id",
+          "TEXT",
+          "",
+          "旧记录未知prompt可空"
+        ],
+        [
+          "config_version_id",
+          "TEXT",
+          "",
+          "新增时记录实际policy；旧表未记录时NULL，不能编造opening版本"
+        ],
+        [
+          "status",
+          "TEXT",
+          "NOT NULL CHECK(status IN ('pending','ready','failed','disabled'))",
+          "保持现有DescriptionStatus"
+        ],
+        [
+          "output_format",
+          "TEXT",
+          "NOT NULL DEFAULT 'none' CHECK(output_format IN ('none','summary','raw_json','text'))",
+          "格式决定适用约束，保留当前fallback读取"
+        ],
+        [
+          "structured_json",
+          "TEXT",
+          "CHECK(structured_json IS NULL OR (CASE WHEN json_valid(structured_json) THEN 1 ELSE 0 END))",
+          "已验证summary或可兼容读取的原始JSON，不一律强迫旧结构为summary"
+        ],
+        [
+          "display_text",
+          "TEXT",
+          "",
+          "原显示文本；仅summary.description受120上限，原text回退不能被截断"
+        ],
+        [
+          "error_code",
+          "TEXT",
+          "",
+          "失败原因分类"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "completed_at",
+          "TEXT",
+          "CHECK(completed_at IS NULL OR (length(completed_at)=27 AND completed_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(completed_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(completed_at,1,10),'+0 days')=substr(completed_at,1,10),0) AND CAST(substr(completed_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(completed_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(completed_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "FOREIGN KEY (alert_id) REFERENCES alerts(id) ON DELETE CASCADE",
+        "FOREIGN KEY (model_version_id) REFERENCES model_versions(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (prompt_version_id) REFERENCES prompt_versions(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (config_version_id) REFERENCES config_versions(id) ON DELETE RESTRICT",
+        "CHECK(completed_at IS NULL OR completed_at>=created_at)",
+        "CHECK((output_format='none' AND structured_json IS NULL AND display_text IS NULL) OR (output_format IN ('summary','raw_json') AND structured_json IS NOT NULL) OR (output_format='text' AND structured_json IS NULL AND display_text IS NOT NULL))",
+        "CHECK(status<>'ready' OR output_format<>'none')"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_description_alert_time ON vlm_descriptions(alert_id,created_at DESC);",
+        "CREATE INDEX ix_description_model ON vlm_descriptions(model_version_id);",
+        "CREATE INDEX ix_description_prompt ON vlm_descriptions(prompt_version_id) WHERE prompt_version_id IS NOT NULL;",
+        "CREATE INDEX ix_description_config ON vlm_descriptions(config_version_id) WHERE config_version_id IS NOT NULL;"
+      ],
+      "why": "描述是每个事件可以重试/重新生成的一系列输出，并非detector事实或二元复核。读取最新ready结果；没有必要与其他推理记录共享大表和状态枚举。",
+      "decision": "保留"
+    },
+    {
+      "name": "alert_actions",
+      "purpose": "用户对事件的人工处理历史及幂等请求",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "alert_id",
+          "TEXT",
+          "NOT NULL",
+          "被处理事件"
+        ],
+        [
+          "user_id",
+          "TEXT",
+          "NOT NULL",
+          "操作人必须真实存在；历史身份不硬删除"
+        ],
+        [
+          "action",
+          "TEXT",
+          "NOT NULL CHECK(action IN ('acknowledge','review','dismiss','resolve','escalate','dismiss_false_alarm','confirm_only','confirm_and_handle','confirm_resolved','take_ownership','simulated_emergency_call'))",
+          "完整旧/新操作集合"
+        ],
+        [
+          "record_origin",
+          "TEXT",
+          "NOT NULL CHECK(record_origin IN ('legacy','workflow'))",
+          "保持Mobile isLegacy语义；不是不同类型业务实体"
+        ],
+        [
+          "note",
+          "TEXT",
+          "",
+          "新workflow沿用1000字符上限；旧无限制note保留原值"
+        ],
+        [
+          "broadcast_role_snapshot_json",
+          "TEXT",
+          "CHECK(broadcast_role_snapshot_json IS NULL OR (CASE WHEN json_valid(broadcast_role_snapshot_json) THEN json_type(broadcast_role_snapshot_json)='array' ELSE 0 END))",
+          "用户当时选择的角色ID历史快照；实际Phase B关系另有FK"
+        ],
+        [
+          "idempotency_key",
+          "TEXT",
+          "",
+          "新workflow请求8..120；旧操作无key允许空"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "FOREIGN KEY (alert_id) REFERENCES alerts(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT",
+        "CHECK(record_origin='legacy' OR (idempotency_key IS NOT NULL AND length(idempotency_key) BETWEEN 8 AND 120 AND broadcast_role_snapshot_json IS NOT NULL AND (note IS NULL OR length(note)<=1000)))"
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX ux_alert_action_idempotency ON alert_actions(alert_id,idempotency_key) WHERE idempotency_key IS NOT NULL;",
+        "CREATE INDEX ix_alert_actions_alert_time ON alert_actions(alert_id,created_at DESC);",
+        "CREATE INDEX ix_alert_actions_user ON alert_actions(user_id);"
+      ],
+      "why": "旧alert_actions和新workflow_events都是人的一次事件响应；统一历史事件模型。audit_logs保留另一条行政审计事实，不按相同时间乱删。已读关系仍单独保存。",
+      "decision": "统一alert_actions+mobile_alert_workflow_events"
+    },
+    {
+      "name": "alert_reads",
+      "purpose": "每用户每警报的首次浏览状态",
+      "columns": [
+        [
+          "user_id",
+          "TEXT",
+          "NOT NULL",
+          "每人独立，不能放在alerts共享行"
+        ],
+        [
+          "alert_id",
+          "TEXT",
+          "NOT NULL",
+          "浏览目标"
+        ],
+        [
+          "read_at",
+          "TEXT",
+          "NOT NULL CHECK(read_at IS NULL OR (length(read_at)=27 AND read_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(read_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(read_at,1,10),'+0 days')=substr(read_at,1,10),0) AND CAST(substr(read_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(read_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(read_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "PRIMARY KEY(user_id,alert_id)",
+        "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
+        "FOREIGN KEY (alert_id) REFERENCES alerts(id) ON DELETE CASCADE"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_alert_reads_alert ON alert_reads(alert_id);"
+      ],
+      "why": "这是独立的用户↔警报状态关系，不是人工响应或行政审计；保留小而明确的联合主键。read不停止提醒。",
+      "decision": "保留"
+    },
+    {
+      "name": "notifications",
+      "purpose": "面向用户的逻辑通知意图、内容和稳定幂等身份",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "alert_id",
+          "TEXT",
+          "NOT NULL",
+          "所属警报"
+        ],
+        [
+          "message_kind",
+          "TEXT",
+          "NOT NULL CHECK(message_kind IN ('initial','broadcast','decision_update','phase_reminder','late_repeat','manual','legacy'))",
+          "消息用途；同一领域的有限分类，不混入其他实体"
+        ],
+        [
+          "event_key",
+          "TEXT",
+          "",
+          "由旧outbox移入的稳定业务幂等键；旧直接发送通知可空；队列清理也不能失去去重身份"
+        ],
+        [
+          "visibility_policy",
+          "TEXT",
+          "NOT NULL DEFAULT 'restricted' CHECK(visibility_policy IN ('restricted','broadcast'))",
+          "显式通知可见范围；原无recipient的旧通知导入broadcast，不把新名单为空解释为全员授权"
+        ],
+        [
+          "phase_id",
+          "TEXT",
+          "",
+          "phase_reminder/late_repeat必须引用真实phase"
+        ],
+        [
+          "reminder_stage",
+          "INTEGER",
+          "CHECK(reminder_stage >= 1 AND reminder_stage <= 2)",
+          "对应阶段1/2，仅提醒消息适用"
+        ],
+        [
+          "title",
+          "TEXT",
+          "NOT NULL",
+          "保持现有标题；协议最终字节大小由sender验证，不臆造字符上限"
+        ],
+        [
+          "body",
+          "TEXT",
+          "NOT NULL",
+          "通知正文，保存真实内容，不为压表数截断"
+        ],
+        [
+          "data_payload_json",
+          "TEXT",
+          "NOT NULL CHECK(data_payload_json IS NULL OR (CASE WHEN json_valid(data_payload_json) THEN json_type(data_payload_json)='object' ELSE 0 END))",
+          "逻辑通知与实际发送使用同一canonical payload；冻结的alertId等不是授权来源"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(event_key)",
+        "UNIQUE(id,alert_id)",
+        "FOREIGN KEY (alert_id) REFERENCES alerts(id) ON DELETE CASCADE",
+        "FOREIGN KEY (phase_id,alert_id) REFERENCES notification_phases(id,alert_id) ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED",
+        "CHECK((message_kind IN ('phase_reminder','late_repeat') AND phase_id IS NOT NULL AND reminder_stage IS NOT NULL) OR (message_kind NOT IN ('phase_reminder','late_repeat') AND phase_id IS NULL AND reminder_stage IS NULL))"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_notifications_alert_time ON notifications(alert_id,created_at DESC);",
+        "CREATE INDEX ix_notifications_phase ON notifications(phase_id,reminder_stage) WHERE phase_id IS NOT NULL;",
+        "CREATE UNIQUE INDEX ux_main_stage_message ON notifications(phase_id,reminder_stage) WHERE message_kind='phase_reminder';"
+      ],
+      "why": "通知作为可浏览内容有独立生命周期；发送任务失败/重试不应改变消息身份。保留notifications，不把跳过阶段造成为假的隐藏消息。payload镜像当前一致，采用一份canonical值；若切换时发现差异先阻断核对并归档原值。",
+      "decision": "保留"
+    },
+    {
+      "name": "notification_outbox",
+      "purpose": "某条通知的持久发送任务、领取与重试状态",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "保留现有dispatch/outbox ID，FCM dispatchId与内部队列引用不改变"
+        ],
+        [
+          "notification_id",
+          "TEXT",
+          "NOT NULL",
+          "一条消息最多一个当前发送任务；内容/默认payload通过FK读取，不再重复"
+        ],
+        [
+          "channel_id",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(channel_id)) > 0)",
+          "Android beep channel的逻辑ID，与正文不同用途，不设无依据长度"
+        ],
+        [
+          "status",
+          "TEXT",
+          "NOT NULL CHECK(status IN ('pending','dispatching','sent','partial','failed','no_recipients'))",
+          "现有outbox生命周期"
+        ],
+        [
+          "attempt_count",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(attempt_count >= 0)",
+          "领取次数；正常失败重试阈值3，crash/lease恢复可增加领取数，不把它误作设备实际发送次数或硬截断"
+        ],
+        [
+          "next_attempt_at",
+          "TEXT",
+          "NOT NULL CHECK(next_attempt_at IS NULL OR (length(next_attempt_at)=27 AND next_attempt_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(next_attempt_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(next_attempt_at,1,10),'+0 days')=substr(next_attempt_at,1,10),0) AND CAST(substr(next_attempt_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(next_attempt_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(next_attempt_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "claimed_at",
+          "TEXT",
+          "CHECK(claimed_at IS NULL OR (length(claimed_at)=27 AND claimed_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(claimed_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(claimed_at,1,10),'+0 days')=substr(claimed_at,1,10),0) AND CAST(substr(claimed_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(claimed_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(claimed_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "last_error_code",
+          "TEXT",
+          "",
+          "队列级错误区别于逐设备错误与阶段错误"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "updated_at",
+          "TEXT",
+          "NOT NULL CHECK(updated_at IS NULL OR (length(updated_at)=27 AND updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(updated_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(updated_at,1,10),'+0 days')=substr(updated_at,1,10),0) AND CAST(substr(updated_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(updated_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(updated_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(notification_id)",
+        "FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE",
+        "CHECK(updated_at>=created_at)"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_outbox_due ON notification_outbox(status,next_attempt_at);"
+      ],
+      "why": "这是可领取、重试和恢复的任务，和用户看到的消息不同；保留独立表有明确运行职责。移除重复event_key及payload：幂等键与正文归notifications。只统一数据真值，不为了减少表数混合生命周期。",
+      "decision": "保留并重命名mobile_notification_outbox；删除重复内容列"
+    },
+    {
+      "name": "notification_recipients",
+      "purpose": "通知展示名单与实际排队用户快照",
+      "columns": [
+        [
+          "id",
+          "INTEGER",
+          "PRIMARY KEY",
+          "关系行没有公开ID需求；用SQLite内部整数键，修复旧表无PK问题"
+        ],
+        [
+          "notification_id",
+          "TEXT",
+          "NOT NULL",
+          "所属逻辑消息"
+        ],
+        [
+          "user_id",
+          "TEXT",
+          "",
+          "用户收件人；和role_id互斥"
+        ],
+        [
+          "role_id",
+          "TEXT",
+          "",
+          "旧role可见名单；和user_id互斥"
+        ],
+        [
+          "feed_visible",
+          "INTEGER",
+          "NOT NULL DEFAULT 1 CHECK(feed_visible IN (0,1))",
+          "该成员是否属于Mobile通知展示名单"
+        ],
+        [
+          "queued_target",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(queued_target IN (0,1))",
+          "用户是否属于实际outbox目标快照；role行不能冒充已物化用户快照"
+        ]
+      ],
+      "rules": [
+        "FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE",
+        "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
+        "FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE",
+        "CHECK((user_id IS NOT NULL AND role_id IS NULL) OR (user_id IS NULL AND role_id IS NOT NULL))",
+        "CHECK(feed_visible=1 OR queued_target=1)",
+        "CHECK(role_id IS NULL OR queued_target=0)"
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX ux_notification_recipient_user ON notification_recipients(notification_id,user_id) WHERE user_id IS NOT NULL;",
+        "CREATE UNIQUE INDEX ux_notification_recipient_role ON notification_recipients(notification_id,role_id) WHERE role_id IS NOT NULL;",
+        "CREATE INDEX ix_notification_recipient_user ON notification_recipients(user_id,feed_visible);",
+        "CREATE INDEX ix_notification_recipient_role ON notification_recipients(role_id,feed_visible);"
+      ],
+      "why": "旧队列与feed使用同一用户名单，却保存两套关系。合并为一行两个有意义标记，可保留两名单不同时的事实；live FK仍明确。原UNIQUE(notification_id,role_id,user_id)含NULL不能可靠去重，改为两个partial UNIQUE。",
+      "decision": "统一notification_recipients+mobile_notification_outbox_recipients"
+    },
+    {
+      "name": "notification_deliveries",
+      "purpose": "每通知每设备的最新实际发送结果",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "原notification_deliveries.id继续保留；仅旧outbox有行时创建明确映射的新ID"
+        ],
+        [
+          "notification_id",
+          "TEXT",
+          "NOT NULL",
+          "所属消息；原outbox_id可通过outbox.notification_id唯一关系回查"
+        ],
+        [
+          "device_id",
+          "TEXT",
+          "NOT NULL",
+          "目标设备身份，历史设备只停用而不硬删除"
+        ],
+        [
+          "recipient_user_id",
+          "TEXT",
+          "",
+          "新发送捕获当时用户；旧表未保存时NULL，不能猜成设备当前owner"
+        ],
+        [
+          "status",
+          "TEXT",
+          "NOT NULL CHECK(status IN ('queued','sent','failed','invalid_device'))",
+          "完整原delivery状态，和队列聚合状态分开"
+        ],
+        [
+          "provider_message_id",
+          "TEXT",
+          "",
+          "FCM返回的不透明ID"
+        ],
+        [
+          "attempt_count",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(attempt_count >= 0)",
+          "设备实际尝试计数，不与队列领取次数混用、不把两镜像次数相加"
+        ],
+        [
+          "last_attempt_at",
+          "TEXT",
+          "CHECK(last_attempt_at IS NULL OR (length(last_attempt_at)=27 AND last_attempt_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(last_attempt_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(last_attempt_at,1,10),'+0 days')=substr(last_attempt_at,1,10),0) AND CAST(substr(last_attempt_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(last_attempt_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(last_attempt_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "error_code",
+          "TEXT",
+          "",
+          "该设备的错误，而非共享消息错误"
+        ],
+        [
+          "updated_at",
+          "TEXT",
+          "CHECK(updated_at IS NULL OR (length(updated_at)=27 AND updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(updated_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(updated_at,1,10),'+0 days')=substr(updated_at,1,10),0) AND CAST(substr(updated_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(updated_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(updated_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "新结果及原outbox镜像有实际更新时间；仅旧feed有的65条未保存此字段，保持NULL，不能冒充last_attempt_at；新写入由服务必填"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(notification_id,device_id)",
+        "FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE",
+        "FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (recipient_user_id) REFERENCES users(id) ON DELETE RESTRICT",
+        "CHECK(status NOT IN ('sent','failed','invalid_device') OR last_attempt_at IS NOT NULL)"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_delivery_device ON notification_deliveries(device_id);",
+        "CREATE INDEX ix_delivery_recipient ON notification_deliveries(recipient_user_id) WHERE recipient_user_id IS NOT NULL;"
+      ],
+      "why": "当前worker同一事务双写两份结果，115份镜像逐字段一致。统一一条消息/设备事实；不采用会因设备换用户而失效的永久(device_id,user_id)复合FK。新插入在服务事务校验当时owner，历史NULL诚实表达未知。",
+      "decision": "统一notification_deliveries+mobile_notification_outbox_deliveries"
+    },
+    {
+      "name": "notification_reads",
+      "purpose": "每用户每消息的首次已读关系",
+      "columns": [
+        [
+          "notification_id",
+          "TEXT",
+          "NOT NULL",
+          "读取的消息"
+        ],
+        [
+          "user_id",
+          "TEXT",
+          "NOT NULL",
+          "读取者"
+        ],
+        [
+          "read_at",
+          "TEXT",
+          "NOT NULL CHECK(read_at IS NULL OR (length(read_at)=27 AND read_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(read_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(read_at,1,10),'+0 days')=substr(read_at,1,10),0) AND CAST(substr(read_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(read_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(read_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "PRIMARY KEY(notification_id,user_id)",
+        "FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE",
+        "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_notification_reads_user ON notification_reads(user_id,read_at);"
+      ],
+      "why": "通知读取与警报浏览是不同用户行为，不合并到共享read字段，也不混进不可删的行政审计。mark-all-read仍逐用户执行。",
+      "decision": "保留"
+    },
+    {
+      "name": "alert_notification_audience",
+      "purpose": "每警报每用户的初次通知资格及已送达事实",
+      "columns": [
+        [
+          "alert_id",
+          "TEXT",
+          "NOT NULL",
+          "警报身份"
+        ],
+        [
+          "user_id",
+          "TEXT",
+          "NOT NULL",
+          "该警报累计具备初次通知资格的用户"
+        ],
+        [
+          "qualification_reasons_json",
+          "TEXT",
+          "NOT NULL DEFAULT '[]' CHECK(qualification_reasons_json IS NULL OR (CASE WHEN json_valid(qualification_reasons_json) THEN json_type(qualification_reasons_json)='array' ELSE 0 END))",
+          "当时ordinary_threshold/borderline_review/legacy等资格来源；逐元素验证字符串"
+        ],
+        [
+          "first_notification_id",
+          "TEXT",
+          "",
+          "最近一次初次尝试的消息；未有消息或旧消息删除时可空"
+        ],
+        [
+          "first_queued_at",
+          "TEXT",
+          "NOT NULL CHECK(first_queued_at IS NULL OR (length(first_queued_at)=27 AND first_queued_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(first_queued_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(first_queued_at,1,10),'+0 days')=substr(first_queued_at,1,10),0) AND CAST(substr(first_queued_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(first_queued_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(first_queued_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "first_sent_at",
+          "TEXT",
+          "CHECK(first_sent_at IS NULL OR (length(first_sent_at)=27 AND first_sent_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(first_sent_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(first_sent_at,1,10),'+0 days')=substr(first_sent_at,1,10),0) AND CAST(substr(first_sent_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(first_sent_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(first_sent_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "PRIMARY KEY(alert_id,user_id)",
+        "FOREIGN KEY (alert_id) REFERENCES alerts(id) ON DELETE CASCADE",
+        "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
+        "FOREIGN KEY (first_notification_id) REFERENCES notifications(id) ON DELETE SET NULL",
+        "CHECK(first_sent_at IS NULL OR first_sent_at>=first_queued_at)"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_alert_audience_user ON alert_notification_audience(user_id,alert_id);",
+        "CREATE INDEX ix_alert_audience_notification ON alert_notification_audience(first_notification_id) WHERE first_notification_id IS NOT NULL;"
+      ],
+      "why": "此关系跨越多条通知，负责初次推送去重与阶段1真实audience。不能与单条消息recipient混为同一事实；资格缓存不是浏览授权。",
+      "decision": "保留"
+    },
+    {
+      "name": "notification_phases",
+      "purpose": "事件Phase A/B的计时快照及旧计划归档",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "alert_id",
+          "TEXT",
+          "NOT NULL",
+          "所属事件"
+        ],
+        [
+          "phase_kind",
+          "TEXT",
+          "NOT NULL CHECK(phase_kind IN ('awaiting_decision','awaiting_handler'))",
+          "当前两种计时阶段"
+        ],
+        [
+          "phase_status",
+          "TEXT",
+          "NOT NULL CHECK(phase_status IN ('active','cancelled','completed','archived'))",
+          "前三种为当前流程，archived只用于不再运行的旧计划事实"
+        ],
+        [
+          "started_at",
+          "TEXT",
+          "NOT NULL CHECK(started_at IS NULL OR (length(started_at)=27 AND started_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(started_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(started_at,1,10),'+0 days')=substr(started_at,1,10),0) AND CAST(substr(started_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(started_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(started_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "first_after_seconds",
+          "INTEGER",
+          "NOT NULL CHECK(first_after_seconds >= 15 AND first_after_seconds <= 3600)",
+          "阶段建立时冻结的首次重复延迟"
+        ],
+        [
+          "all_after_seconds",
+          "INTEGER",
+          "NOT NULL CHECK(all_after_seconds >= 30 AND all_after_seconds <= 7200)",
+          "全体升级延迟必须更晚"
+        ],
+        [
+          "first_due_at",
+          "TEXT",
+          "NOT NULL CHECK(first_due_at IS NULL OR (length(first_due_at)=27 AND first_due_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(first_due_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(first_due_at,1,10),'+0 days')=substr(first_due_at,1,10),0) AND CAST(substr(first_due_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(first_due_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(first_due_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "all_due_at",
+          "TEXT",
+          "NOT NULL CHECK(all_due_at IS NULL OR (length(all_due_at)=27 AND all_due_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(all_due_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(all_due_at,1,10),'+0 days')=substr(all_due_at,1,10),0) AND CAST(substr(all_due_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(all_due_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(all_due_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "broadcast_role_snapshot_json",
+          "TEXT",
+          "NOT NULL DEFAULT '[]' CHECK(broadcast_role_snapshot_json IS NULL OR (CASE WHEN json_valid(broadcast_role_snapshot_json) THEN json_type(broadcast_role_snapshot_json)='array' ELSE 0 END))",
+          "建立阶段时的历史选择；live关系在notification_phase_roles"
+        ],
+        [
+          "initiated_by_user_id",
+          "TEXT",
+          "",
+          "Phase B发起人；自动Phase A可空"
+        ],
+        [
+          "source_notification_id",
+          "TEXT",
+          "",
+          "启动计时的消息；即使没有设备也可建立Phase B"
+        ],
+        [
+          "cancel_reason",
+          "TEXT",
+          "",
+          "取消/替代原因，可扩展"
+        ],
+        [
+          "completed_at",
+          "TEXT",
+          "CHECK(completed_at IS NULL OR (length(completed_at)=27 AND completed_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(completed_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(completed_at,1,10),'+0 days')=substr(completed_at,1,10),0) AND CAST(substr(completed_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(completed_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(completed_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "is_legacy",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(is_legacy IN (0,1))",
+          "允许诚实归档旧v10计划，不伪造人工取消"
+        ]
+      ],
+      "rules": [
+        "UNIQUE(id,alert_id)",
+        "FOREIGN KEY (alert_id) REFERENCES alerts(id) ON DELETE CASCADE",
+        "FOREIGN KEY (initiated_by_user_id) REFERENCES users(id) ON DELETE RESTRICT",
+        "FOREIGN KEY (source_notification_id) REFERENCES notifications(id) ON DELETE RESTRICT",
+        "CHECK(all_after_seconds>first_after_seconds)",
+        "CHECK(first_due_at<all_due_at AND first_due_at>started_at)",
+        "CHECK(completed_at IS NULL OR completed_at>=started_at)",
+        "CHECK(phase_status<>'active' OR completed_at IS NULL)",
+        "CHECK(phase_status<>'archived' OR is_legacy=1)",
+        "CHECK(COALESCE(CAST(strftime('%s',substr(first_due_at,1,19)||'Z') AS INTEGER)=CAST(strftime('%s',substr(started_at,1,19)||'Z') AS INTEGER)+first_after_seconds,0) AND substr(first_due_at,21,6)=substr(started_at,21,6))",
+        "CHECK(COALESCE(CAST(strftime('%s',substr(all_due_at,1,19)||'Z') AS INTEGER)=CAST(strftime('%s',substr(started_at,1,19)||'Z') AS INTEGER)+all_after_seconds,0) AND substr(all_due_at,21,6)=substr(started_at,21,6))"
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX ux_one_active_phase ON notification_phases(alert_id) WHERE phase_status='active';",
+        "CREATE INDEX ix_phase_due ON notification_phases(phase_status,first_due_at,all_due_at);",
+        "CREATE INDEX ix_phase_initiator ON notification_phases(initiated_by_user_id) WHERE initiated_by_user_id IS NOT NULL;",
+        "CREATE INDEX ix_phase_source_notice ON notification_phases(source_notification_id) WHERE source_notification_id IS NOT NULL;"
+      ],
+      "why": "计时从一个明确phase anchor开始，响应可取消；与消息/队列任务独立。同一事件可有多个历史phase，但最多一个active。old schedules也是计时快照，迁移后停止双写。精确微秒deadline计算由Python datetime执行，不用SQLite毫秒舍入函数代替。",
+      "decision": "统一mobile_alert_reminder_phases+旧alert_notification_escalation_schedules"
+    },
+    {
+      "name": "notification_phase_roles",
+      "purpose": "Phase B当时选择的live Broadcast Roles",
+      "columns": [
+        [
+          "phase_id",
+          "TEXT",
+          "NOT NULL",
+          "具体Phase B，不能只按alert覆盖所有历史阶段"
+        ],
+        [
+          "role_id",
+          "TEXT",
+          "NOT NULL",
+          "当前存在的角色FK；删除role后live选择消失，历史snapshot仍在"
+        ]
+      ],
+      "rules": [
+        "PRIMARY KEY(phase_id,role_id)",
+        "FOREIGN KEY (phase_id) REFERENCES notification_phases(id) ON DELETE CASCADE",
+        "FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_phase_roles_role ON notification_phase_roles(role_id,phase_id);"
+      ],
+      "why": "这张新增表有真实职责：把当前用于即时收件资格的JSON角色ID列表改为可执行FK、可索引的M:N关系。选中时最多20角色由事务验证；以后角色删除不抹掉历史快照。",
+      "decision": "新增一个明确关联实体，取代live JSON关系"
+    },
+    {
+      "name": "notification_phase_dispatches",
+      "purpose": "一个phase-stage的领取、防重与完成结果",
+      "columns": [
+        [
+          "phase_id",
+          "TEXT",
+          "NOT NULL",
+          "阶段"
+        ],
+        [
+          "stage",
+          "INTEGER",
+          "NOT NULL CHECK(stage >= 1 AND stage <= 2)",
+          "联合主键成员，阶段1/2"
+        ],
+        [
+          "status",
+          "TEXT",
+          "NOT NULL CHECK(status IN ('dispatching','queued','sent','partial','failed','no_recipients','skipped_stopped','skipped_superseded','skipped_responded'))",
+          "完整当前/旧阶段执行状态"
+        ],
+        [
+          "notification_id",
+          "TEXT",
+          "",
+          "真正产生消息时才引用；claim/skipped/no-recipients允许无消息"
+        ],
+        [
+          "recipient_count_unit",
+          "TEXT",
+          "CHECK(recipient_count_unit IN ('user','device'))",
+          "明确旧代码排队统计用户、完成统计设备的不同单位；历史无法证明时NULL"
+        ],
+        [
+          "recipient_count",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(recipient_count >= 0)",
+          "阶段收件数快照，须结合单位"
+        ],
+        [
+          "sent_count",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(sent_count >= 0)",
+          "设备成功数快照"
+        ],
+        [
+          "failed_count",
+          "INTEGER",
+          "NOT NULL DEFAULT 0 CHECK(failed_count >= 0)",
+          "设备失败数快照"
+        ],
+        [
+          "error_code",
+          "TEXT",
+          "",
+          "阶段错误与outbox错误各自保存"
+        ],
+        [
+          "claimed_at",
+          "TEXT",
+          "NOT NULL CHECK(claimed_at IS NULL OR (length(claimed_at)=27 AND claimed_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(claimed_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(claimed_at,1,10),'+0 days')=substr(claimed_at,1,10),0) AND CAST(substr(claimed_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(claimed_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(claimed_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ],
+        [
+          "completed_at",
+          "TEXT",
+          "CHECK(completed_at IS NULL OR (length(completed_at)=27 AND completed_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(completed_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(completed_at,1,10),'+0 days')=substr(completed_at,1,10),0) AND CAST(substr(completed_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(completed_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(completed_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "PRIMARY KEY(phase_id,stage)",
+        "UNIQUE(notification_id)",
+        "FOREIGN KEY (phase_id) REFERENCES notification_phases(id) ON DELETE CASCADE",
+        "FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE SET NULL",
+        "CHECK(completed_at IS NULL OR completed_at>=claimed_at)"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_phase_dispatch_status ON notification_phase_dispatches(status,claimed_at);"
+      ],
+      "why": "一条stage执行记录可能没有任何消息或设备，所以它不能被并入notifications而造假通知。claim事实是提醒worker的幂等保障；outbox任务处理的是已有消息的发送与重试，两者语义不同。",
+      "decision": "统一mobile_alert_reminder_dispatches+旧alert_notification_escalation_dispatches"
+    },
+    {
+      "name": "notification_phase_audience",
+      "purpose": "每阶段、每用户、每stage的发送防重与结果",
+      "columns": [
+        [
+          "phase_id",
+          "TEXT",
+          "NOT NULL",
+          "phase已决定alert，不重复存alert_id"
+        ],
+        [
+          "user_id",
+          "TEXT",
+          "NOT NULL",
+          "用户身份"
+        ],
+        [
+          "stage",
+          "INTEGER",
+          "NOT NULL CHECK(stage >= 1 AND stage <= 2)",
+          "阶段1/2"
+        ],
+        [
+          "status",
+          "TEXT",
+          "NOT NULL CHECK(status IN ('queued','sent','failed','skipped'))",
+          "当前用户阶段状态"
+        ],
+        [
+          "notification_id",
+          "TEXT",
+          "",
+          "主提醒或late-repeat消息；旧outbox唯一映射到消息，保留稳定关联"
+        ],
+        [
+          "updated_at",
+          "TEXT",
+          "NOT NULL CHECK(updated_at IS NULL OR (length(updated_at)=27 AND updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(updated_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(updated_at,1,10),'+0 days')=substr(updated_at,1,10),0) AND CAST(substr(updated_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(updated_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(updated_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "PRIMARY KEY(phase_id,user_id,stage)",
+        "FOREIGN KEY (phase_id) REFERENCES notification_phases(id) ON DELETE CASCADE",
+        "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE",
+        "FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE SET NULL"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_phase_audience_user ON notification_phase_audience(user_id,phase_id);",
+        "CREATE INDEX ix_phase_audience_notice ON notification_phase_audience(notification_id) WHERE notification_id IS NOT NULL;"
+      ],
+      "why": "late-repeat可在主stage完成后为新增资格账号创建另一条消息；逐用户stage防重仍独立。不是message recipient的重复：这里跨越该phase-stage的多个通知。删除冗余alert_id依赖，查旧API时JOIN phase。",
+      "decision": "重命名mobile_alert_reminder_audience并去除冗余依赖"
+    },
+    {
+      "name": "mobile_settings",
+      "purpose": "全局管理偏好、Borderline并发revision与模拟通话不变量",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(id='global')",
+          "真实单例设置，不伪装成模型版本资源"
+        ],
+        [
+          "borderline_alert_enabled",
+          "INTEGER",
+          "NOT NULL DEFAULT 1 CHECK(borderline_alert_enabled IN (0,1))",
+          "保留旧Mobile全局设置；与config.vlm_borderline_review_enabled Web master不同"
+        ],
+        [
+          "borderline_revision",
+          "INTEGER",
+          "NOT NULL DEFAULT 1 CHECK(borderline_revision >= 1)",
+          "角色/个人接收设置共用的乐观并发版本"
+        ],
+        [
+          "emergency_call_simulation_only",
+          "INTEGER",
+          "NOT NULL DEFAULT 1 CHECK(emergency_call_simulation_only=1)",
+          "产品当前只模拟通话；不能通过数据库值0启用真实拨号"
+        ],
+        [
+          "updated_by_user_id",
+          "TEXT",
+          "",
+          "后台初始化可空，否则记录修改者"
+        ],
+        [
+          "updated_at",
+          "TEXT",
+          "NOT NULL CHECK(updated_at IS NULL OR (length(updated_at)=27 AND updated_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(updated_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(updated_at,1,10),'+0 days')=substr(updated_at,1,10),0) AND CAST(substr(updated_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(updated_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(updated_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE RESTRICT"
+      ],
+      "indexes": [],
+      "why": "全局偏好与角色/用户配置的统一revision属于同一单例。合并borderline_settings_revision；旧角色集合转roles.compat_borderline_selected，历史集合留审计。系统运行策略版本仍在config_versions。",
+      "decision": "合并mobile_settings+borderline_settings_revision"
+    },
+    {
+      "name": "audit_logs",
+      "purpose": "行政、安全与配置操作的不可变审计事实",
+      "columns": [
+        [
+          "id",
+          "TEXT",
+          "PRIMARY KEY NOT NULL CHECK(length(trim(id)) > 0 AND instr(id,char(0))=0)",
+          "沿用既有公开 ID，避免改动手机深链接、证据 URL 和幂等引用"
+        ],
+        [
+          "user_id",
+          "TEXT",
+          "",
+          "系统操作或已删除actor允许NULL；敏感内容不得写入detail"
+        ],
+        [
+          "action",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(action)) > 0)",
+          "行政操作名可扩展，不把未来所有操作封死成少量枚举"
+        ],
+        [
+          "entity_type",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(entity_type)) > 0)",
+          "操作目标的历史类别，非动态授权或可执行外键"
+        ],
+        [
+          "entity_id",
+          "TEXT",
+          "",
+          "历史目标标识，可指已删除角色；故意不是live FK"
+        ],
+        [
+          "detail_json",
+          "TEXT",
+          "CHECK(detail_json IS NULL OR (CASE WHEN json_valid(detail_json) THEN 1 ELSE 0 END))",
+          "当时操作及迁移例外的冻结JSON；原始合法JSON类型保留，运行审计由服务生成对象"
+        ],
+        [
+          "created_at",
+          "TEXT",
+          "NOT NULL CHECK(created_at IS NULL OR (length(created_at)=27 AND created_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(created_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(created_at,1,10),'+0 days')=substr(created_at,1,10),0) AND CAST(substr(created_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(created_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(created_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL"
+      ],
+      "indexes": [
+        "CREATE INDEX ix_audit_actor_time ON audit_logs(user_id,created_at DESC);",
+        "CREATE INDEX ix_audit_subject_time ON audit_logs(entity_type,entity_id,created_at DESC);"
+      ],
+      "why": "审计与事件人工响应、首次已读、schema账表有不同查询/保留职责，保留独立。删除role不能让过去管理员操作消失；entity_id是历史snapshot，不能谎称它受FK保障。",
+      "decision": "保留"
+    },
+    {
+      "name": "schema_migrations",
+      "purpose": "数据库结构升级的持久账表",
+      "columns": [
+        [
+          "version",
+          "INTEGER",
+          "NOT NULL CHECK(version >= 1)",
+          "结构版本主键，与业务配置版本完全不同"
+        ],
+        [
+          "name",
+          "TEXT",
+          "NOT NULL CHECK(length(trim(name)) > 0)",
+          "升级名称，仅version用作身份，不要求名称永远不重复"
+        ],
+        [
+          "applied_at",
+          "TEXT",
+          "NOT NULL CHECK(applied_at IS NULL OR (length(applied_at)=27 AND applied_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z' AND CAST(substr(applied_at,1,4) AS INTEGER) BETWEEN 1 AND 9999 AND COALESCE(date(substr(applied_at,1,10),'+0 days')=substr(applied_at,1,10),0) AND CAST(substr(applied_at,12,2) AS INTEGER) BETWEEN 0 AND 23 AND CAST(substr(applied_at,15,2) AS INTEGER) BETWEEN 0 AND 59 AND CAST(substr(applied_at,18,2) AS INTEGER) BETWEEN 0 AND 59))",
+          "统一UTC ISO8601微秒格式 YYYY-MM-DDTHH:MM:SS.ffffffZ；保留微秒，固定格式才可按文本精确排序"
+        ]
+      ],
+      "rules": [
+        "PRIMARY KEY(version)"
+      ],
+      "indexes": [],
+      "why": "基础设施元数据有明确长期职责。保留当前migration runner识别的账表，不为了少一张而混入用户活动。schema版本只以本表为真值；DDL样稿不插入假装已执行的升级行。",
+      "decision": "保留"
+    }
+  ],
+  "mapping": {
+    "users": "users",
+    "roles": "roles",
+    "user_roles": "user_roles",
+    "devices": "devices",
+    "locations": "locations",
+    "cameras": "cameras",
+    "media_files": "media_files",
+    "camera_sources": "camera_sources",
+    "model_versions": "model_versions",
+    "prompt_versions": "prompt_versions",
+    "config_versions": "config_versions",
+    "violence_configs": "config_versions.violence_*",
+    "weapon_configs": "config_versions.weapon_*",
+    "vlm_configs": "config_versions.vlm_*及prompt FK",
+    "alert_notification_escalation_configs": "config_versions两阶段延迟",
+    "alerts": "alerts；status由workflow_status固定映射派生",
+    "mobile_alert_workflows": "alerts的当前流程/处理人/phase/revision字段",
+    "detection_events": "detection_events",
+    "borderline_review_tasks": "borderline_reviews [task]",
+    "borderline_reviews": "borderline_reviews [audit_only]；能证明相同的镜像合并并保留legacy_review_id",
+    "evidence_records": "evidence_records",
+    "vlm_descriptions": "vlm_descriptions",
+    "alert_actions": "alert_actions [legacy]",
+    "mobile_alert_workflow_events": "alert_actions [workflow]；审计事实留audit_logs",
+    "alert_reads": "alert_reads",
+    "notifications": "notifications",
+    "notification_recipients": "notification_recipients.feed_visible",
+    "notification_reads": "notification_reads",
+    "notification_deliveries": "notification_deliveries",
+    "mobile_notification_outbox": "notification_outbox；event_key移notifications，payload统一读取notifications",
+    "mobile_notification_outbox_recipients": "notification_recipients.queued_target",
+    "mobile_notification_outbox_deliveries": "notification_deliveries；以(notification_id,device_id)单一事实，不加总次数",
+    "alert_notification_audience": "alert_notification_audience",
+    "mobile_alert_reminder_phases": "notification_phases；live JSON角色选择展开到notification_phase_roles",
+    "alert_notification_escalation_schedules": "notification_phases的legacy归档或可证明相同phase",
+    "mobile_alert_reminder_dispatches": "notification_phase_dispatches",
+    "alert_notification_escalation_dispatches": "notification_phase_dispatches的历史对应phase-stage",
+    "mobile_alert_reminder_audience": "notification_phase_audience；alert_id通过phase推导，outbox_id唯一映射notification_id",
+    "borderline_role_settings": "roles.borderline_*",
+    "borderline_user_settings": "users.borderline_*",
+    "mobile_settings": "mobile_settings；角色集合改为roles.compat_borderline_selected",
+    "borderline_settings_revision": "mobile_settings.borderline_revision",
+    "audit_logs": "audit_logs",
+    "schema_migrations": "schema_migrations"
+  },
+  "count_ledger": [
+    [
+      "基线",
+      44,
+      "原schema v14"
+    ],
+    [
+      "五张配置表合并",
+      -4,
+      "相同版本和保存生命周期"
+    ],
+    [
+      "用户/角色偏好并入主实体",
+      -2,
+      "两个一对一属性组"
+    ],
+    [
+      "revision并入全局设置",
+      -1,
+      "同一全局设置聚合"
+    ],
+    [
+      "当前workflow并入alert",
+      -1,
+      "每事件唯一当前状态"
+    ],
+    [
+      "统一复核请求/结论镜像",
+      -1,
+      "同一review生命周期"
+    ],
+    [
+      "统一旧/新人工响应历史",
+      -1,
+      "同一事件动作事实"
+    ],
+    [
+      "旧计划/dispatch统一当前phase模型",
+      -2,
+      "保留全部旧事实，结束双写"
+    ],
+    [
+      "统一用户目标名单",
+      -1,
+      "同一message-user关系的两个标记"
+    ],
+    [
+      "统一设备结果镜像",
+      -1,
+      "同一message-device结果"
+    ],
+    [
+      "新增live phase-role关联",
+      1,
+      "替代可执行JSON关联，提高FK保障"
+    ]
+  ],
+  "status_map": {
+    "awaiting_confirmation": "open",
+    "confirmed_awaiting_handler": "in_review",
+    "in_progress": "in_review",
+    "legacy_in_review": "in_review",
+    "resolved": "resolved",
+    "dismissed": "dismissed",
+    "legacy_escalated": "escalated"
+  }
+}
