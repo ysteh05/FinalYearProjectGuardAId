@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GuardAId Monitor</title>
+  <link rel="stylesheet" href="/static/styles.css?v=20261018-alert-centre-v2">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><img class="brand-mark" src="/static/guardaid-mark.svg" alt="" width="40" height="40"><div><strong>GuardAId</strong><small>School safety console</small></div></div>
+      <nav>
+        <button class="nav-item active" data-view="monitor"><span class="nav-icon">◉</span><span>Monitor</span></button>
+        <button class="nav-item" data-view="alerts"><span class="nav-icon">△</span><span>Alerts</span><span id="alert-count" class="count">0</span></button>
+        <button class="nav-item" data-view="cameras"><span class="nav-icon">▣</span><span>Cameras</span></button>
+        <button class="nav-item" data-view="config"><span class="nav-icon">⚙</span><span>Config</span></button>
+      </nav>
+      <div class="sidebar-foot"><div class="system-pulse"><i></i><span id="sidebar-mode">Checking runtime...</span></div><small>Human review remains required</small></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar"><div><small>Operational prototype</small><h1 id="page-title">Live monitor</h1></div><div class="operator"><span id="clock" class="clock"></span><button class="icon-button" id="refresh-button" title="Refresh">↻</button><div><strong>Local operator</strong><small>Admin console</small></div></div></header>
+      <div id="runtime-banner" class="runtime-banner hidden" role="status"></div>
+      <div id="refresh-health" class="runtime-banner hidden" role="status" aria-live="polite"></div>
+      <div id="toast-stack" class="toast-stack" aria-live="polite"></div>
+
+      <section id="view-monitor" class="view active">
+        <div class="view-heading"><div><h2>Camera wall</h2><p>All detector-confirmed alerts meeting the lowest configured violence threshold or weapon N-of-M gate are recorded; role sensitivity controls phone notifications.</p></div><div class="heading-actions"><button class="button primary" data-go="cameras">＋ Add camera</button></div></div>
+        <div class="monitor-layout">
+          <div><div id="camera-wall" class="camera-wall"></div><div id="camera-empty" class="empty-state hidden"><div class="empty-glyph">▣</div><h3>No camera feeds</h3><p>Upload short videos to create simulated CCTV views.</p><button class="button primary" data-go="cameras">Upload first video</button></div></div>
+          <aside class="rail">
+            <article class="panel"><div class="panel-title"><div><span class="live-dot"></span>Pipeline status</div><span id="feed-count" class="muted">0 feeds</span></div><div id="pipeline-readiness" class="readiness-list"></div></article>
+            <article class="panel"><div class="panel-title">Active policy</div><dl id="policy-summary" class="policy-summary"></dl></article>
+            <article class="panel runtime-design-panel"><div class="panel-title">Runtime design</div><p class="muted compact runtime-design-copy">YOLOv9-T and MC3-18 are continuous detector lanes. MiniCPM V4.7 1B reviews borderline windows until confirmation and describes completed incidents, with one local VLM request at a time.</p></article>
+          </aside>
+        </div>
+      </section>
+
+      <section id="view-alerts" class="view">
+        <div class="view-heading"><div><h2>Alert centre</h2><p>Detector evidence and VLM descriptions for authorised human review.</p></div><div class="filter-tabs" id="alert-filters"><button class="active" data-filter="all">All</button><button data-filter="violence">Violence</button><button data-filter="weapon">Weapon</button></div></div>
+        <div id="alerts-list" class="alerts-list"></div><div id="alerts-empty" class="empty-state hidden"><div class="empty-glyph safe">✓</div><h3>No alerts to review</h3><p>Analysis results will appear here without fabricating detections.</p></div>
+      </section>
+
+      <section id="view-cameras" class="view">
+        <div class="view-heading"><div><h2>Camera sources</h2><p>Add, rename, enable, replace or remove uploaded CCTV simulations.</p></div></div>
+        <div class="camera-admin-layout">
+          <form id="camera-upload-form" class="panel upload-panel"><div class="panel-title">Add simulated camera</div><label class="dropzone" id="dropzone"><input id="camera-file" name="video" type="file" accept="video/mp4,video/webm,video/quicktime,.mkv,.avi" required><span class="upload-glyph">⇧</span><strong id="file-label">Choose a CCTV video</strong><small>MP4, MOV, MKV, AVI or WebM</small></label><div class="form-grid two"><label>Camera name<input id="camera-name" name="name" placeholder="e.g. Block A Corridor" maxlength="80" required></label><label>Location<input id="camera-location" name="location" placeholder="e.g. Level 2" maxlength="120"></label></div><div id="upload-privacy-note" class="privacy-note"></div><button class="button primary wide" type="submit">Add camera feed</button></form>
+          <div class="panel camera-table-panel"><div class="panel-title"><span>Configured cameras</span><span id="camera-total" class="muted">0 total</span></div><div id="camera-admin-list" class="camera-admin-list"></div></div>
+        </div>
+      </section>
+
+      <section id="view-config" class="view">
+        <div class="view-heading"><div><h2>Detection configuration</h2><p>Every save creates an auditable configuration version.</p></div><div id="config-version" class="version-chip">Config v—</div></div>
+        <form id="settings-form" class="settings-form">
+          <div id="settings-feedback" class="runtime-banner hidden" role="status"></div>
+          <button id="reload-settings" class="button secondary" type="button">Reload latest settings</button>
+          <article class="panel settings-card"><div class="settings-card-head"><div class="settings-icon violence">V</div><div><h3>Violence & physical bullying</h3><p>Fine-tuned MC3-18 · 4-second temporal-window model</p></div><span class="model-chip">MC3-18 · Kinetics-400 fine-tune · 16 frames</span></div><div class="form-grid three"><label>Segment duration <span>seconds</span><input name="violence.segmentSeconds" type="number" min="1" max="60" step="0.5"></label><label>Window stride <span>seconds</span><input name="violence.strideSeconds" type="number" min="0.1" max="60" step="0.1"></label><label>Input frames <span>16 frames sampled at bin centres</span><input name="violence.detectorInputFrames" type="number" min="4" max="128"></label><label>Sensitive threshold<input name="violence.sensitiveThreshold" type="number" min="0" max="1" step="any"></label><label>Moderate threshold<input name="violence.moderateThreshold" type="number" min="0" max="1" step="any"></label><label>Certain threshold<input name="violence.certainThreshold" type="number" min="0" max="1" step="any"></label><label>Incident merge gap <span>source-time seconds</span><input name="violence.incidentMergeGapSeconds" type="number" min="0" max="120" step="0.5"></label></div><p class="muted compact">Current inference input: 4-second windows, 2-second stride, 16 RGB frames sampled at bin centres (4 FPS), resized proportionally to fit the full frame inside 160×160, then padded to 160×160 with the MC3 RGB mean before normalization (letterbox; no center crop). The threshold fields above control the active decision levels. Role sensitivity determines ordinary phone notifications. Changing window length, stride, or frame count departs from the checkpoint's training/calibration protocol and may change detection performance.</p></article>
+
+          <article class="panel settings-card"><div class="settings-card-head"><div class="settings-icon weapon">W</div><div><h3>Weapon detection</h3><p>Ten-source YOLOv9-T · Epoch 10 · Knife and Gun · class-aware NMS, calibrated thresholds and N-of-M confirmation</p></div><span class="model-chip">YOLOv9-T · Knife/Gun</span></div><div class="form-grid three"><label>Sampling rate <span>FPS</span><input name="weapon.sampleFps" type="number" min="0.25" max="30" step="0.25"></label><label>NMS candidate floor <span>technical prefilter</span><input name="weapon.nmsCandidateFloor" type="number" min="0" max="0.1" step="0.0001"></label><label>NMS IoU threshold<input name="weapon.nmsIouThreshold" type="number" min="0.1" max="0.95" step="0.01"></label><label>N required <span>positive frames</span><input name="weapon.nRequired" type="number" min="1" max="120"></label><label>M window <span>recent frames</span><input name="weapon.mWindow" type="number" min="1" max="120"></label><label>Incident merge gap <span>source-time seconds</span><input name="weapon.incidentMergeGapSeconds" type="number" min="0" max="120" step="0.5"></label></div><div class="threshold-table"><div class="threshold-head"><strong>Class</strong><strong>Sensitive</strong><strong>Moderate</strong><strong>Certain</strong></div><div id="weapon-threshold-inputs"></div></div><p class="muted compact">Knife and Gun each use the lowest of their configured thresholds for alert recording. Sensitive, Moderate and Certain notification qualifications each require that profile's own class-specific N-of-M confirmation. A score spike alone cannot qualify a higher profile.</p></article>
+
+          <article class="panel settings-card"><div class="settings-card-head"><div class="settings-icon debug">!</div><div><h3>Unanswered alert notifications</h3><p>Two-stage reminders for pending decisions or handlers</p></div><span class="model-chip">NEW ALERTS</span></div><div class="form-grid two"><label>First-repeat delay <span>minutes after the current notification phase starts</span><input name="alertNotificationEscalation.sameAudienceRepeatMinutes" type="number" min="0.25" max="60" step="0.25" required></label><label>All-user reminder delay <span>minutes after the same phase starts</span><input name="alertNotificationEscalation.allUsersEscalationMinutes" type="number" min="0.5" max="120" step="0.25" required></label></div><p class="muted compact">The second delay must be later than the first. For an undecided alert, the first repeat goes to accounts that actually received the initial ordinary or VLM-supplemental notification; later eligible accounts retain the original phase timing. The second stage goes to all active users with a role and enabled device. After Confirm only, the first repeat also includes the selected broadcast roles (without an extra sensitivity filter); the second stage goes to all active role-bearing users with enabled devices. Dismissal, confirmation-and-handling, taking ownership, or resolution stops the relevant reminder phase. Opening/reading an alert, adding a comment, or recording a simulated emergency call does not stop it. Initial, first-repeat and all-user channels use two, three and four beeps respectively; routine decision updates use the normal notification channel. Timing is snapshotted for each phase.</p></article>
+
+          <article class="panel settings-card"><div class="settings-card-head"><div class="settings-icon vlm">M</div><div><h3>MiniCPM assistance</h3><p>Borderline review and incident scene descriptions</p></div><span class="model-chip">V4.7 · 1B · Q4_K_M</span></div><div class="form-grid two"><label>Borderline sampling <span>FPS</span><input name="vlm.inputFps" type="number" min="0.25" max="12" step="0.25"></label><label>Scene output token limit<input name="vlm.maxOutputTokens" type="number" min="32" max="2048"></label></div><div class="toggle-row"><label class="toggle-control"><input name="vlm.borderlineReviewEnabled" type="checkbox"><span></span>Enable Borderline Review</label><label class="toggle-control"><input name="vlm.sceneDescriptionEnabled" type="checkbox"><span></span>Generate alert descriptions</label></div><p class="muted compact">Scene descriptions use Ollama thinking; Borderline Review remains non-thinking. Frames retain their aspect ratio at a 360-pixel short side. Borderline review checks windows from Sensitive up to Certain until the first positive result for that alert, then skips further reviews. Ordinary threshold notifications continue independently. A violence scene description runs once after all windows eligible for the configured incident merge gap are processed, or when the video ends. Scenes up to 8 seconds use 2 FPS; longer scenes use 1 FPS. Only the first 60 seconds of the incident are described; full video evidence is retained.</p></article>
+          <article class="panel settings-card debug-settings-card"><div class="settings-card-head"><div class="settings-icon debug">D</div><div><h3>Developer diagnostics</h3><p>Time-aligned model score charts during video analysis</p></div><span class="model-chip">LOCAL DEBUG</span></div><div class="toggle-row"><label class="toggle-control"><input name="detectionDebugModeEnabled" type="checkbox"><span></span>Detection Debug Mode</label></div><p class="muted compact">When enabled, analyses started after saving show an MC3 Fight probability chart and a YOLO chart with one confidence line per weapon class in the active model. Click a time on either chart to inspect its nearest sample: MC3 opens that video window; YOLO shows the sampled frame and its bounding boxes, if any. Use +/− or scroll/pinch to zoom the X axis, Reset to show the full video, or right-drag to pan; the Y axis remains 0–100%. YOLO confidence is a detector score, not a calibrated probability. Red sample outlines mark alerts; yellow outlines mark threshold hits without a new alert. This display does not change detector decisions.</p></article>
+          <div class="settings-actions"><div><strong>Saving creates a new config version.</strong><small>Existing alerts retain their original model, prompt and config references.</small></div><button class="button primary" type="submit">Save configuration</button></div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="edit-camera-dialog" class="modal"><form id="edit-camera-form" method="dialog"><div class="modal-head"><h3>Edit camera</h3><button value="cancel" aria-label="Close">×</button></div><input id="edit-camera-id" type="hidden"><label>Camera name<input id="edit-camera-name" maxlength="80" required></label><label>Location<input id="edit-camera-location" maxlength="120"></label><label class="toggle-control"><input id="edit-camera-enabled" type="checkbox"><span></span>Camera enabled</label><div class="modal-actions"><button class="button secondary" value="cancel">Cancel</button><button class="button primary" value="default">Save changes</button></div></form></dialog>
+  <dialog id="debug-preview-dialog" class="debug-preview-dialog" aria-labelledby="debug-preview-title">
+    <div class="debug-preview-shell">
+      <header class="debug-preview-head"><div><span id="debug-preview-chip" class="preview-chip">MC3 WINDOW</span><h3 id="debug-preview-title">Detection preview</h3><p id="debug-preview-subtitle"></p></div><button id="debug-preview-close" class="preview-close" type="button" aria-label="Close preview">×</button></header>
+      <div class="debug-preview-stage"><video id="debug-preview-video" playsinline muted preload="metadata"></video><img id="debug-preview-image" alt="YOLO sampled source frame" hidden><canvas id="debug-preview-canvas" hidden></canvas><div id="debug-preview-empty" class="debug-preview-empty" hidden>No frame preview is available for this record.</div></div>
+      <footer class="debug-preview-foot"><div class="preview-caption"><strong id="debug-preview-caption"></strong><small id="debug-preview-detail"></small><div id="debug-preview-progress" class="preview-progress"><i></i></div></div><div class="preview-actions"><button id="debug-preview-replay" class="button secondary" type="button">Replay 4-second window</button><button id="debug-preview-pause" class="button secondary" type="button">Pause</button><button id="debug-preview-done" class="button primary" type="button">Done</button></div></footer>
+    </div>
+  </dialog>
+  <script src="/static/monitor.js?v=20261018-avi-playback-v4"></script>
+  <script src="/static/refresh_state.js?v=20261019-correctness-v1"></script>
+  <script src="/static/app.js?v=20261019-correctness-v1"></script>
+</body>
+</html>

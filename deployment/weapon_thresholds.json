@@ -1,0 +1,846 @@
+{
+  "schema_version": 3,
+  "status": "complete",
+  "dataset_fingerprint": "74b61f990f6859ac66a96711",
+  "best_checkpoint_sha256": "78e9a6cc9e65c307a7da9e661c7839ce4ea1f93b1cca733a4ed3274911b741c2",
+  "iou_threshold": 0.5,
+  "prediction_floor": 0.001,
+  "class_names": [
+    "knife",
+    "gun"
+  ],
+  "method": {
+    "profile_objectives": {
+      "Sensitive": "maximize validation F2",
+      "Moderate": "maximize validation F1",
+      "Certain": "maximize validation F0.5"
+    },
+    "matching": "Per-image, class-aware, confidence-descending greedy one-to-one matching at IoU >= 0.50.",
+    "threshold_candidates": "Every distinct saved post-NMS validation confidence >= 0.001 plus export floor 0.001.",
+    "threshold_selection": "Choose each class threshold independently on validation; apply the locked thresholds to test.",
+    "tie_break": "F2 ties: higher recall, then lower threshold. F1/F0.5 ties: higher precision, then higher threshold."
+  },
+  "validation_images": 1615,
+  "test_images": 1892,
+  "profiles": [
+    {
+      "profile": "Sensitive",
+      "objective": "F2",
+      "beta": 2.0,
+      "thresholds": {
+        "knife": 0.25375208258628845,
+        "gun": 0.10521546751260757
+      },
+      "validation_micro": {
+        "tp": 780,
+        "fp": 223,
+        "fn": 85,
+        "ground_truth_boxes": 865,
+        "predicted_boxes": 1003,
+        "precision": 0.7776669990029911,
+        "recall": 0.9017341040462428,
+        "f1": 0.835117773019272,
+        "f2": 0.8738516692807529,
+        "f0_5": 0.7996719294648349,
+        "classes": {
+          "knife": {
+            "threshold": 0.25375208258628845,
+            "ground_truth_boxes": 347,
+            "predicted_boxes": 377,
+            "tp": 305,
+            "fp": 72,
+            "fn": 42,
+            "precision": 0.8090185676392573,
+            "recall": 0.8789625360230547,
+            "f1": 0.8425414364640884,
+            "f2": 0.8640226628895183,
+            "f0_5": 0.8221024258760108
+          },
+          "gun": {
+            "threshold": 0.10521546751260757,
+            "ground_truth_boxes": 518,
+            "predicted_boxes": 626,
+            "tp": 475,
+            "fp": 151,
+            "fn": 43,
+            "precision": 0.7587859424920128,
+            "recall": 0.916988416988417,
+            "f1": 0.8304195804195804,
+            "f2": 0.8802816901408451,
+            "f0_5": 0.78590337524818
+          }
+        }
+      },
+      "validation_negative_false_positives_by_source": {
+        "dangerous_items": {
+          "images": 138,
+          "images_with_false_positive": 10,
+          "false_positive_boxes": 12,
+          "false_positive_image_rate": 0.07246376811594203,
+          "false_positives_per_image": 0.08695652173913043
+        },
+        "sohas_weapon": {
+          "images": 26,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "shanghaitech_negative": {
+          "images": 200,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "yolo_negative": {
+          "images": 55,
+          "images_with_false_positive": 6,
+          "false_positive_boxes": 6,
+          "false_positive_image_rate": 0.10909090909090909,
+          "false_positives_per_image": 0.10909090909090909
+        },
+        "airt_lab_nonviolent": {
+          "images": 58,
+          "images_with_false_positive": 1,
+          "false_positive_boxes": 1,
+          "false_positive_image_rate": 0.017241379310344827,
+          "false_positives_per_image": 0.017241379310344827
+        },
+        "bus_violence_nonfight": {
+          "images": 70,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "mall_negative": {
+          "images": 200,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "nogun": {
+          "images": 88,
+          "images_with_false_positive": 7,
+          "false_positive_boxes": 8,
+          "false_positive_image_rate": 0.07954545454545454,
+          "false_positives_per_image": 0.09090909090909091
+        },
+        "long_gun_dataset": {
+          "images": 1,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "knife_dataset": {
+          "images": 2,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        }
+      },
+      "classes": {
+        "knife": {
+          "threshold": 0.25375208258628845,
+          "objective": "F2",
+          "selected_validation_score": 0.8640226628895183,
+          "validation": {
+            "threshold": 0.25375208258628845,
+            "ground_truth_boxes": 347,
+            "predicted_boxes": 377,
+            "tp": 305,
+            "fp": 72,
+            "fn": 42,
+            "precision": 0.8090185676392573,
+            "recall": 0.8789625360230547,
+            "f1": 0.8425414364640884,
+            "f2": 0.8640226628895183,
+            "f0_5": 0.8221024258760108
+          },
+          "tie_break": "higher recall then lower threshold"
+        },
+        "gun": {
+          "threshold": 0.10521546751260757,
+          "objective": "F2",
+          "selected_validation_score": 0.8802816901408451,
+          "validation": {
+            "threshold": 0.10521546751260757,
+            "ground_truth_boxes": 518,
+            "predicted_boxes": 626,
+            "tp": 475,
+            "fp": 151,
+            "fn": 43,
+            "precision": 0.7587859424920128,
+            "recall": 0.916988416988417,
+            "f1": 0.8304195804195804,
+            "f2": 0.8802816901408451,
+            "f0_5": 0.78590337524818
+          },
+          "tie_break": "higher recall then lower threshold"
+        }
+      },
+      "test_micro": {
+        "tp": 971,
+        "fp": 238,
+        "fn": 130,
+        "ground_truth_boxes": 1101,
+        "predicted_boxes": 1209,
+        "precision": 0.8031430934656741,
+        "recall": 0.8819255222524978,
+        "f1": 0.8406926406926408,
+        "f2": 0.8649563513272761,
+        "f0_5": 0.817753073943069,
+        "classes": {
+          "knife": {
+            "threshold": 0.25375208258628845,
+            "ground_truth_boxes": 499,
+            "predicted_boxes": 505,
+            "tp": 420,
+            "fp": 85,
+            "fn": 79,
+            "precision": 0.8316831683168316,
+            "recall": 0.8416833667334669,
+            "f1": 0.8366533864541833,
+            "f2": 0.8396641343462615,
+            "f0_5": 0.8336641524414451
+          },
+          "gun": {
+            "threshold": 0.10521546751260757,
+            "ground_truth_boxes": 602,
+            "predicted_boxes": 704,
+            "tp": 551,
+            "fp": 153,
+            "fn": 51,
+            "precision": 0.7826704545454546,
+            "recall": 0.915282392026578,
+            "f1": 0.8437978560490046,
+            "f2": 0.8852827763496144,
+            "f0_5": 0.8060269163253365
+          }
+        }
+      },
+      "test_negative_false_positives_by_source": {
+        "sohas_weapon": {
+          "images": 147,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "dangerous_items": {
+          "images": 125,
+          "images_with_false_positive": 7,
+          "false_positive_boxes": 8,
+          "false_positive_image_rate": 0.056,
+          "false_positives_per_image": 0.064
+        },
+        "shanghaitech_negative": {
+          "images": 196,
+          "images_with_false_positive": 1,
+          "false_positive_boxes": 1,
+          "false_positive_image_rate": 0.00510204081632653,
+          "false_positives_per_image": 0.00510204081632653
+        },
+        "yolo_negative": {
+          "images": 55,
+          "images_with_false_positive": 1,
+          "false_positive_boxes": 1,
+          "false_positive_image_rate": 0.01818181818181818,
+          "false_positives_per_image": 0.01818181818181818
+        },
+        "bus_violence_nonfight": {
+          "images": 70,
+          "images_with_false_positive": 3,
+          "false_positive_boxes": 4,
+          "false_positive_image_rate": 0.04285714285714286,
+          "false_positives_per_image": 0.05714285714285714
+        },
+        "airt_lab_nonviolent": {
+          "images": 74,
+          "images_with_false_positive": 1,
+          "false_positive_boxes": 1,
+          "false_positive_image_rate": 0.013513513513513514,
+          "false_positives_per_image": 0.013513513513513514
+        },
+        "mall_negative": {
+          "images": 200,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "nogun": {
+          "images": 30,
+          "images_with_false_positive": 4,
+          "false_positive_boxes": 4,
+          "false_positive_image_rate": 0.13333333333333333,
+          "false_positives_per_image": 0.13333333333333333
+        },
+        "long_gun_dataset": {
+          "images": 1,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "knife_dataset": {
+          "images": 1,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        }
+      }
+    },
+    {
+      "profile": "Moderate",
+      "objective": "F1",
+      "beta": 1.0,
+      "thresholds": {
+        "knife": 0.5290975570678711,
+        "gun": 0.4002937972545624
+      },
+      "validation_micro": {
+        "tp": 717,
+        "fp": 64,
+        "fn": 148,
+        "ground_truth_boxes": 865,
+        "predicted_boxes": 781,
+        "precision": 0.9180537772087067,
+        "recall": 0.8289017341040462,
+        "f1": 0.8712029161603889,
+        "f2": 0.8453195001178967,
+        "f0_5": 0.8987214840812234,
+        "classes": {
+          "knife": {
+            "threshold": 0.5290975570678711,
+            "ground_truth_boxes": 347,
+            "predicted_boxes": 303,
+            "tp": 278,
+            "fp": 25,
+            "fn": 69,
+            "precision": 0.9174917491749175,
+            "recall": 0.8011527377521613,
+            "f1": 0.8553846153846153,
+            "f2": 0.8219988172678887,
+            "f0_5": 0.8915971776779987
+          },
+          "gun": {
+            "threshold": 0.4002937972545624,
+            "ground_truth_boxes": 518,
+            "predicted_boxes": 478,
+            "tp": 439,
+            "fp": 39,
+            "fn": 79,
+            "precision": 0.9184100418410042,
+            "recall": 0.8474903474903475,
+            "f1": 0.8815261044176707,
+            "f2": 0.8607843137254902,
+            "f0_5": 0.9032921810699588
+          }
+        }
+      },
+      "validation_negative_false_positives_by_source": {
+        "dangerous_items": {
+          "images": 138,
+          "images_with_false_positive": 2,
+          "false_positive_boxes": 2,
+          "false_positive_image_rate": 0.014492753623188406,
+          "false_positives_per_image": 0.014492753623188406
+        },
+        "sohas_weapon": {
+          "images": 26,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "shanghaitech_negative": {
+          "images": 200,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "yolo_negative": {
+          "images": 55,
+          "images_with_false_positive": 1,
+          "false_positive_boxes": 1,
+          "false_positive_image_rate": 0.01818181818181818,
+          "false_positives_per_image": 0.01818181818181818
+        },
+        "airt_lab_nonviolent": {
+          "images": 58,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "bus_violence_nonfight": {
+          "images": 70,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "mall_negative": {
+          "images": 200,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "nogun": {
+          "images": 88,
+          "images_with_false_positive": 1,
+          "false_positive_boxes": 1,
+          "false_positive_image_rate": 0.011363636363636364,
+          "false_positives_per_image": 0.011363636363636364
+        },
+        "long_gun_dataset": {
+          "images": 1,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "knife_dataset": {
+          "images": 2,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        }
+      },
+      "classes": {
+        "knife": {
+          "threshold": 0.5290975570678711,
+          "objective": "F1",
+          "selected_validation_score": 0.8553846153846153,
+          "validation": {
+            "threshold": 0.5290975570678711,
+            "ground_truth_boxes": 347,
+            "predicted_boxes": 303,
+            "tp": 278,
+            "fp": 25,
+            "fn": 69,
+            "precision": 0.9174917491749175,
+            "recall": 0.8011527377521613,
+            "f1": 0.8553846153846153,
+            "f2": 0.8219988172678887,
+            "f0_5": 0.8915971776779987
+          },
+          "tie_break": "higher precision then higher threshold"
+        },
+        "gun": {
+          "threshold": 0.4002937972545624,
+          "objective": "F1",
+          "selected_validation_score": 0.8815261044176707,
+          "validation": {
+            "threshold": 0.4002937972545624,
+            "ground_truth_boxes": 518,
+            "predicted_boxes": 478,
+            "tp": 439,
+            "fp": 39,
+            "fn": 79,
+            "precision": 0.9184100418410042,
+            "recall": 0.8474903474903475,
+            "f1": 0.8815261044176707,
+            "f2": 0.8607843137254902,
+            "f0_5": 0.9032921810699588
+          },
+          "tie_break": "higher precision then higher threshold"
+        }
+      },
+      "test_micro": {
+        "tp": 896,
+        "fp": 72,
+        "fn": 205,
+        "ground_truth_boxes": 1101,
+        "predicted_boxes": 968,
+        "precision": 0.9256198347107438,
+        "recall": 0.8138056312443234,
+        "f1": 0.8661188980183664,
+        "f2": 0.8339538346984365,
+        "f0_5": 0.9008646692137543,
+        "classes": {
+          "knife": {
+            "threshold": 0.5290975570678711,
+            "ground_truth_boxes": 499,
+            "predicted_boxes": 423,
+            "tp": 378,
+            "fp": 45,
+            "fn": 121,
+            "precision": 0.8936170212765957,
+            "recall": 0.7575150300601202,
+            "f1": 0.8199566160520608,
+            "f2": 0.7813145928069449,
+            "f0_5": 0.8626198083067091
+          },
+          "gun": {
+            "threshold": 0.4002937972545624,
+            "ground_truth_boxes": 602,
+            "predicted_boxes": 545,
+            "tp": 518,
+            "fp": 27,
+            "fn": 84,
+            "precision": 0.9504587155963303,
+            "recall": 0.8604651162790697,
+            "f1": 0.903225806451613,
+            "f2": 0.8770741618692854,
+            "f0_5": 0.9309849029475199
+          }
+        }
+      },
+      "test_negative_false_positives_by_source": {
+        "sohas_weapon": {
+          "images": 147,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "dangerous_items": {
+          "images": 125,
+          "images_with_false_positive": 2,
+          "false_positive_boxes": 2,
+          "false_positive_image_rate": 0.016,
+          "false_positives_per_image": 0.016
+        },
+        "shanghaitech_negative": {
+          "images": 196,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "yolo_negative": {
+          "images": 55,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "bus_violence_nonfight": {
+          "images": 70,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "airt_lab_nonviolent": {
+          "images": 74,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "mall_negative": {
+          "images": 200,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "nogun": {
+          "images": 30,
+          "images_with_false_positive": 3,
+          "false_positive_boxes": 3,
+          "false_positive_image_rate": 0.1,
+          "false_positives_per_image": 0.1
+        },
+        "long_gun_dataset": {
+          "images": 1,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "knife_dataset": {
+          "images": 1,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        }
+      }
+    },
+    {
+      "profile": "Certain",
+      "objective": "F0.5",
+      "beta": 0.5,
+      "thresholds": {
+        "knife": 0.6319119930267334,
+        "gun": 0.5961230993270874
+      },
+      "validation_micro": {
+        "tp": 661,
+        "fp": 29,
+        "fn": 204,
+        "ground_truth_boxes": 865,
+        "predicted_boxes": 690,
+        "precision": 0.9579710144927536,
+        "recall": 0.7641618497109827,
+        "f1": 0.8501607717041799,
+        "f2": 0.7963855421686746,
+        "f0_5": 0.9117241379310344,
+        "classes": {
+          "knife": {
+            "threshold": 0.6319119930267334,
+            "ground_truth_boxes": 347,
+            "predicted_boxes": 276,
+            "tp": 263,
+            "fp": 13,
+            "fn": 84,
+            "precision": 0.9528985507246377,
+            "recall": 0.7579250720461095,
+            "f1": 0.8443017656500803,
+            "f2": 0.790264423076923,
+            "f0_5": 0.9062715368711234
+          },
+          "gun": {
+            "threshold": 0.5961230993270874,
+            "ground_truth_boxes": 518,
+            "predicted_boxes": 414,
+            "tp": 398,
+            "fp": 16,
+            "fn": 120,
+            "precision": 0.961352657004831,
+            "recall": 0.7683397683397684,
+            "f1": 0.8540772532188842,
+            "f2": 0.8004827031375703,
+            "f0_5": 0.9153633854645815
+          }
+        }
+      },
+      "validation_negative_false_positives_by_source": {
+        "dangerous_items": {
+          "images": 138,
+          "images_with_false_positive": 2,
+          "false_positive_boxes": 2,
+          "false_positive_image_rate": 0.014492753623188406,
+          "false_positives_per_image": 0.014492753623188406
+        },
+        "sohas_weapon": {
+          "images": 26,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "shanghaitech_negative": {
+          "images": 200,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "yolo_negative": {
+          "images": 55,
+          "images_with_false_positive": 1,
+          "false_positive_boxes": 1,
+          "false_positive_image_rate": 0.01818181818181818,
+          "false_positives_per_image": 0.01818181818181818
+        },
+        "airt_lab_nonviolent": {
+          "images": 58,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "bus_violence_nonfight": {
+          "images": 70,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "mall_negative": {
+          "images": 200,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "nogun": {
+          "images": 88,
+          "images_with_false_positive": 1,
+          "false_positive_boxes": 1,
+          "false_positive_image_rate": 0.011363636363636364,
+          "false_positives_per_image": 0.011363636363636364
+        },
+        "long_gun_dataset": {
+          "images": 1,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "knife_dataset": {
+          "images": 2,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        }
+      },
+      "classes": {
+        "knife": {
+          "threshold": 0.6319119930267334,
+          "objective": "F0.5",
+          "selected_validation_score": 0.9062715368711234,
+          "validation": {
+            "threshold": 0.6319119930267334,
+            "ground_truth_boxes": 347,
+            "predicted_boxes": 276,
+            "tp": 263,
+            "fp": 13,
+            "fn": 84,
+            "precision": 0.9528985507246377,
+            "recall": 0.7579250720461095,
+            "f1": 0.8443017656500803,
+            "f2": 0.790264423076923,
+            "f0_5": 0.9062715368711234
+          },
+          "tie_break": "higher precision then higher threshold"
+        },
+        "gun": {
+          "threshold": 0.5961230993270874,
+          "objective": "F0.5",
+          "selected_validation_score": 0.9153633854645815,
+          "validation": {
+            "threshold": 0.5961230993270874,
+            "ground_truth_boxes": 518,
+            "predicted_boxes": 414,
+            "tp": 398,
+            "fp": 16,
+            "fn": 120,
+            "precision": 0.961352657004831,
+            "recall": 0.7683397683397684,
+            "f1": 0.8540772532188842,
+            "f2": 0.8004827031375703,
+            "f0_5": 0.9153633854645815
+          },
+          "tie_break": "higher precision then higher threshold"
+        }
+      },
+      "test_micro": {
+        "tp": 829,
+        "fp": 50,
+        "fn": 272,
+        "ground_truth_boxes": 1101,
+        "predicted_boxes": 879,
+        "precision": 0.9431171786120591,
+        "recall": 0.7529518619436876,
+        "f1": 0.8373737373737373,
+        "f2": 0.7845920878288851,
+        "f0_5": 0.8977691141433832,
+        "classes": {
+          "knife": {
+            "threshold": 0.6319119930267334,
+            "ground_truth_boxes": 499,
+            "predicted_boxes": 384,
+            "tp": 353,
+            "fp": 31,
+            "fn": 146,
+            "precision": 0.9192708333333334,
+            "recall": 0.7074148296593187,
+            "f1": 0.7995469988674972,
+            "f2": 0.7415966386554622,
+            "f0_5": 0.8673218673218673
+          },
+          "gun": {
+            "threshold": 0.5961230993270874,
+            "ground_truth_boxes": 602,
+            "predicted_boxes": 495,
+            "tp": 476,
+            "fp": 19,
+            "fn": 126,
+            "precision": 0.9616161616161616,
+            "recall": 0.7906976744186046,
+            "f1": 0.8678213309024612,
+            "f2": 0.8198415432311402,
+            "f0_5": 0.9217660728117737
+          }
+        }
+      },
+      "test_negative_false_positives_by_source": {
+        "sohas_weapon": {
+          "images": 147,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "dangerous_items": {
+          "images": 125,
+          "images_with_false_positive": 1,
+          "false_positive_boxes": 1,
+          "false_positive_image_rate": 0.008,
+          "false_positives_per_image": 0.008
+        },
+        "shanghaitech_negative": {
+          "images": 196,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "yolo_negative": {
+          "images": 55,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "bus_violence_nonfight": {
+          "images": 70,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "airt_lab_nonviolent": {
+          "images": 74,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "mall_negative": {
+          "images": 200,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "nogun": {
+          "images": 30,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "long_gun_dataset": {
+          "images": 1,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        },
+        "knife_dataset": {
+          "images": 1,
+          "images_with_false_positive": 0,
+          "false_positive_boxes": 0,
+          "false_positive_image_rate": 0.0,
+          "false_positives_per_image": 0.0
+        }
+      }
+    }
+  ]
+}

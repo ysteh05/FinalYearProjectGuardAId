@@ -1,0 +1,1614 @@
+{
+  "created_at": "2026-10-27T01:00:27.676964+08:00",
+  "scope": "Application system source only; no accounts, runtime database, media, credentials or model weights.",
+  "files": [
+    {
+      "path": "deployment/weapon_thresholds.json",
+      "source": "model_runs/yolov9_ten_sources/runs/tenft_20261017_034950_424d7a/checkpoint_evaluations/epoch_10_20261017_102213/sensitivity_thresholds.json",
+      "sha256": "8d0064f1ebee608c6176f965b20a31e11449f0ee86815a400b3c30165331cde9",
+      "bytes": 28452
+    },
+    {
+      "path": "guardaid_monitor/.env.example",
+      "source": "guardaid_monitor/.env.example",
+      "sha256": "8b21f9fe3ef48e8b21423a441f9233a031248ba0c9c20ca6fdedc82657e457f2",
+      "bytes": 1265
+    },
+    {
+      "path": "guardaid_monitor/README.md",
+      "source": "guardaid_monitor/README.md",
+      "sha256": "86140b2ba7b71b9e3523412d9ed4091271fc7e041402710d33fcda89eaf680e1",
+      "bytes": 9250
+    },
+    {
+      "path": "guardaid_monitor/app/__init__.py",
+      "source": "guardaid_monitor/app/__init__.py",
+      "sha256": "bd6c3e296c246378aa2bc27caacc9717d3f572348e8292e2bdb917414533fcb5",
+      "bytes": 45
+    },
+    {
+      "path": "guardaid_monitor/app/bootstrap_admin.py",
+      "source": "guardaid_monitor/app/bootstrap_admin.py",
+      "sha256": "12f55b285611198690c1d4f1cdf6de454bc310d62ca766788e70e7010e815823",
+      "bytes": 1545
+    },
+    {
+      "path": "guardaid_monitor/app/config.py",
+      "source": "guardaid_monitor/app/config.py",
+      "sha256": "f3eefd29e7e63c497ff69bc57c2fad7d922dcc74b107f11a34265efb450a08dd",
+      "bytes": 5412
+    },
+    {
+      "path": "guardaid_monitor/app/domain.py",
+      "source": "guardaid_monitor/app/domain.py",
+      "sha256": "e65a81f1da87888d34c0b2e33fac683f0c558dfd9e7d9aaac6167535cd323954",
+      "bytes": 18154
+    },
+    {
+      "path": "guardaid_monitor/app/firebase_services.py",
+      "source": "guardaid_monitor/app/firebase_services.py",
+      "sha256": "5162fa52c99f86d7724e1a14ff6d70244673d992110a4454086be56e48a01607",
+      "bytes": 10546
+    },
+    {
+      "path": "guardaid_monitor/app/inference/__init__.py",
+      "source": "guardaid_monitor/app/inference/__init__.py",
+      "sha256": "0ba11f4a13d03eda9e91ca1a25135872bd2304676dc3df435159a13fd9641654",
+      "bytes": 161
+    },
+    {
+      "path": "guardaid_monitor/app/inference/mc3.py",
+      "source": "guardaid_monitor/app/inference/mc3.py",
+      "sha256": "fafea690a10dbaf0652c37c745efe17f33c49ef1f69e79a7b13a95895e34fc59",
+      "bytes": 6499
+    },
+    {
+      "path": "guardaid_monitor/app/inference/media_pipeline.py",
+      "source": "guardaid_monitor/app/inference/media_pipeline.py",
+      "sha256": "5f86eb9d71884dba41243f721a4f48011a0b4c4cd18108f3c992cee0fec944f2",
+      "bytes": 10871
+    },
+    {
+      "path": "guardaid_monitor/app/inference/minicpm.py",
+      "source": "guardaid_monitor/app/inference/minicpm.py",
+      "sha256": "e25a129174e6dcbb9576ce94b2ec320419931d769081b8a7ce3444b6f81b36c1",
+      "bytes": 16961
+    },
+    {
+      "path": "guardaid_monitor/app/inference/monitor.py",
+      "source": "guardaid_monitor/app/inference/monitor.py",
+      "sha256": "a99074adfc8986b0b72b135eca3c248d14f26c4e209a8b00a09d7902524d4248",
+      "bytes": 5795
+    },
+    {
+      "path": "guardaid_monitor/app/inference/orchestrator.py",
+      "source": "guardaid_monitor/app/inference/orchestrator.py",
+      "sha256": "39e2ceea7cbe368a4c9119b390fbf33d19e1b89716fecad25888742a8cc3f1a1",
+      "bytes": 82980
+    },
+    {
+      "path": "guardaid_monitor/app/inference/scene_reliability.py",
+      "source": "guardaid_monitor/app/inference/scene_reliability.py",
+      "sha256": "1a673675db40e903bfc601ae5cdf1c57c7f291abfc6f110c702752721e3dd272",
+      "bytes": 2921
+    },
+    {
+      "path": "guardaid_monitor/app/inference/timing.py",
+      "source": "guardaid_monitor/app/inference/timing.py",
+      "sha256": "9c02a266180c4c07d60fb5b93a926ee14e01f69a60c46e8fa0f0abbf8ad9a57e",
+      "bytes": 1448
+    },
+    {
+      "path": "guardaid_monitor/app/inference/vlm.py",
+      "source": "guardaid_monitor/app/inference/vlm.py",
+      "sha256": "ef8004dae489c24cedcca37c9da7fffae884826b2cbdab1ce8a2499909c08fdc",
+      "bytes": 23110
+    },
+    {
+      "path": "guardaid_monitor/app/inference/weapon.py",
+      "source": "guardaid_monitor/app/inference/weapon.py",
+      "sha256": "2a84e045afd16fe919aebf86bb4551123dcafd4cf8c918cf3fc068c98fb281a5",
+      "bytes": 7223
+    },
+    {
+      "path": "guardaid_monitor/app/main.py",
+      "source": "guardaid_monitor/app/main.py",
+      "sha256": "46c8824683fbe51a87cb11034a254881477eb05a6a20833507b73097088d4a44",
+      "bytes": 68397
+    },
+    {
+      "path": "guardaid_monitor/app/media.py",
+      "source": "guardaid_monitor/app/media.py",
+      "sha256": "ae959dd6a8d85d0896a07a6385ce9450ccbdf69bd8869ef388a70560d4d49c77",
+      "bytes": 9046
+    },
+    {
+      "path": "guardaid_monitor/app/media_tasks.py",
+      "source": "guardaid_monitor/app/media_tasks.py",
+      "sha256": "979d48953de59a485f0be3461e4093fdcdc6847c327ae3b34e2598bbf4ff4b15",
+      "bytes": 9294
+    },
+    {
+      "path": "guardaid_monitor/app/migrate_v15.py",
+      "source": "guardaid_monitor/app/migrate_v15.py",
+      "sha256": "1c9e9d251a39accb884bcba4242a0f0a4b3f555fc39aaafb37256332f61e2d11",
+      "bytes": 19161
+    },
+    {
+      "path": "guardaid_monitor/app/model_metadata.py",
+      "source": "guardaid_monitor/app/model_metadata.py",
+      "sha256": "8c8a575b4d5713c9a4a9bedb30a77689259acee22fbc9424d324a03409aea9bd",
+      "bytes": 3602
+    },
+    {
+      "path": "guardaid_monitor/app/notification_escalation.py",
+      "source": "guardaid_monitor/app/notification_escalation.py",
+      "sha256": "fccbcf8db3e7bce2dbc88bed7e81289853784c2b8cc6955f979b10187e56b3e5",
+      "bytes": 7652
+    },
+    {
+      "path": "guardaid_monitor/app/notification_outbox.py",
+      "source": "guardaid_monitor/app/notification_outbox.py",
+      "sha256": "14cc75d947c4a68b373782826c7855e7b2494ff3312772f27685cadd38f462af",
+      "bytes": 7394
+    },
+    {
+      "path": "guardaid_monitor/app/policy.py",
+      "source": "guardaid_monitor/app/policy.py",
+      "sha256": "9e5bc4883350e8332c89f47c37c916670aa437f93180cf0422439180158c34d5",
+      "bytes": 4433
+    },
+    {
+      "path": "guardaid_monitor/app/read_models_v15.py",
+      "source": "guardaid_monitor/app/read_models_v15.py",
+      "sha256": "570e156f7024a1af6b25bb3018d93bf644ddcfdbc9b55545d0d1b533d2b83732",
+      "bytes": 5649
+    },
+    {
+      "path": "guardaid_monitor/app/read_models_v17.py",
+      "source": "guardaid_monitor/app/read_models_v17.py",
+      "sha256": "1f351330c24b7e6c5988ec6a8269bd685bf2c42f6ebeb71a108148b77693151e",
+      "bytes": 473
+    },
+    {
+      "path": "guardaid_monitor/app/repository.py",
+      "source": "guardaid_monitor/app/repository.py",
+      "sha256": "9897ae7153c625d1a7afaa78838e8c2cdec3bedd8d3e7c439a6604dc0d22dbc4",
+      "bytes": 5737
+    },
+    {
+      "path": "guardaid_monitor/app/schema_v15.py",
+      "source": "guardaid_monitor/app/schema_v15.py",
+      "sha256": "a7af2ba5cdc4f3be7034f545562050469544e8a8f212b5447a4a87836681ccaf",
+      "bytes": 3718
+    },
+    {
+      "path": "guardaid_monitor/app/schema_v16.py",
+      "source": "guardaid_monitor/app/schema_v16.py",
+      "sha256": "f83ea9ed36e715088b5cfcdec6cf09ea8a09ce0eaa6806572b2e8d2017e642b1",
+      "bytes": 1712
+    },
+    {
+      "path": "guardaid_monitor/app/schema_v17.py",
+      "source": "guardaid_monitor/app/schema_v17.py",
+      "sha256": "a2ee0e39962d7e8d84139958bea43df2097c5b71226887114d65693748e3c158",
+      "bytes": 1571
+    },
+    {
+      "path": "guardaid_monitor/app/schema_v18.py",
+      "source": "guardaid_monitor/app/schema_v18.py",
+      "sha256": "c1d721c1b8dfab9de7904755d475716f2c4c3f969c42a97d694ca2058f6777cf",
+      "bytes": 1541
+    },
+    {
+      "path": "guardaid_monitor/app/schema_v19.py",
+      "source": "guardaid_monitor/app/schema_v19.py",
+      "sha256": "a176ffc5b1ae0da9e4e71c0469f9db4e3494d9d2293b8e84053b67b04cc02fdc",
+      "bytes": 1341
+    },
+    {
+      "path": "guardaid_monitor/app/schema_v20.py",
+      "source": "guardaid_monitor/app/schema_v20.py",
+      "sha256": "47a8e39e5432c0aae42355b9ced3f9c10fea7a4706fec77a7d8d101b84608c3c",
+      "bytes": 1479
+    },
+    {
+      "path": "guardaid_monitor/app/services.py",
+      "source": "guardaid_monitor/app/services.py",
+      "sha256": "546e1b374bc8b694b5b83aa37223ec7ec773f3a36545b618e3b0452a826c0359",
+      "bytes": 19479
+    },
+    {
+      "path": "guardaid_monitor/app/simulation.py",
+      "source": "guardaid_monitor/app/simulation.py",
+      "sha256": "51cf44345fd9a7d73b28bc464ef4ea2309f288f4833cc5da3f056af7b7e43c4b",
+      "bytes": 4583
+    },
+    {
+      "path": "guardaid_monitor/app/sqlite_repository.py",
+      "source": "guardaid_monitor/app/sqlite_repository.py",
+      "sha256": "fa9827e35c0514f34dbb62192d1dd1b5679bbd7c0cb693718d07b6697a00f645",
+      "bytes": 257246
+    },
+    {
+      "path": "guardaid_monitor/app/static/app.js",
+      "source": "guardaid_monitor/app/static/app.js",
+      "sha256": "4450f8f5a323ad47f9227bb45be173a40657b67c4249f485c9bbc3da5f5c8610",
+      "bytes": 66496
+    },
+    {
+      "path": "guardaid_monitor/app/static/guardaid-mark.svg",
+      "source": "guardaid_monitor/app/static/guardaid-mark.svg",
+      "sha256": "f4ab83107d35a571f49f9a2e3b28b7f410019ad3ca6c2dada9b2e7a195fcefb5",
+      "bytes": 707
+    },
+    {
+      "path": "guardaid_monitor/app/static/index.html",
+      "source": "guardaid_monitor/app/static/index.html",
+      "sha256": "a48fcd0064e49067ae5a962fe8ea2546506504b0d99b605bd36ec63bc4089aa8",
+      "bytes": 16324
+    },
+    {
+      "path": "guardaid_monitor/app/static/monitor.js",
+      "source": "guardaid_monitor/app/static/monitor.js",
+      "sha256": "2f349c14bab1e5a7c42e4822dd4003257bcca36c1e643117d367ee2a5feabff3",
+      "bytes": 18211
+    },
+    {
+      "path": "guardaid_monitor/app/static/refresh_state.js",
+      "source": "guardaid_monitor/app/static/refresh_state.js",
+      "sha256": "9fe45b90c9746c30fa8b20a4e801c3050982e2f51640563ac774f121349bfb1f",
+      "bytes": 1869
+    },
+    {
+      "path": "guardaid_monitor/app/static/styles.css",
+      "source": "guardaid_monitor/app/static/styles.css",
+      "sha256": "8a1b7cf8ac61f77b6ed85da557c0c97d898de89760edcef51c02acae69ccaa95",
+      "bytes": 35979
+    },
+    {
+      "path": "guardaid_monitor/app/verify_v15.py",
+      "source": "guardaid_monitor/app/verify_v15.py",
+      "sha256": "9790a96e1d7d1db34ed4385f23a70f894389e6b3f852459ded2b10e485efa0be",
+      "bytes": 7154
+    },
+    {
+      "path": "guardaid_monitor/app/vlm_contract.py",
+      "source": "guardaid_monitor/app/vlm_contract.py",
+      "sha256": "e4985db853e38c30109c861f4aacfb3cabba164fa23c961522211ed35a9d2f64",
+      "bytes": 6332
+    },
+    {
+      "path": "guardaid_monitor/app/workflow_conflicts.py",
+      "source": "guardaid_monitor/app/workflow_conflicts.py",
+      "sha256": "75ec15d7fcecc99a1be96ad03cee5d80f7e6d0c9ba3dcef565b09b0f4a8aa1dc",
+      "bytes": 936
+    },
+    {
+      "path": "guardaid_monitor/migrations/001_initial.sql",
+      "source": "guardaid_monitor/migrations/001_initial.sql",
+      "sha256": "774724dd27ca9ad1bc5bf7e9c9da5c5a5d7888d669cc598a4db38f096cefe5be",
+      "bytes": 11129
+    },
+    {
+      "path": "guardaid_monitor/migrations/002_inference_runtime.sql",
+      "source": "guardaid_monitor/migrations/002_inference_runtime.sql",
+      "sha256": "6d6a7edd73e08ff19454054ae7e782d7ec6deb1f6ad21777db636e7522b2fc6a",
+      "bytes": 647
+    },
+    {
+      "path": "guardaid_monitor/migrations/003_incident_grouping_realtime.sql",
+      "source": "guardaid_monitor/migrations/003_incident_grouping_realtime.sql",
+      "sha256": "c5cf7ed515369351a92c2935079054f27247ff8cd06297e98c7be4d3709d0e5d",
+      "bytes": 374
+    },
+    {
+      "path": "guardaid_monitor/migrations/004_provisional_urgent_alerts.sql",
+      "source": "guardaid_monitor/migrations/004_provisional_urgent_alerts.sql",
+      "sha256": "525a4c9d2f6806efe014c13ea3035690fdc1dab0fce157d3323a2dda6418fbbc",
+      "bytes": 279
+    },
+    {
+      "path": "guardaid_monitor/migrations/005_scene_description_uniform_frames.sql",
+      "source": "guardaid_monitor/migrations/005_scene_description_uniform_frames.sql",
+      "sha256": "db2e3e159a0ada0f34073dbeff36a4a67827667c3ad21f88b04e5b99f0f2fbda",
+      "bytes": 395
+    },
+    {
+      "path": "guardaid_monitor/migrations/006_mobile_response_workflow.sql",
+      "source": "guardaid_monitor/migrations/006_mobile_response_workflow.sql",
+      "sha256": "39a1de9d348ca93a110b32bc14047a0c400da86f285b7bfba42c3fcbfa8c2b4b",
+      "bytes": 3291
+    },
+    {
+      "path": "guardaid_monitor/migrations/007_mobile_roles_profile.sql",
+      "source": "guardaid_monitor/migrations/007_mobile_roles_profile.sql",
+      "sha256": "9068213d9e139f3b536acb55071a0a0e7f354bf2958bb204492aec265ca3fe97",
+      "bytes": 1322
+    },
+    {
+      "path": "guardaid_monitor/migrations/008_detection_debug_mode.sql",
+      "source": "guardaid_monitor/migrations/008_detection_debug_mode.sql",
+      "sha256": "b27e3bbe0c6e5092d2180d38af30df4603eb1139e2830091f4513ff0acd79099",
+      "bytes": 286
+    },
+    {
+      "path": "guardaid_monitor/migrations/009_mobile_alert_reads.sql",
+      "source": "guardaid_monitor/migrations/009_mobile_alert_reads.sql",
+      "sha256": "ae8ba4c17df7d8839815ff19e0299ffa6585ba76c4927e7f2acd91bed5974be6",
+      "bytes": 457
+    },
+    {
+      "path": "guardaid_monitor/migrations/010_alert_notification_escalation.sql",
+      "source": "guardaid_monitor/migrations/010_alert_notification_escalation.sql",
+      "sha256": "a98126f72291fd792a39ade6e16d4cfc5dce0bbb155335eb996520d95767e2f6",
+      "bytes": 2647
+    },
+    {
+      "path": "guardaid_monitor/migrations/011_mobile_alert_response_workflow.sql",
+      "source": "guardaid_monitor/migrations/011_mobile_alert_response_workflow.sql",
+      "sha256": "7b0c9a8bbec99ada8130f00cc95f239fbc4531855006886e7e88ba3417a52b82",
+      "bytes": 7819
+    },
+    {
+      "path": "guardaid_monitor/migrations/012_detection_borderline_audiences.sql",
+      "source": "guardaid_monitor/migrations/012_detection_borderline_audiences.sql",
+      "sha256": "66af3a4298c1c4e8138338faf54286d5ae9321c7ef842f89e19d83e475d659dc",
+      "bytes": 5821
+    },
+    {
+      "path": "guardaid_monitor/migrations/013_alert_evidence_state.sql",
+      "source": "guardaid_monitor/migrations/013_alert_evidence_state.sql",
+      "sha256": "f21c6214ed023a4b2a9902b6bd2872c6850d9f20f901675e74f04360211ce3c6",
+      "bytes": 501
+    },
+    {
+      "path": "guardaid_monitor/migrations/014_borderline_notification_eligibility.sql",
+      "source": "guardaid_monitor/migrations/014_borderline_notification_eligibility.sql",
+      "sha256": "684a1571377bcdd876705568cca000881d6779a33d1de2088f62fec329bed526",
+      "bytes": 564
+    },
+    {
+      "path": "guardaid_monitor/migrations/015_targeted_refactor.sql",
+      "source": "guardaid_monitor/migrations/015_targeted_refactor.sql",
+      "sha256": "7c85837c0a511bd7b8e87839ca08e0d3afb77432122bed82ee9157af75847857",
+      "bytes": 101595
+    },
+    {
+      "path": "guardaid_monitor/migrations/016_minicpm_scene_points.sql",
+      "source": "guardaid_monitor/migrations/016_minicpm_scene_points.sql",
+      "sha256": "a14728a00fc6ecf368fc6e030b0f1b0aa196255c487f1f7c88e1057fd24d004c",
+      "bytes": 1985
+    },
+    {
+      "path": "guardaid_monitor/migrations/017_workflow_decision_revision.sql",
+      "source": "guardaid_monitor/migrations/017_workflow_decision_revision.sql",
+      "sha256": "64a65ce9d4a9750e4fda1bc965fd1a58d2d43ae7dfa61a64b596cbdb2b80d7a5",
+      "bytes": 722
+    },
+    {
+      "path": "guardaid_monitor/migrations/018_background_media.sql",
+      "source": "guardaid_monitor/migrations/018_background_media.sql",
+      "sha256": "54e033e9b64b355cbc4012cd50fcb2df39edf62c82098194ecd56b66bc50a095",
+      "bytes": 1004
+    },
+    {
+      "path": "guardaid_monitor/migrations/019_scene_diagnostics.sql",
+      "source": "guardaid_monitor/migrations/019_scene_diagnostics.sql",
+      "sha256": "90369a4f95aa18f8ece657a6352d0e9d72b7fc7b3efd143dc2e347ea4598cc59",
+      "bytes": 400
+    },
+    {
+      "path": "guardaid_monitor/migrations/020_scene_length_fallback.sql",
+      "source": "guardaid_monitor/migrations/020_scene_length_fallback.sql",
+      "sha256": "8a3106c098c28fd7c65280d0bdc73740b9a1525fb092e7fb9d58a599ddb89d46",
+      "bytes": 1962
+    },
+    {
+      "path": "guardaid_monitor/requirements-cuda.txt",
+      "source": "guardaid_monitor/requirements-cuda.txt",
+      "sha256": "98b962a5a79ecfb1d5fcebe025e6fe99feb61e8aa4750fdd0873f8fd3a1dfe73",
+      "bytes": 253
+    },
+    {
+      "path": "guardaid_monitor/requirements.txt",
+      "source": "guardaid_monitor/requirements.txt",
+      "sha256": "aa4a67912227ff3a2eff900ef62ca84cb63ad3453f0244954decb152778efbfc",
+      "bytes": 577
+    },
+    {
+      "path": "guardaid_monitor/run_demo.ps1",
+      "source": "guardaid_monitor/run_demo.ps1",
+      "sha256": "c1360919816afbb6251a8dbf253af18a5853b36f3db8660a4f1cbd6bec46a666",
+      "bytes": 1446
+    },
+    {
+      "path": "guardaid_monitor/scripts/evaluate_gemma4_e2b_val29.py",
+      "source": "guardaid_monitor/scripts/evaluate_gemma4_e2b_val29.py",
+      "sha256": "ba0a9dcfee4ad19d5cace4e2cd27a6ab2c7bd8ec9b0f1b5cc07ae6cd7bc6fa51",
+      "bytes": 42003
+    },
+    {
+      "path": "guardaid_monitor/scripts/evaluate_minicpm47_borderline_epoch08_val29.py",
+      "source": "guardaid_monitor/scripts/evaluate_minicpm47_borderline_epoch08_val29.py",
+      "sha256": "980a8cbfaa6c0c3caa936c5115202b4f11b79c2c231a41b3902e748ab1f6181c",
+      "bytes": 31413
+    },
+    {
+      "path": "guardaid_monitor/scripts/evaluate_minicpm_scene_structured.py",
+      "source": "guardaid_monitor/scripts/evaluate_minicpm_scene_structured.py",
+      "sha256": "63fad8551c3541ad432e2fdc20c1da2b3bfe90ed9d7a75627c3e93c9bd1a990f",
+      "bytes": 15108
+    },
+    {
+      "path": "guardaid_monitor/scripts/evaluate_qwen3vl4b_scene_adjustment24.py",
+      "source": "guardaid_monitor/scripts/evaluate_qwen3vl4b_scene_adjustment24.py",
+      "sha256": "b3450d5ccae44bc767ccd2abced32acb59adfd42ddf065c8164146e97509c90e",
+      "bytes": 13156
+    },
+    {
+      "path": "guardaid_monitor/scripts/evaluate_qwen_borderline_epoch08_val_band.py",
+      "source": "guardaid_monitor/scripts/evaluate_qwen_borderline_epoch08_val_band.py",
+      "sha256": "2a5e12dcb7e18ff6724a0546f8f6333eb69ab36182aeb453c777cf71035bae6c",
+      "bytes": 23627
+    },
+    {
+      "path": "guardaid_monitor/scripts/export_minicpm_prompt_optimization_report.py",
+      "source": "guardaid_monitor/scripts/export_minicpm_prompt_optimization_report.py",
+      "sha256": "6c71764d71a39ad5d47aa3370b162047e7c51aaaad439d5c345ac7d68a891ccf",
+      "bytes": 20737
+    },
+    {
+      "path": "guardaid_monitor/scripts/minicpm_scene_prompt_optimization.py",
+      "source": "guardaid_monitor/scripts/minicpm_scene_prompt_optimization.py",
+      "sha256": "47a4cc84d1e78be433f6c4d67bc1f7866f02a421af89cfead6471922d687faa3",
+      "bytes": 111674
+    },
+    {
+      "path": "guardaid_monitor/scripts/prepare_minicpm_scene_prompt_review.py",
+      "source": "guardaid_monitor/scripts/prepare_minicpm_scene_prompt_review.py",
+      "sha256": "aff26049d48952258586522434b56e46f9b51c49db58f0c2a74f774aa6777b68",
+      "bytes": 7357
+    },
+    {
+      "path": "guardaid_monitor/scripts/repair_evidence_codec.py",
+      "source": "guardaid_monitor/scripts/repair_evidence_codec.py",
+      "sha256": "2d7497d586c9f75031fa91234636a2a322bb632f4935c61aa7a936e6d4b22857",
+      "bytes": 3455
+    },
+    {
+      "path": "guardaid_monitor/scripts/replace_watermarked_minicpm_case.py",
+      "source": "guardaid_monitor/scripts/replace_watermarked_minicpm_case.py",
+      "sha256": "f34614c8a5e72931626ea295406fdfd762225afc13c634c34d30301e13e8f6f1",
+      "bytes": 6613
+    },
+    {
+      "path": "guardaid_monitor/scripts/set_borderline_sampling.py",
+      "source": "guardaid_monitor/scripts/set_borderline_sampling.py",
+      "sha256": "51b6f3129a1e06df3349e5c09ca05b83d4f85ffd4a1bb668bf76490425dec2bc",
+      "bytes": 4455
+    },
+    {
+      "path": "guardaid_monitor/scripts/start_backend.ps1",
+      "source": "guardaid_monitor/scripts/start_backend.ps1",
+      "sha256": "1cb0396206f59a5770488d6e3217480f4900f2fe46cc3d71d555b973f3d31d64",
+      "bytes": 5921
+    },
+    {
+      "path": "guardaid_monitor/scripts/start_live_phone.ps1",
+      "source": "guardaid_monitor/scripts/start_live_phone.ps1",
+      "sha256": "65010ed8d726dee5e3ae92935997e47811ec43ebfcc2801c36cf32fc03fbee01",
+      "bytes": 9556
+    },
+    {
+      "path": "guardaid_monitor/scripts/verify_minicpm_integration.py",
+      "source": "guardaid_monitor/scripts/verify_minicpm_integration.py",
+      "sha256": "af67f73991924cfa9972d411c2a152c743f96a2509aa77698d6cf19c30f8edea",
+      "bytes": 5603
+    },
+    {
+      "path": "guardaid_monitor/setup.ps1",
+      "source": "guardaid_monitor/setup.ps1",
+      "sha256": "f6092e5130b352281b1150d31f1b0f75895c3e6ea0cc9f2dd20ae7bdd2feb238",
+      "bytes": 1445
+    },
+    {
+      "path": "guardaid_monitor/tools/offline_upgrade_server.py",
+      "source": "guardaid_monitor/tools/offline_upgrade_server.py",
+      "sha256": "49276e26d3b57bf44faa3f5b4d276c8c9fefec170b5362f5e6c4a5c3caa0285e",
+      "bytes": 2944
+    },
+    {
+      "path": "guardaid_monitor/tools/rollback_v15.py",
+      "source": "guardaid_monitor/tools/rollback_v15.py",
+      "sha256": "ec9c8148c9425e1944b260feaacbd798a12fc0063633dcd106b0cd82a86ba953",
+      "bytes": 2425
+    },
+    {
+      "path": "mobileapp/.gitignore",
+      "source": "mobileapp/.gitignore",
+      "sha256": "98ad50a898e9db60ac36a478d0ae4c76e7416512b0a8179040a4da19ea74d903",
+      "bytes": 1403
+    },
+    {
+      "path": "mobileapp/.metadata",
+      "source": "mobileapp/.metadata",
+      "sha256": "c170da128b4c2d260eeac894ea86856db0e1cf8e1f984ddcdef5502acf519242",
+      "bytes": 1114
+    },
+    {
+      "path": "mobileapp/analysis_options.yaml",
+      "source": "mobileapp/analysis_options.yaml",
+      "sha256": "b63207cf529949ec4727b68c23dbb38ce255b6f6f4ae1effcb5c1dcf2852d238",
+      "bytes": 1448
+    },
+    {
+      "path": "mobileapp/android/.gitignore",
+      "source": "mobileapp/android/.gitignore",
+      "sha256": "c9af75dbc2c8aa867476a09426c80b178c4aeed8b9393ae48503eedfa3273d71",
+      "bytes": 267
+    },
+    {
+      "path": "mobileapp/android/app/build.gradle.kts",
+      "source": "mobileapp/android/app/build.gradle.kts",
+      "sha256": "22430d58e521b09baa0b0ce105f51cdd44a2f7f2e5b6defe1dbd53f06209d21e",
+      "bytes": 1948
+    },
+    {
+      "path": "mobileapp/android/app/src/debug/AndroidManifest.xml",
+      "source": "mobileapp/android/app/src/debug/AndroidManifest.xml",
+      "sha256": "461b87691af0b51a2c953f82c2508d6fdade728ce1cc5cd3ce0f09bfab5d22ff",
+      "bytes": 510
+    },
+    {
+      "path": "mobileapp/android/app/src/main/AndroidManifest.xml",
+      "source": "mobileapp/android/app/src/main/AndroidManifest.xml",
+      "sha256": "6ed826734e11ec4a8ce802b355f72dcf4f3a64f591bb5c9de9c617427693e938",
+      "bytes": 2546
+    },
+    {
+      "path": "mobileapp/android/app/src/main/kotlin/com/guardaid/prototype/MainActivity.kt",
+      "source": "mobileapp/android/app/src/main/kotlin/com/guardaid/prototype/MainActivity.kt",
+      "sha256": "0928f9daabe56a7c3b7006105863933928371be2d7ba145b0233fd87bf5d8575",
+      "bytes": 124
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/drawable-v21/launch_background.xml",
+      "source": "mobileapp/android/app/src/main/res/drawable-v21/launch_background.xml",
+      "sha256": "dca312ec77de83e43ef70a825c299b51451247286c29167d62f19165750b8793",
+      "bytes": 450
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/drawable/launch_background.xml",
+      "source": "mobileapp/android/app/src/main/res/drawable/launch_background.xml",
+      "sha256": "2df60e2cfbee873ce2858088cf003e6b93498f2f568476da437610467ea1a9d7",
+      "bytes": 446
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "source": "mobileapp/android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "sha256": "6a7c8f0d703e3682108f9662f813302236240d3f8f638bb391e32bfb96055fef",
+      "bytes": 544
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "source": "mobileapp/android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "sha256": "c7c0c0189145e4e32a401c61c9bdc615754b0264e7afae24e834bb81049eaf81",
+      "bytes": 442
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "source": "mobileapp/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "sha256": "e14aa40904929bf313fded22cf7e7ffcbf1d1aac4263b5ef1be8bfce650397aa",
+      "bytes": 721
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "source": "mobileapp/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "sha256": "4d470bf22d5c17d84edc5f82516d1ba8a1c09559cd761cefb792f86d9f52b540",
+      "bytes": 1031
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "source": "mobileapp/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "sha256": "3c34e1f298d0c9ea3455d46db6b7759c8211a49e9ec6e44b635fc5c87dfb4180",
+      "bytes": 1443
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_alerts_v1.wav",
+      "source": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_alerts_v1.wav",
+      "sha256": "6b6c3f7d52878d6faec6788d3c67cf4f284ef3870dba7df10ebeb1bda3c6a5f6",
+      "bytes": 211718
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_alerts_v2.wav",
+      "source": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_alerts_v2.wav",
+      "sha256": "ca822443d6c2bd731bf2223db110388938801b2bfc1fbc97e813a6d8517f73da",
+      "bytes": 211718
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_alerts_v3.wav",
+      "source": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_alerts_v3.wav",
+      "sha256": "bc3823dfb7e93fed2b702c91d4c5891d5927e52517c62cac6fc078f0c7230372",
+      "bytes": 211724
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_alerts_v4.wav",
+      "source": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_alerts_v4.wav",
+      "sha256": "5183f20683a225ecbffb6288a330c8b9a37317c3119ffc2db97a3da07d8b2aa4",
+      "bytes": 229364
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_alerts_v5.wav",
+      "source": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_alerts_v5.wav",
+      "sha256": "a3f1c62f45887f9f550bcd7443817586386ba44e1f45305dc72eccdecb798588",
+      "bytes": 465740
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_beep_v6.wav",
+      "source": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_beep_v6.wav",
+      "sha256": "215ac9dbe1150ead7cd0749ae9337180fb0352c4100410ed8e99317ab053ec04",
+      "bytes": 82952
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_beep_v7.wav",
+      "source": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_beep_v7.wav",
+      "sha256": "792c051450deb8ea3b2ae089c928a7bb568188a962f112abf1094d6f4941d039",
+      "bytes": 84716
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_escalated_4beep_v1.wav",
+      "source": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_escalated_4beep_v1.wav",
+      "sha256": "f8d1a41f4ce50f5677f72306a3f718b1bf747ce57feab4d64b96e40b50b3aafd",
+      "bytes": 169388
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_repeat_3beep_v1.wav",
+      "source": "mobileapp/android/app/src/main/res/raw/guardaid_urgent_repeat_3beep_v1.wav",
+      "sha256": "22f029e0e19fd24332b56ccab1f2fab4256969e851d2dff6862e921e652abbb4",
+      "bytes": 127052
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/values-night/styles.xml",
+      "source": "mobileapp/android/app/src/main/res/values-night/styles.xml",
+      "sha256": "ea763597dc1a84c8034251caee98d7753e0fbf57340ffc94677427de4b537516",
+      "bytes": 1013
+    },
+    {
+      "path": "mobileapp/android/app/src/main/res/values/styles.xml",
+      "source": "mobileapp/android/app/src/main/res/values/styles.xml",
+      "sha256": "cca15a99b59380a548bf6a890f7ca5380ee509b1f9bbb2f5f9ec3589fa25c2f7",
+      "bytes": 1014
+    },
+    {
+      "path": "mobileapp/android/app/src/profile/AndroidManifest.xml",
+      "source": "mobileapp/android/app/src/profile/AndroidManifest.xml",
+      "sha256": "b01a4541a8144c15bc617bab7eb267c99fa1476368fbbda5a12cdbf4e316a34c",
+      "bytes": 385
+    },
+    {
+      "path": "mobileapp/android/build.gradle.kts",
+      "source": "mobileapp/android/build.gradle.kts",
+      "sha256": "218f400e3fff31c9c986a2535dfb974560e1b4d33cc27b7c1fee96a2b7e44454",
+      "bytes": 561
+    },
+    {
+      "path": "mobileapp/android/gradle.properties",
+      "source": "mobileapp/android/gradle.properties",
+      "sha256": "e3e07ffc8707de0cdb7b05891540c495451c99b2b1f4121fca3e6bef16f66cf5",
+      "bytes": 157
+    },
+    {
+      "path": "mobileapp/android/gradle/wrapper/gradle-wrapper.properties",
+      "source": "mobileapp/android/gradle/wrapper/gradle-wrapper.properties",
+      "sha256": "1220fdd333a881e47441de07b23f9dd1ebd35459730543ae429cf249847d91bf",
+      "bytes": 206
+    },
+    {
+      "path": "mobileapp/android/settings.gradle.kts",
+      "source": "mobileapp/android/settings.gradle.kts",
+      "sha256": "27d01fb2f1f5e5561a5c7aebff165756e3bddd31a78f5a75f1ce3b5f9c09df9e",
+      "bytes": 946
+    },
+    {
+      "path": "mobileapp/ios/.gitignore",
+      "source": "mobileapp/ios/.gitignore",
+      "sha256": "e85b4db8ba6ed14708e5f7d3c60336e5a3067ce11329b84aa8ba5d98603ee253",
+      "bytes": 603
+    },
+    {
+      "path": "mobileapp/ios/Flutter/AppFrameworkInfo.plist",
+      "source": "mobileapp/ios/Flutter/AppFrameworkInfo.plist",
+      "sha256": "e51cfa76fca1ae586244b43bf97423577315d2906394c1e7768ef43b8d23e161",
+      "bytes": 744
+    },
+    {
+      "path": "mobileapp/ios/Flutter/Debug.xcconfig",
+      "source": "mobileapp/ios/Flutter/Debug.xcconfig",
+      "sha256": "c0d1da54718e75f2028962b689258ecc741abf7cdaed50483aa5225264d0a7d7",
+      "bytes": 31
+    },
+    {
+      "path": "mobileapp/ios/Flutter/Release.xcconfig",
+      "source": "mobileapp/ios/Flutter/Release.xcconfig",
+      "sha256": "c0d1da54718e75f2028962b689258ecc741abf7cdaed50483aa5225264d0a7d7",
+      "bytes": 31
+    },
+    {
+      "path": "mobileapp/ios/Runner.xcodeproj/project.pbxproj",
+      "source": "mobileapp/ios/Runner.xcodeproj/project.pbxproj",
+      "sha256": "01d13e2fb66e378e51439116fa046bbe6728aef13981cb5196129f2553e44850",
+      "bytes": 24728
+    },
+    {
+      "path": "mobileapp/ios/Runner.xcodeproj/project.xcworkspace/contents.xcworkspacedata",
+      "source": "mobileapp/ios/Runner.xcodeproj/project.xcworkspace/contents.xcworkspacedata",
+      "sha256": "ac28b35c2b940210bec0fff8e424b07fd0efe9112ab178a10533583f251a386c",
+      "bytes": 142
+    },
+    {
+      "path": "mobileapp/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "source": "mobileapp/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "sha256": "d557c2c32fc6258ec28981fa45dc847b76c9968beb90a2e26d13ef9c4ea45c30",
+      "bytes": 246
+    },
+    {
+      "path": "mobileapp/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
+      "source": "mobileapp/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
+      "sha256": "dd64c0308ab2971c456871b990b24a008bdc3ece09833e8dbe9675e33a496e74",
+      "bytes": 234
+    },
+    {
+      "path": "mobileapp/ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme",
+      "source": "mobileapp/ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme",
+      "sha256": "570c49fd61c67330efb75097018d1b0df0c68d03667631105a5acf5621112b1b",
+      "bytes": 3934
+    },
+    {
+      "path": "mobileapp/ios/Runner.xcworkspace/contents.xcworkspacedata",
+      "source": "mobileapp/ios/Runner.xcworkspace/contents.xcworkspacedata",
+      "sha256": "706a4c812f2a1e220e6785c27580020d58048e2ae4d30d1280f3c43344ce6b38",
+      "bytes": 159
+    },
+    {
+      "path": "mobileapp/ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "source": "mobileapp/ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "sha256": "d557c2c32fc6258ec28981fa45dc847b76c9968beb90a2e26d13ef9c4ea45c30",
+      "bytes": 246
+    },
+    {
+      "path": "mobileapp/ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
+      "source": "mobileapp/ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
+      "sha256": "dd64c0308ab2971c456871b990b24a008bdc3ece09833e8dbe9675e33a496e74",
+      "bytes": 234
+    },
+    {
+      "path": "mobileapp/ios/Runner/AppDelegate.swift",
+      "source": "mobileapp/ios/Runner/AppDelegate.swift",
+      "sha256": "54a5e98d6c3e8a79413ad50607b83aac8ded8828bc913eda1fe86bb33a66cd5d",
+      "bytes": 555
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "sha256": "5f8b941b774bde4496d73347c1f79cbdd786bb76fbdab9ed1f3f0cb78a0fb0d3",
+      "bytes": 2641
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png",
+      "sha256": "7770183009e914112de7d8ef1d235a6a30c5834424858e0d2f8253f6b8d31926",
+      "bytes": 10932
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@1x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@1x.png",
+      "sha256": "cab10a0d391ec5bc09ef50ce49e8ad401cee7ef03707ec0923a222c5c2b3d212",
+      "bytes": 295
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@2x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@2x.png",
+      "sha256": "b9ad02cf6576a04d1b6806ac02a2431481b448dd0c2e505ce25842d1f7c4730b",
+      "bytes": 406
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@3x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@3x.png",
+      "sha256": "c6e6d3b215ae744a9c391f4c4d44157eff5e739d6ad6c39f9bfa5df66dddd267",
+      "bytes": 450
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@1x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@1x.png",
+      "sha256": "5dee24dc104ac76dc162e42ae0beb163d426bf365562ee28ba7b3ad368559a60",
+      "bytes": 282
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@2x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@2x.png",
+      "sha256": "a9b21eb6f4271385655a8771f76e29eef8c1107d7879cbcfc567e6619d1f716a",
+      "bytes": 462
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@3x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@3x.png",
+      "sha256": "e677d701ffe4af7bc2935098d6b3984cc9ab7ace573e6900955a5535b12410cf",
+      "bytes": 704
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@1x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@1x.png",
+      "sha256": "b9ad02cf6576a04d1b6806ac02a2431481b448dd0c2e505ce25842d1f7c4730b",
+      "bytes": 406
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@2x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@2x.png",
+      "sha256": "7c61c42fc7b657d9cf314d32a4ec458f0647c3aaf360be1b9377857266ec2499",
+      "bytes": 586
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@3x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@3x.png",
+      "sha256": "19be171481dc71a0b2803ebcd01dd8b0c5fd5778dee34c0a3cabc948c225f24e",
+      "bytes": 862
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@2x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@2x.png",
+      "sha256": "19be171481dc71a0b2803ebcd01dd8b0c5fd5778dee34c0a3cabc948c225f24e",
+      "bytes": 862
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@3x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@3x.png",
+      "sha256": "4209a49e44a92ec40a327d3455eb1b1c153ee83d75de1c2be0a12ab18b2ff9de",
+      "bytes": 1674
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@1x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@1x.png",
+      "sha256": "836c918cb613249eba0483a6b02fa3df3c1c0a89a315ee4d3b88509b83c7ab73",
+      "bytes": 762
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@2x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@2x.png",
+      "sha256": "41c7d42f6e61f8fe7f30b1ffa2256aecbc9682be06d18c4a3062043e1a2e547c",
+      "bytes": 1226
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-83.5x83.5@2x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-83.5x83.5@2x.png",
+      "sha256": "5d7e5bdf01b93802bc973345b3a78c038907147625035952a08a115a563b7f81",
+      "bytes": 1418
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json",
+      "sha256": "fbd112a9f3b541a1d811f71ac8e4fe68b6176687d973a5f4d99b7aa4a722e94e",
+      "bytes": 414
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png",
+      "sha256": "93ae7d494fad0fb30cbf3ae746a39c4bc7a0f8bbf87fbb587a3f3c01f3c5ce20",
+      "bytes": 68
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png",
+      "sha256": "93ae7d494fad0fb30cbf3ae746a39c4bc7a0f8bbf87fbb587a3f3c01f3c5ce20",
+      "bytes": 68
+    },
+    {
+      "path": "mobileapp/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png",
+      "source": "mobileapp/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png",
+      "sha256": "93ae7d494fad0fb30cbf3ae746a39c4bc7a0f8bbf87fbb587a3f3c01f3c5ce20",
+      "bytes": 68
+    },
+    {
+      "path": "mobileapp/ios/Runner/Base.lproj/LaunchScreen.storyboard",
+      "source": "mobileapp/ios/Runner/Base.lproj/LaunchScreen.storyboard",
+      "sha256": "bc3644fbb251ff1e18de25a4932c927850ae1a025be3dd1447940429633fe4b2",
+      "bytes": 2414
+    },
+    {
+      "path": "mobileapp/ios/Runner/Base.lproj/Main.storyboard",
+      "source": "mobileapp/ios/Runner/Base.lproj/Main.storyboard",
+      "sha256": "dcea4686c02065e56217fd19fcfb73d7509b41872e7486126149d47a18559363",
+      "bytes": 1631
+    },
+    {
+      "path": "mobileapp/ios/Runner/Info.plist",
+      "source": "mobileapp/ios/Runner/Info.plist",
+      "sha256": "4a2904be5ed7262308070462764baec507e948c996d65f38d9329350cc9464bc",
+      "bytes": 2286
+    },
+    {
+      "path": "mobileapp/ios/Runner/Runner-Bridging-Header.h",
+      "source": "mobileapp/ios/Runner/Runner-Bridging-Header.h",
+      "sha256": "efe657d8b27f7f8595a0d416bffb33fe7d93bd2869d81f7353b556c439d7a1a7",
+      "bytes": 39
+    },
+    {
+      "path": "mobileapp/ios/Runner/SceneDelegate.swift",
+      "source": "mobileapp/ios/Runner/SceneDelegate.swift",
+      "sha256": "edce811c671ca0a6ccb14753e14e16deb0d89a0adf4f1b685e362d87d8f4c366",
+      "bytes": 82
+    },
+    {
+      "path": "mobileapp/lib/main.dart",
+      "source": "mobileapp/lib/main.dart",
+      "sha256": "e9d1c9a377f726b069a767ff83fe8fb9ec00f571048cb758a2ae95773b03a6f2",
+      "bytes": 157
+    },
+    {
+      "path": "mobileapp/lib/src/app.dart",
+      "source": "mobileapp/lib/src/app.dart",
+      "sha256": "bd8cb395a1eed38b730d08063a9a69d831569189f6fe8b6615c512d0cc20f3c6",
+      "bytes": 6929
+    },
+    {
+      "path": "mobileapp/lib/src/controller.dart",
+      "source": "mobileapp/lib/src/controller.dart",
+      "sha256": "cf1863baf5342e1d2f5f7f118f9c82749bf377d55a3e046fd0b96f85f24da15c",
+      "bytes": 23189
+    },
+    {
+      "path": "mobileapp/lib/src/firebase_api_repository.dart",
+      "source": "mobileapp/lib/src/firebase_api_repository.dart",
+      "sha256": "70596d4235d891919a300b95217869f632079f06508ad0014cf4bd5227c234cd",
+      "bytes": 37955
+    },
+    {
+      "path": "mobileapp/lib/src/models.dart",
+      "source": "mobileapp/lib/src/models.dart",
+      "sha256": "41cf0811aeaa9dc269a8d903bc78eb868469fb22736e205e5d004513e6842bb1",
+      "bytes": 25556
+    },
+    {
+      "path": "mobileapp/lib/src/notification_service.dart",
+      "source": "mobileapp/lib/src/notification_service.dart",
+      "sha256": "23e71ecd62b221f4eb497fe6c4a70d225a1be2adb05e70b414d951fffc4a463f",
+      "bytes": 9551
+    },
+    {
+      "path": "mobileapp/lib/src/repository.dart",
+      "source": "mobileapp/lib/src/repository.dart",
+      "sha256": "e54fa149c6a7226dcc1fcc9422a21f943b3449a88bba613654ff5290ea7908ab",
+      "bytes": 37559
+    },
+    {
+      "path": "mobileapp/lib/src/screens/alert_detail_screen.dart",
+      "source": "mobileapp/lib/src/screens/alert_detail_screen.dart",
+      "sha256": "19bd46ddd68f58562caa8ba4937e733103484288c42051b19b1cba3e8add1bc2",
+      "bytes": 57948
+    },
+    {
+      "path": "mobileapp/lib/src/screens/alerts_screen.dart",
+      "source": "mobileapp/lib/src/screens/alerts_screen.dart",
+      "sha256": "5b7ec50afeb1b0863fb5d0c797966be70e59096b23fd13ec1d345fcb38932d56",
+      "bytes": 36151
+    },
+    {
+      "path": "mobileapp/lib/src/screens/emergency_call_simulation_screen.dart",
+      "source": "mobileapp/lib/src/screens/emergency_call_simulation_screen.dart",
+      "sha256": "6b4b091b5abf25aab3f05b0fd75cfb7053d3e8c8616f7ec80cad7ce2de51f8d9",
+      "bytes": 6434
+    },
+    {
+      "path": "mobileapp/lib/src/screens/home_shell.dart",
+      "source": "mobileapp/lib/src/screens/home_shell.dart",
+      "sha256": "2e597ea0e8940451c848dd4fecd2f1eac55e2c63f9992b61dd92d096d90daa47",
+      "bytes": 6320
+    },
+    {
+      "path": "mobileapp/lib/src/screens/login_screen.dart",
+      "source": "mobileapp/lib/src/screens/login_screen.dart",
+      "sha256": "2128946b67a023752ea97d5deed67bdcde66162921399e0068a0013828ace1dc",
+      "bytes": 13423
+    },
+    {
+      "path": "mobileapp/lib/src/screens/logs_screen.dart",
+      "source": "mobileapp/lib/src/screens/logs_screen.dart",
+      "sha256": "fc7874781fec33989ab25a4052bcaa4b59d49b1f6ff763341acba0fa66fb6081",
+      "bytes": 5865
+    },
+    {
+      "path": "mobileapp/lib/src/screens/settings_screen.dart",
+      "source": "mobileapp/lib/src/screens/settings_screen.dart",
+      "sha256": "40c3e12422f69076c724a87e9a6a45949bb9aac7957339c5c574683047712a0e",
+      "bytes": 72815
+    },
+    {
+      "path": "mobileapp/lib/src/screens/updates_screen.dart",
+      "source": "mobileapp/lib/src/screens/updates_screen.dart",
+      "sha256": "d6f4d12ec1246d28bb82178267747ea945f91002e1ee22272233f12da9f1231b",
+      "bytes": 7168
+    },
+    {
+      "path": "mobileapp/lib/src/screens/weapon_photo_gallery.dart",
+      "source": "mobileapp/lib/src/screens/weapon_photo_gallery.dart",
+      "sha256": "4d4a41f90e717050def70a3d3a9c794da28939f2b448660d69b4f79ac83f46e6",
+      "bytes": 7486
+    },
+    {
+      "path": "mobileapp/lib/src/theme.dart",
+      "source": "mobileapp/lib/src/theme.dart",
+      "sha256": "bb95cd36d84e1be7d15a0dd365fa3887fcea121ca187916031fa9141f26d2cdc",
+      "bytes": 3290
+    },
+    {
+      "path": "mobileapp/lib/src/widgets.dart",
+      "source": "mobileapp/lib/src/widgets.dart",
+      "sha256": "03045a378f0b46866b836c233318c8571fd2340b5d8dd7e0a5015ce31f87e6b0",
+      "bytes": 13006
+    },
+    {
+      "path": "mobileapp/lib/src/workflow_requests.dart",
+      "source": "mobileapp/lib/src/workflow_requests.dart",
+      "sha256": "43dfc83659c5536caa8a3b017f3837113795643021791b49a7e7aa3e7d12cf5e",
+      "bytes": 3814
+    },
+    {
+      "path": "mobileapp/pubspec.lock",
+      "source": "mobileapp/pubspec.lock",
+      "sha256": "3df0b84a6173462c3c8d8df7314a8f24bd5b06e45751caeb4d72bf1a4c52d881",
+      "bytes": 19250
+    },
+    {
+      "path": "mobileapp/pubspec.yaml",
+      "source": "mobileapp/pubspec.yaml",
+      "sha256": "a7cd48895d83da712482ef1b120398d26a21031dc0a011d8e2fe22f6ff035991",
+      "bytes": 4268
+    },
+    {
+      "path": "mobileapp/tooling/generate_escalation_sounds.py",
+      "source": "mobileapp/tooling/generate_escalation_sounds.py",
+      "sha256": "28f7e3798e62890f06a3a836213e3daab1736f15c2a2c191356803f5d64f8b09",
+      "bytes": 1946
+    },
+    {
+      "path": "runtime_dependencies/yolov9/LICENSE.md",
+      "source": "results (4)/yolov9/LICENSE.md",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "bytes": 35149
+    },
+    {
+      "path": "runtime_dependencies/yolov9/README.md",
+      "source": "results (4)/yolov9/README.md",
+      "sha256": "c0564bdf90a8f0e068ad9a635a86eeba51fb20b316ca5236447d879c83450960",
+      "bytes": 16480
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/__init__.py",
+      "source": "results (4)/yolov9/models/__init__.py",
+      "sha256": "0486028fa4d1cc658211b606e5935a4c74386a6e9cf5055b812f3484b1b46e57",
+      "bytes": 6
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/common.py",
+      "source": "results (4)/yolov9/models/common.py",
+      "sha256": "7b0f6f517ddaa894efb5e00a6145bb8d7decd4a7dc8b7931676e9cc1c8413205",
+      "bytes": 54495
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/detect/gelan-c.yaml",
+      "source": "results (4)/yolov9/models/detect/gelan-c.yaml",
+      "sha256": "cd1c44fb9d3c5d5034f02960963175de479054f8f83f21925fcb762c982e0d0b",
+      "bytes": 1730
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/detect/gelan-e.yaml",
+      "source": "results (4)/yolov9/models/detect/gelan-e.yaml",
+      "sha256": "25691c82a687de61998a230c89c70af1e97b49ddbaa8c116c3a980e4ed2811e5",
+      "bytes": 2868
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/detect/gelan-m.yaml",
+      "source": "results (4)/yolov9/models/detect/gelan-m.yaml",
+      "sha256": "cbd07238a2066a8b7d463b7b0d4c147397914adc2e31a731f450ca0a79990e37",
+      "bytes": 1715
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/detect/gelan-s.yaml",
+      "source": "results (4)/yolov9/models/detect/gelan-s.yaml",
+      "sha256": "cf1a102cb72a65e1361ffdb08d9f756884823ff3c5d5413435b6fc0672f9f70a",
+      "bytes": 1697
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/detect/gelan-t.yaml",
+      "source": "results (4)/yolov9/models/detect/gelan-t.yaml",
+      "sha256": "d3d4507e0232b347c90bc8133d67a80c245145edf21824eff9d5d5ac5234f8b3",
+      "bytes": 1681
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/detect/gelan.yaml",
+      "source": "results (4)/yolov9/models/detect/gelan.yaml",
+      "sha256": "83a2b58529187dc74bc8e4bde1c0ca7b552cf44d284ed735e4d0ef63fd7bc212",
+      "bytes": 1753
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/detect/yolov7-af.yaml",
+      "source": "results (4)/yolov9/models/detect/yolov7-af.yaml",
+      "sha256": "79a28f72761482ab56ed309293b59d3ef5dfacb50a2d80829b0bd1bed0c4da5e",
+      "bytes": 3869
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/detect/yolov9-c.yaml",
+      "source": "results (4)/yolov9/models/detect/yolov9-c.yaml",
+      "sha256": "216b12db842c945ed54ba61bdf067a18a50c1fab689825e990699bd16c49620b",
+      "bytes": 2745
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/detect/yolov9-cf.yaml",
+      "source": "results (4)/yolov9/models/detect/yolov9-cf.yaml",
+      "sha256": "dfc913b2c6cd80dbf05f81f57c77b154a19eb49ca0a192d3503eafd1021c020d",
+      "bytes": 2816
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/detect/yolov9-e.yaml",
+      "source": "results (4)/yolov9/models/detect/yolov9-e.yaml",
+      "sha256": "e8139f890c91cf3d6c9db57e6d755592e1e16ed111315e0d38bf882a525c5dea",
+      "bytes": 3431
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/detect/yolov9-m.yaml",
+      "source": "results (4)/yolov9/models/detect/yolov9-m.yaml",
+      "sha256": "e684924ecbe1a843c8c25bfa023ee1949a772788fc81292d743d5b56b16548f7",
+      "bytes": 2613
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/detect/yolov9-s.yaml",
+      "source": "results (4)/yolov9/models/detect/yolov9-s.yaml",
+      "sha256": "e73b06e7f6df3cea33ba01be42dc8f00850513e8520e66ff1df8ac33b7d48a2b",
+      "bytes": 2150
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/detect/yolov9-t.yaml",
+      "source": "results (4)/yolov9/models/detect/yolov9-t.yaml",
+      "sha256": "70898888f1ec324ff9858eb4d3aa5a3b0d0b882f583dc14b32c2c40fe27a8ed6",
+      "bytes": 2129
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/detect/yolov9.yaml",
+      "source": "results (4)/yolov9/models/detect/yolov9.yaml",
+      "sha256": "245ca4811a7aeddc2f0db1e20ee0ff4c566acc5cbd75fd26ae09f090c5fb5057",
+      "bytes": 2667
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/experimental.py",
+      "source": "results (4)/yolov9/models/experimental.py",
+      "sha256": "6120e57246da8589c7c8c4bdc4a6f528a385fd3e8f31d1b839f3b523a3af6ade",
+      "bytes": 11643
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/hub/anchors.yaml",
+      "source": "results (4)/yolov9/models/hub/anchors.yaml",
+      "sha256": "c8dc1829e2c58d88c09568dfd9412b1fc97eedf9ae4dfb8f4327106e5f360381",
+      "bytes": 3307
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/hub/yolov3-spp.yaml",
+      "source": "results (4)/yolov9/models/hub/yolov3-spp.yaml",
+      "sha256": "e093defbd702f6eb958d8380765f90bfc646cb8c7f0231a388eb827be872e059",
+      "bytes": 1530
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/hub/yolov3-tiny.yaml",
+      "source": "results (4)/yolov9/models/hub/yolov3-tiny.yaml",
+      "sha256": "d72389c81b1acac6b1b2f319381bdbddb10b40f6415be6ccf9dcfb134e13825b",
+      "bytes": 1195
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/hub/yolov3.yaml",
+      "source": "results (4)/yolov9/models/hub/yolov3.yaml",
+      "sha256": "2631f8d1537ececb9304490e9e57e50a6fc6c71ac0498175d836cf156f912a01",
+      "bytes": 1521
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/panoptic/gelan-c-pan.yaml",
+      "source": "results (4)/yolov9/models/panoptic/gelan-c-pan.yaml",
+      "sha256": "b73e60eb179bb99c398ba4c4fb489b7b649a8b6e62b5997d4ede32e10a48736d",
+      "bytes": 1747
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/panoptic/yolov7-af-pan.yaml",
+      "source": "results (4)/yolov9/models/panoptic/yolov7-af-pan.yaml",
+      "sha256": "4205d2520fc85efa7bf08c710eb275126ae6936e864937a6660343fb932a5cd3",
+      "bytes": 3893
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/segment/gelan-c-dseg.yaml",
+      "source": "results (4)/yolov9/models/segment/gelan-c-dseg.yaml",
+      "sha256": "ee8d80784f1f8e080996e02c3810109138f8591f9a12c96163dd509bd7eeb9c0",
+      "bytes": 1884
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/segment/gelan-c-seg.yaml",
+      "source": "results (4)/yolov9/models/segment/gelan-c-seg.yaml",
+      "sha256": "0c99de1d6826bd12d5089120ee856359cca91980b37d841968e4e97d68c1ddc6",
+      "bytes": 1740
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/segment/yolov7-af-seg.yaml",
+      "source": "results (4)/yolov9/models/segment/yolov7-af-seg.yaml",
+      "sha256": "bdf7ed153f77db430267412d00956c91408afafdb0621c968901b0da11e380eb",
+      "bytes": 3849
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/segment/yolov9-c-dseg.yaml",
+      "source": "results (4)/yolov9/models/segment/yolov9-c-dseg.yaml",
+      "sha256": "5a36c623da6cc9af2b4474b8002134e81f322e91c2112b21d8d0dfcccd2b034d",
+      "bytes": 3004
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/tf.py",
+      "source": "results (4)/yolov9/models/tf.py",
+      "sha256": "a22a6deb8639d7c6fdeed7227d96a3ebe8f05ca75a1ec5604b783de4db3dd800",
+      "bytes": 26659
+    },
+    {
+      "path": "runtime_dependencies/yolov9/models/yolo.py",
+      "source": "results (4)/yolov9/models/yolo.py",
+      "sha256": "9d09fc34b1429c46b9853ce2fc3b85fcfb1fc3d312bc8b3bbfa4705ae05954d5",
+      "bytes": 40858
+    },
+    {
+      "path": "runtime_dependencies/yolov9/requirements.txt",
+      "source": "results (4)/yolov9/requirements.txt",
+      "sha256": "26b1899cae12507518ec30b1d6d7fd8e231cfaaf260d50a426e9ed85394e8bc5",
+      "bytes": 1073
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/__init__.py",
+      "source": "results (4)/yolov9/utils/__init__.py",
+      "sha256": "db708c8a585643ee7e4a75231b0ab12ca60fb4de32e34b979a230ead329136cc",
+      "bytes": 2203
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/activations.py",
+      "source": "results (4)/yolov9/utils/activations.py",
+      "sha256": "b9b729ee665398ea26e778977eb8b110a687526ebcb20143644aec6a47a52006",
+      "bytes": 3373
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/augmentations.py",
+      "source": "results (4)/yolov9/utils/augmentations.py",
+      "sha256": "fb97ff58a13c636e57f76a8b8420748ca4162af02d6a1c2e42acbf7fe9d03a92",
+      "bytes": 17063
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/autoanchor.py",
+      "source": "results (4)/yolov9/utils/autoanchor.py",
+      "sha256": "24782835bf2fbf8bfd3731134058a958d4cbf39119ad010cfd884f132ce19780",
+      "bytes": 7348
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/autobatch.py",
+      "source": "results (4)/yolov9/utils/autobatch.py",
+      "sha256": "feadf4e8edfd27a386a3fa5fc43ab22e01b4a3a06ec8610e8346ed8bc6674a11",
+      "bytes": 2917
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/callbacks.py",
+      "source": "results (4)/yolov9/utils/callbacks.py",
+      "sha256": "32d8b304a1c0a75a58b7f7edacb12c6df23b08603376359fc6e338ba657cf569",
+      "bytes": 2591
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/coco_utils.py",
+      "source": "results (4)/yolov9/utils/coco_utils.py",
+      "sha256": "9ad18f69ff72702b5aba4ba1374b8639e103dd49562025f809279284febd03dc",
+      "bytes": 3256
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/dataloaders.py",
+      "source": "results (4)/yolov9/utils/dataloaders.py",
+      "sha256": "a476573e8e4f4738f7e6eb9414a8606089640e275ea498f0291b0f847bead79c",
+      "bytes": 55616
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/downloads.py",
+      "source": "results (4)/yolov9/utils/downloads.py",
+      "sha256": "eefc2655c72f1c4b777f243b57e93e528315785a8f5fdc555b07f9bb9057b6f3",
+      "bytes": 4581
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/general.py",
+      "source": "results (4)/yolov9/utils/general.py",
+      "sha256": "aff3e40f0e44a819ab199619e12a315495bfc6ca0e44f7c62e7d650ad2d5b420",
+      "bytes": 46965
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/lion.py",
+      "source": "results (4)/yolov9/utils/lion.py",
+      "sha256": "d20263cf0195933ba1ebbba6a9255b2e0a42173e100e2fa81147e050f708a307",
+      "bytes": 2518
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loggers/__init__.py",
+      "source": "results (4)/yolov9/utils/loggers/__init__.py",
+      "sha256": "8353ce780c7d6a85f73489bf051ff109917ea182ca6aeb0a99b3e1eee1431c19",
+      "bytes": 17037
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loggers/clearml/__init__.py",
+      "source": "results (4)/yolov9/utils/loggers/clearml/__init__.py",
+      "sha256": "0486028fa4d1cc658211b606e5935a4c74386a6e9cf5055b812f3484b1b46e57",
+      "bytes": 6
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loggers/clearml/clearml_utils.py",
+      "source": "results (4)/yolov9/utils/loggers/clearml/clearml_utils.py",
+      "sha256": "b4d7eab38b951a5c2a3efdce2b93d0bc318a8c1a6337c62a28119b5664800525",
+      "bytes": 7553
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loggers/clearml/hpo.py",
+      "source": "results (4)/yolov9/utils/loggers/clearml/hpo.py",
+      "sha256": "c8947371f40250c5943fcd07619ce92bcb99285db78686385aa4616bfd52e3d5",
+      "bytes": 5271
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loggers/comet/__init__.py",
+      "source": "results (4)/yolov9/utils/loggers/comet/__init__.py",
+      "sha256": "19c5b872e8e69cb59ec62441e8db4d76be783f2116b3cfc280a2c99e487b7eec",
+      "bytes": 18731
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loggers/comet/comet_utils.py",
+      "source": "results (4)/yolov9/utils/loggers/comet/comet_utils.py",
+      "sha256": "39f79b5c114e325b5b4dcb9038ae51262d3a690f67db2d123283fc428bb58628",
+      "bytes": 4751
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loggers/comet/hpo.py",
+      "source": "results (4)/yolov9/utils/loggers/comet/hpo.py",
+      "sha256": "60cb7aee290fb92e3410a9df6356d9a08f2d0ac727062f030d623a28fa7852d8",
+      "bytes": 6653
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loggers/comet/optimizer_config.json",
+      "source": "results (4)/yolov9/utils/loggers/comet/optimizer_config.json",
+      "sha256": "39edaf5872d3e2f493a31c32d29184726fc44de8d9c6aeec06efec5ea15060e9",
+      "bytes": 3020
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loggers/wandb/__init__.py",
+      "source": "results (4)/yolov9/utils/loggers/wandb/__init__.py",
+      "sha256": "0486028fa4d1cc658211b606e5935a4c74386a6e9cf5055b812f3484b1b46e57",
+      "bytes": 6
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loggers/wandb/log_dataset.py",
+      "source": "results (4)/yolov9/utils/loggers/wandb/log_dataset.py",
+      "sha256": "0b48685105229e7e7a40190b802599a4d619bbac694cacb4b53634b42ffccf8e",
+      "bytes": 1032
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loggers/wandb/sweep.py",
+      "source": "results (4)/yolov9/utils/loggers/wandb/sweep.py",
+      "sha256": "a6c5375914f09f36eaecffe571d4f4a7297aac8e43c11ebf00bc7f1023c0263f",
+      "bytes": 1213
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loggers/wandb/sweep.yaml",
+      "source": "results (4)/yolov9/utils/loggers/wandb/sweep.yaml",
+      "sha256": "4db55939c8e852bc7488441dc8bb1b927f488b81226ecf2042c7f7cc06f96d8e",
+      "bytes": 2463
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loggers/wandb/wandb_utils.py",
+      "source": "results (4)/yolov9/utils/loggers/wandb/wandb_utils.py",
+      "sha256": "c9f17a8dedc511547c1c646361b45e226666beca04d9863b23feba5e337a6a8e",
+      "bytes": 28239
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loss.py",
+      "source": "results (4)/yolov9/utils/loss.py",
+      "sha256": "82ed244f03f97a67b4ad7949b2b2b074097a4a5c3015dab411d8a1ab53d44917",
+      "bytes": 16076
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loss_tal.py",
+      "source": "results (4)/yolov9/utils/loss_tal.py",
+      "sha256": "b6217b3fd179ab3e7cc966cbaabe50260236320525b998b4ec62526060ab3d4a",
+      "bytes": 9688
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loss_tal_dual.py",
+      "source": "results (4)/yolov9/utils/loss_tal_dual.py",
+      "sha256": "eade9314c0d794634f874e7ada437cc626def2a06986b0f8e7b1b5255be798e0",
+      "bytes": 19017
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/loss_tal_triple.py",
+      "source": "results (4)/yolov9/utils/loss_tal_triple.py",
+      "sha256": "002f47ee1a7a8f1cae81a83a3c3b35da7e5a8767a2d682edc8817f8bb360c16c",
+      "bytes": 13592
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/metrics.py",
+      "source": "results (4)/yolov9/utils/metrics.py",
+      "sha256": "a90f3b248985afe1e4d03afdcddbf0631a16dd2737350cb26789776d3bc06c98",
+      "bytes": 15913
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/panoptic/__init__.py",
+      "source": "results (4)/yolov9/utils/panoptic/__init__.py",
+      "sha256": "0486028fa4d1cc658211b606e5935a4c74386a6e9cf5055b812f3484b1b46e57",
+      "bytes": 6
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/panoptic/augmentations.py",
+      "source": "results (4)/yolov9/utils/panoptic/augmentations.py",
+      "sha256": "caaa984c96839de4e42dea0604c741908492720433951676c70b1a658e8b230d",
+      "bytes": 7672
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/panoptic/dataloaders.py",
+      "source": "results (4)/yolov9/utils/panoptic/dataloaders.py",
+      "sha256": "4df5f6385e5bfebdd2801490c2e07a74e1e9d03356a03283b20ad9ab7a78b9be",
+      "bytes": 21536
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/panoptic/general.py",
+      "source": "results (4)/yolov9/utils/panoptic/general.py",
+      "sha256": "f9cc0f71a13a73e7e1b28f9275501737b8af66762d348acf91b443c5375bf35f",
+      "bytes": 4934
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/panoptic/loss.py",
+      "source": "results (4)/yolov9/utils/panoptic/loss.py",
+      "sha256": "d24901d7c899c0028e001204e62f890a27acd3bf052fd3ff4c3a5b788160bc27",
+      "bytes": 8620
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/panoptic/loss_tal.py",
+      "source": "results (4)/yolov9/utils/panoptic/loss_tal.py",
+      "sha256": "d5d6c7dd98ec940425792d91dca4b2fd695d5d6d7c91e34bee23d971ddbaf19a",
+      "bytes": 13132
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/panoptic/metrics.py",
+      "source": "results (4)/yolov9/utils/panoptic/metrics.py",
+      "sha256": "1a6cdd554f3c30c0cc990085c18fa33515ef26b5c4f07e2e237a83f3f98b7005",
+      "bytes": 8319
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/panoptic/plots.py",
+      "source": "results (4)/yolov9/utils/panoptic/plots.py",
+      "sha256": "24915d68abd4c21dd4c4a89d6bb56968b65a5668579d113ef1314f83b3246e93",
+      "bytes": 7167
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/panoptic/tal/__init__.py",
+      "source": "results (4)/yolov9/utils/panoptic/tal/__init__.py",
+      "sha256": "0486028fa4d1cc658211b606e5935a4c74386a6e9cf5055b812f3484b1b46e57",
+      "bytes": 6
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/panoptic/tal/anchor_generator.py",
+      "source": "results (4)/yolov9/utils/panoptic/tal/anchor_generator.py",
+      "sha256": "29a1e535ffec28610858d82828a7bbf6c5d6eaaeb342290e7f88bd29e47b6400",
+      "bytes": 1557
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/panoptic/tal/assigner.py",
+      "source": "results (4)/yolov9/utils/panoptic/tal/assigner.py",
+      "sha256": "0aabc8b359c6e933f1655d3173140c7200b0570e9e22a8c3cea304ee3a10c5d8",
+      "bytes": 8450
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/plots.py",
+      "source": "results (4)/yolov9/utils/plots.py",
+      "sha256": "3b49825c1ba042b5eeaefc818bf7eccdc96a747cb2b19c074491cc89bbd4db00",
+      "bytes": 25208
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/segment/__init__.py",
+      "source": "results (4)/yolov9/utils/segment/__init__.py",
+      "sha256": "0486028fa4d1cc658211b606e5935a4c74386a6e9cf5055b812f3484b1b46e57",
+      "bytes": 6
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/segment/augmentations.py",
+      "source": "results (4)/yolov9/utils/segment/augmentations.py",
+      "sha256": "5a30a0d288b495dbb3c472510b7e5e72e8057c6a73c76623b315e3106a30d454",
+      "bytes": 3672
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/segment/dataloaders.py",
+      "source": "results (4)/yolov9/utils/segment/dataloaders.py",
+      "sha256": "4921f35dea951b67a5cc20807376af5b59e7a4cd3761d5cfa7c5f1a8f98d2a53",
+      "bytes": 13855
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/segment/general.py",
+      "source": "results (4)/yolov9/utils/segment/general.py",
+      "sha256": "f9cc0f71a13a73e7e1b28f9275501737b8af66762d348acf91b443c5375bf35f",
+      "bytes": 4934
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/segment/loss.py",
+      "source": "results (4)/yolov9/utils/segment/loss.py",
+      "sha256": "d24901d7c899c0028e001204e62f890a27acd3bf052fd3ff4c3a5b788160bc27",
+      "bytes": 8620
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/segment/loss_tal.py",
+      "source": "results (4)/yolov9/utils/segment/loss_tal.py",
+      "sha256": "56e076445bd19a7ca703ef919d4a83498421c8fcf0fdd90dee551dafb7fd208c",
+      "bytes": 12024
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/segment/loss_tal_dual.py",
+      "source": "results (4)/yolov9/utils/segment/loss_tal_dual.py",
+      "sha256": "d94cc4772014bc3d85eb80f19c763f36949df1b316bb68d150185b6e18939423",
+      "bytes": 34900
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/segment/metrics.py",
+      "source": "results (4)/yolov9/utils/segment/metrics.py",
+      "sha256": "c0c282561be7256f64f2d69a6649e2ae7277f9089a201e03ca58e6e07d832231",
+      "bytes": 5377
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/segment/plots.py",
+      "source": "results (4)/yolov9/utils/segment/plots.py",
+      "sha256": "29c2c952231f49d974e19b8b9218c3ef79da099c790ba57ffd13920f04225906",
+      "bytes": 6390
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/segment/tal/__init__.py",
+      "source": "results (4)/yolov9/utils/segment/tal/__init__.py",
+      "sha256": "0486028fa4d1cc658211b606e5935a4c74386a6e9cf5055b812f3484b1b46e57",
+      "bytes": 6
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/segment/tal/anchor_generator.py",
+      "source": "results (4)/yolov9/utils/segment/tal/anchor_generator.py",
+      "sha256": "29a1e535ffec28610858d82828a7bbf6c5d6eaaeb342290e7f88bd29e47b6400",
+      "bytes": 1557
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/segment/tal/assigner.py",
+      "source": "results (4)/yolov9/utils/segment/tal/assigner.py",
+      "sha256": "9d22c99c5a8319efceb199c3942ba977cc360d273a32bd9afd84e006ab4af56e",
+      "bytes": 8316
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/tal/__init__.py",
+      "source": "results (4)/yolov9/utils/tal/__init__.py",
+      "sha256": "0486028fa4d1cc658211b606e5935a4c74386a6e9cf5055b812f3484b1b46e57",
+      "bytes": 6
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/tal/anchor_generator.py",
+      "source": "results (4)/yolov9/utils/tal/anchor_generator.py",
+      "sha256": "29a1e535ffec28610858d82828a7bbf6c5d6eaaeb342290e7f88bd29e47b6400",
+      "bytes": 1557
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/tal/assigner.py",
+      "source": "results (4)/yolov9/utils/tal/assigner.py",
+      "sha256": "7bf65b59b3d105ef30ce4bce9915f0c294a20bf292e9410893d7de429da17213",
+      "bytes": 8231
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/torch_utils.py",
+      "source": "results (4)/yolov9/utils/torch_utils.py",
+      "sha256": "a84f088876ec3f5ecf68d9ef2e9c7df72bea2a73b0c06afe55fe6c85b77a8b38",
+      "bytes": 23374
+    },
+    {
+      "path": "runtime_dependencies/yolov9/utils/triton.py",
+      "source": "results (4)/yolov9/utils/triton.py",
+      "sha256": "acb319d70374d940c7d20cf27aeb5caf7299fefc55d12158fb889bdef8c74773",
+      "bytes": 3528
+    }
+  ]
+}
