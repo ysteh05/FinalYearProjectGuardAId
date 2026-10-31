@@ -206,21 +206,27 @@ class InferenceOrchestrator(BackgroundMediaPipeline):
 
     def readiness(self) -> dict[str, dict[str, object]]:
         threshold_found = self.runtime.weapon_thresholds_path.is_file()
+        violence_found = self.runtime.violence_checkpoint.is_file()
+        weapon_found = bool(
+            self.runtime.weapon_checkpoint and self.runtime.weapon_checkpoint.is_file()
+        )
         return {
             "violence": {
-                "checkpointFound": self.runtime.violence_checkpoint.is_file(),
+                "checkpointFound": violence_found,
                 "workerConnected": True,
                 "loaded": self.mc3.is_loaded,
                 "checkpoint": self.runtime.violence_checkpoint.name,
                 "modelVersion": VIOLENCE_MODEL_VERSION,
                 "protocol": "4 s window · 2 s stride · 16 frames at bin centres · 160x160 RGB-mean letterbox",
                 "trainingProtocol": VIOLENCE_MODEL_PROTOCOL,
-                "message": "MC3-18 Kinetics-400 Epoch 8 ready (4 s / 2 s / 16 frames, full-frame 160x160 RGB-mean letterbox).",
+                "message": (
+                    "MC3-18 Kinetics-400 Epoch 8 ready (4 s / 2 s / 16 frames, full-frame 160x160 RGB-mean letterbox)."
+                    if violence_found
+                    else f"MC3-18 checkpoint not found: {self.runtime.violence_checkpoint}. Analysis cannot start until the model file is restored."
+                ),
             },
             "weapon": {
-                "checkpointFound": bool(
-                    self.runtime.weapon_checkpoint and self.runtime.weapon_checkpoint.is_file()
-                ),
+                "checkpointFound": weapon_found,
                 "thresholdsFound": threshold_found,
                 "workerConnected": self.runtime.yolov9_root.is_dir() and threshold_found,
                 "loaded": self.weapon.is_loaded,
@@ -229,7 +235,11 @@ class InferenceOrchestrator(BackgroundMediaPipeline):
                 "checkpoint": (
                     self.runtime.weapon_checkpoint.name if self.runtime.weapon_checkpoint else None
                 ),
-                "message": "Ten-source YOLOv9-T Epoch 10 ready (Knife/Gun) with six validation-calibrated thresholds.",
+                "message": (
+                    "Ten-source YOLOv9-T Epoch 10 ready (Knife/Gun) with six validation-calibrated thresholds."
+                    if weapon_found
+                    else f"YOLOv9-T checkpoint not found: {self.runtime.weapon_checkpoint or 'not configured'}. Weapon detection cannot start."
+                ),
             },
             "vlm": {
                 "modelCacheFound": self.vlm.is_loaded,
@@ -290,11 +300,30 @@ class InferenceOrchestrator(BackgroundMediaPipeline):
                     )
             # Load both alert-critical models before the browser starts playback so
             # first-use CUDA setup does not create an avoidable timeline offset.
-            self.mc3.load()
-            self.weapon.load()
-            for runner in (self.mc3, self.weapon):
-                if hasattr(runner, 'warmup'):
-                    runner.warmup()
+            try:
+                self.mc3.load()
+                self.weapon.load()
+                for runner in (self.mc3, self.weapon):
+                    if hasattr(runner, 'warmup'):
+                        runner.warmup()
+            except Exception as exc:
+                # A missing or unreadable checkpoint is an operational failure the
+                # operator must be able to see and retry. Record it as a failed job
+                # instead of letting it escape as an unhandled 500 with no record.
+                message = f"{type(exc).__name__}: {exc}"
+                LOGGER.error("Model initialisation failed; analysis not started (%s).", message)
+                failed = AnalysisJob(
+                    camera_id=camera.id,
+                    camera_name=camera.name,
+                    duration_seconds=camera.duration_seconds,
+                    debug_mode_enabled=settings.detection_debug_mode_enabled,
+                    status=AnalysisStatus.FAILED,
+                    error=message,
+                    finished_at=datetime.now(timezone.utc),
+                )
+                with self._lock:
+                    self._jobs[failed.id] = failed
+                return failed.model_copy(deep=True)
             active = [
                 job for job in self._jobs.values()
                 if job.status in {AnalysisStatus.QUEUED, AnalysisStatus.RUNNING}

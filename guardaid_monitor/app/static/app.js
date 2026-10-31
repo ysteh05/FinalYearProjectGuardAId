@@ -22,12 +22,23 @@ async function api(path, options = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
   try {
-    const response = await fetch(path, { ...options, signal: options.signal || controller.signal });
+    let response;
+    try {
+      response = await fetch(path, { ...options, signal: options.signal || controller.signal });
+    } catch (cause) {
+      const wrapped = new Error(GuardAidErrors.describeError(cause));
+      wrapped.name = cause?.name === "AbortError" ? "AbortError" : "Error";
+      wrapped.cause = cause;
+      throw wrapped;
+    }
     if (!response.ok) {
       let detail;
       try { detail = (await response.json()).detail; } catch (_) {}
-      const error = new Error(typeof detail === "string" ? detail : detail?.message || `${response.status} ${response.statusText}`);
-      error.status = response.status; error.code = detail?.code;
+      const described = GuardAidErrors.describeHttpFailure(response.status, response.statusText, detail);
+      const error = new Error(described.message);
+      error.status = response.status;
+      error.code = described.code || undefined;
+      error.detail = detail;
       throw error;
     }
     return response.status === 204 ? null : await response.json();
@@ -67,8 +78,12 @@ function renderRuntime() {
   const warnings = state.runtime.warnings || [];
   $("#runtime-banner").classList.toggle("hidden", !warnings.length); $("#runtime-banner").textContent = warnings.join(" · ");
   $("#pipeline-readiness").innerHTML = Object.entries(state.runtime.readiness || {}).map(([key, item]) => {
-    const ready = Boolean(item.workerConnected);
-    return `<div class="readiness-row ${ready ? "ready" : ""}"><i></i><div><strong>${escapeHtml(key)} · ${ready ? (item.loaded ? "loaded" : "ready") : "unavailable"}</strong><small>${escapeHtml(item.message)}</small></div></div>`;
+    // workerConnected only says the worker thread exists; a missing checkpoint
+    // still looks "ready" and every analysis then fails. Gate on the artifact.
+    const artifactPresent = key === "vlm" ? item.modelCacheFound !== false : item.checkpointFound !== false;
+    const ready = Boolean(item.workerConnected) && artifactPresent;
+    const detail = artifactPresent ? item.message : `Required model file is missing (${escapeHtml(item.checkpoint || key)}). Analysis cannot start until it is restored.`;
+    return `<div class="readiness-row ${ready ? "ready" : ""}"><i></i><div><strong>${escapeHtml(key)} · ${ready ? (item.loaded ? "loaded" : "ready") : "unavailable"}</strong><small>${escapeHtml(detail)}</small></div></div>`;
   }).join("");
 }
 
@@ -387,7 +402,17 @@ function changeDebugZoom(button, direction) {
 function jobPanel(job) {
   if (!job) return "";
   const running = ["queued", "running"].includes(job.status);
-  return `<div class="job-panel ${escapeHtml(job.status)}"><div class="job-line"><strong class="job-status">${escapeHtml(job.status.toUpperCase())}</strong><span class="job-progress-label">${job.progressPercent.toFixed(1)}% · ${formatDuration(job.sourceSeconds)} / ${formatDuration(job.durationSeconds)}</span></div><div class="progress-track"><i style="width:${job.progressPercent}%"></i></div><div class="job-counters"><span>Weapon frames ${job.weaponFramesProcessed}</span><span>MC3 windows ${job.violenceWindowsProcessed}</span><span>VLM reviews ${job.borderlineReviewsProcessed}</span><span>VLM pending ${job.pendingVlmJobs}</span><span>Alerts ${job.alertsCreated}</span></div><small class="job-message">${escapeHtml(job.error || job.latestResult || (running ? formatEta(job.etaSeconds) : "Analysis complete"))}</small>${job.debugModeEnabled ? debugPanelHtml(job) : ""}</div>`;
+  return `<div class="job-panel ${escapeHtml(job.status)}"><div class="job-line"><strong class="job-status">${escapeHtml(job.status.toUpperCase())}</strong><span class="job-progress-label">${job.progressPercent.toFixed(1)}% · ${formatDuration(job.sourceSeconds)} / ${formatDuration(job.durationSeconds)}</span></div><div class="progress-track"><i style="width:${job.progressPercent}%"></i></div><div class="job-counters"><span>Weapon frames ${job.weaponFramesProcessed}</span><span>MC3 windows ${job.violenceWindowsProcessed}</span><span>VLM reviews ${job.borderlineReviewsProcessed}</span><span>VLM pending ${job.pendingVlmJobs}</span><span>Alerts ${job.alertsCreated}</span></div><small class="job-message">${escapeHtml(jobMessage(job, running))}</small>${jobTechnicalHtml(job)}${job.debugModeEnabled ? debugPanelHtml(job) : ""}</div>`;
+}
+
+function jobMessage(job, running) {
+  if (job.error) return GuardAidErrors.describeJobFailure(job.error, job.status, job.progressPercent);
+  return job.latestResult || (running ? formatEta(job.etaSeconds) : "Analysis complete");
+}
+
+function jobTechnicalHtml(job) {
+  if (!job.error) return "";
+  return `<details class="job-technical"><summary>Technical details</summary><code>${escapeHtml(job.error)}</code></details>`;
 }
 
 function updateJobPanel(card, job) {
@@ -403,9 +428,22 @@ function updateJobPanel(card, job) {
   $(".job-progress-label", panel).textContent = `${job.progressPercent.toFixed(1)}% · ${formatDuration(job.sourceSeconds)} / ${formatDuration(job.durationSeconds)}`;
   $(".progress-track i", panel).style.width = `${job.progressPercent}%`;
   $(".job-counters", panel).innerHTML = `<span>Weapon frames ${job.weaponFramesProcessed}</span><span>MC3 windows ${job.violenceWindowsProcessed}</span><span>VLM reviews ${job.borderlineReviewsProcessed}</span><span>VLM pending ${job.pendingVlmJobs}</span><span>Evidence pending ${job.pendingMediaJobs || 0}</span><span>Alerts ${job.alertsCreated}</span>`;
-  $(".job-message", panel).textContent = job.error || job.latestResult || (running ? formatEta(job.etaSeconds) : "Analysis complete");
+  $(".job-message", panel).textContent = jobMessage(job, running);
+  const technical = $(".job-technical", panel);
+  if (job.error) {
+    if (technical) $("code", technical).textContent = job.error;
+    else $(".job-message", panel).insertAdjacentHTML("afterend", jobTechnicalHtml(job));
+  } else technical?.remove();
   if (!job.debugModeEnabled) return;
   let debugPanel = $(".debug-panel", panel);
+  // A repeat run on the same card replaces the job; the stored panel would keep
+  // the previous job id, so every zoom/reset looked up a chart that no longer
+  // matched and silently did nothing.
+  if (debugPanel && debugPanel.dataset.debugJobId !== job.id) {
+    debugPanel.insertAdjacentHTML("afterend", debugPanelHtml(job));
+    debugPanel.remove();
+    return;
+  }
   if (!debugPanel) {
     panel.insertAdjacentHTML("beforeend", debugPanelHtml(job));
     return;
@@ -448,11 +486,16 @@ function renderCameras() {
     let card = $(`.camera-card[data-camera-id="${CSS.escape(camera.id)}"]`);
     if (card && card.dataset.mediaUrl !== camera.mediaUrl) { card.remove(); card = null; }
     if (!card) {
-      $("#camera-wall").insertAdjacentHTML("beforeend", `<article class="camera-card" data-camera-id="${escapeHtml(camera.id)}"><div class="video-wrap"><video src="${escapeHtml(camera.mediaUrl)}" muted playsinline preload="auto"></video><canvas class="monitor-boxes" aria-hidden="true"></canvas><div class="camera-overlay"><span class="camera-label"></span><span class="camera-status"></span></div><div class="monitor-probability" role="status">Violence · ready</div></div><div class="camera-card-foot"><div><strong></strong><small></small></div><div class="camera-card-actions"><button type="button" class="button start-camera"></button></div></div></article>`);
+      $("#camera-wall").insertAdjacentHTML("beforeend", `<article class="camera-card" data-camera-id="${escapeHtml(camera.id)}"><div class="video-wrap"><video src="${escapeHtml(camera.mediaUrl)}" muted playsinline preload="auto"></video><canvas class="monitor-boxes" aria-hidden="true"></canvas><div class="camera-overlay"><span class="camera-label"></span><span class="camera-status"></span></div><div class="monitor-probability" role="status"></div></div><div class="camera-card-foot"><div><strong></strong><small></small></div><div class="camera-card-actions"><button type="button" class="button start-camera"></button></div></div></article>`);
       card = $(`.camera-card[data-camera-id="${CSS.escape(camera.id)}"]`);
       card.dataset.mediaUrl = camera.mediaUrl;
     }
     $(".camera-label", card).textContent = camera.name;
+    const violenceReadiness = state.runtime && state.runtime.readiness && state.runtime.readiness.violence;
+    const violenceAvailable = !violenceReadiness || (Boolean(violenceReadiness.workerConnected) && violenceReadiness.checkpointFound !== false);
+    const probabilityBadge = $(".monitor-probability", card);
+    if (!violenceAvailable) probabilityBadge.textContent = "Violence · model unavailable";
+    else if (!probabilityBadge.textContent || probabilityBadge.textContent === "Violence · model unavailable") probabilityBadge.textContent = "Violence · ready";
     const status = $(".camera-status", card);
     status.className = `camera-status${running ? " analysing" : ""}`;
     status.textContent = running ? `ANALYSING · ${MonitorPlayback.delaySeconds}s delay` : camera.status.toUpperCase();
@@ -690,8 +733,14 @@ function bindEvents() {
     } catch (error) { toast(error.message, "error"); }
   });
   $$(".nav-item").forEach(item => item.addEventListener("click", () => setView(item.dataset.view))); $$('[data-go]').forEach(button => button.addEventListener("click", () => setView(button.dataset.go))); $("#refresh-button").addEventListener("click", () => refreshAll());
-  const fileInput = $("#camera-file"), dropzone = $("#dropzone"); fileInput.addEventListener("change", () => $("#file-label").textContent = fileInput.files[0]?.name || "Choose a CCTV video"); ["dragenter", "dragover"].forEach(name => dropzone.addEventListener(name, event => { event.preventDefault(); dropzone.classList.add("dragging"); })); ["dragleave", "drop"].forEach(name => dropzone.addEventListener(name, event => { event.preventDefault(); dropzone.classList.remove("dragging"); })); dropzone.addEventListener("drop", event => { if (event.dataTransfer.files.length) { fileInput.files = event.dataTransfer.files; fileInput.dispatchEvent(new Event("change")); } });
-  $("#camera-upload-form").addEventListener("submit", async event => { event.preventDefault(); const form = event.currentTarget, button = $("button[type='submit']", form), file = fileInput.files[0]; if (!file) return; button.disabled = true; button.textContent = "Adding camera..."; try { const data = new FormData(); data.append("video", file); data.append("name", $("#camera-name").value); data.append("location", $("#camera-location").value || "Unspecified"); data.append("durationSeconds", await videoDuration(file)); await api("/api/cameras", { method: "POST", body: data }); form.reset(); $("#file-label").textContent = "Choose a CCTV video"; await refreshAll(true); toast("Camera source added"); } catch (error) { toast(error.message, "error"); } finally { button.disabled = false; button.textContent = "Add camera feed"; } });
+  const fileInput = $("#camera-file"), dropzone = $("#dropzone");
+  const cameraFeedback = message => { const el = $("#camera-upload-feedback"); if (!el) return; el.textContent = message || ""; el.classList.toggle("hidden", !message); };
+  fileInput.addEventListener("change", () => { $("#file-label").textContent = fileInput.files[0]?.name || "Choose a CCTV video"; if (fileInput.files[0]) cameraFeedback(""); });
+  // The input is visually hidden, so the native validation bubble has nowhere to
+  // anchor; surface the same message inline instead of failing silently.
+  fileInput.addEventListener("invalid", () => cameraFeedback("Choose a CCTV video before adding the camera."));
+  ["dragenter", "dragover"].forEach(name => dropzone.addEventListener(name, event => { event.preventDefault(); dropzone.classList.add("dragging"); })); ["dragleave", "drop"].forEach(name => dropzone.addEventListener(name, event => { event.preventDefault(); dropzone.classList.remove("dragging"); })); dropzone.addEventListener("drop", event => { if (event.dataTransfer.files.length) { fileInput.files = event.dataTransfer.files; fileInput.dispatchEvent(new Event("change")); } });
+  $("#camera-upload-form").addEventListener("submit", async event => { event.preventDefault(); const form = event.currentTarget, button = $("button[type='submit']", form), file = fileInput.files[0]; if (!file) { cameraFeedback("Choose a CCTV video before adding the camera."); fileInput.focus(); return; } cameraFeedback(""); button.disabled = true; button.textContent = "Adding camera..."; try { const data = new FormData(); data.append("video", file); data.append("name", $("#camera-name").value); data.append("location", $("#camera-location").value || "Unspecified"); data.append("durationSeconds", await videoDuration(file)); await api("/api/cameras", { method: "POST", body: data }); form.reset(); cameraFeedback(""); $("#file-label").textContent = "Choose a CCTV video"; await refreshAll(true); toast("Camera source added"); } catch (error) { toast(error.message, "error"); } finally { button.disabled = false; button.textContent = "Add camera feed"; } });
 
   document.addEventListener("click", async event => {
     const zoomButton = event.target.closest(".debug-zoom-in, .debug-zoom-out, .debug-zoom-reset");

@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'models.dart';
 import 'notification_service.dart';
 import 'repository.dart';
+import 'error_messages.dart';
 
 class FirebaseApiGuardAidRepository implements GuardAidRepository {
   FirebaseApiGuardAidRepository({
@@ -126,6 +127,8 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
       await _auth.sendPasswordResetEmail(email: email.trim());
     } on FirebaseAuthException catch (error) {
       throw FormatException(_firebaseMessage(error));
+    } catch (error) {
+      throw FormatException(describeUserFacingError(error).message);
     }
   }
 
@@ -141,7 +144,7 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
   Future<List<GuardAlert>> loadAlerts() async {
     final payload =
         await _requestJson('GET', '/api/mobile/alerts') as List<dynamic>;
-    final token = await _requiredToken();
+    final token = _lastAuthorizedToken ?? await _requiredToken();
     return payload
         .cast<Map<String, dynamic>>()
         .map((item) => _parseAlert(item, token))
@@ -165,7 +168,7 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
     final value =
         await _requestJson('GET', '/api/mobile/alerts/$alertId')
             as Map<String, dynamic>;
-    final token = await _requiredToken();
+    final token = _lastAuthorizedToken ?? await _requiredToken();
     return _parseAlert(value, token);
   }
 
@@ -429,12 +432,12 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
         setupEmailRequested: false,
         setupEmailError: _firebaseMessage(error),
       );
-    } catch (_) {
+    } catch (error) {
       return UserProvisioningResult(
         user: user,
         identityLinked: payload['identityAction'] == 'linked',
         setupEmailRequested: false,
-        setupEmailError: 'The setup email could not be requested. Try again.',
+        setupEmailError: describeUserFacingError(error).message,
       );
     }
   }
@@ -446,6 +449,8 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
       return true;
     } on FirebaseAuthException catch (error) {
       throw FormatException(_firebaseMessage(error));
+    } catch (error) {
+      throw FormatException(describeUserFacingError(error).message);
     }
   }
 
@@ -580,6 +585,11 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
     }
   }
 
+  /// Token of the last request that the backend accepted. An expired token is
+  /// recovered by a forced refresh inside [_requestJson]; evidence media URLs are
+  /// stamped with this value so they never carry the token that was just rejected.
+  String? _lastAuthorizedToken;
+
   Future<dynamic> _requestJson(
     String method,
     String path, {
@@ -610,18 +620,23 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
       return _requestJson(method, path, body: body, forceTokenRefresh: true);
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      String message = 'GuardAId server returned ${response.statusCode}.';
-      String code = 'workflow_changed';
-      try {
-        final value = jsonDecode(response.body) as Map<String, dynamic>;
-        message = value['detail']?.toString() ?? message;
-        code = value['code'] as String? ?? code;
-      } catch (_) {}
+      final failure = describeApiFailure(
+        statusCode: response.statusCode,
+        body: response.body,
+      );
       if (response.statusCode == 409) {
-        throw GuardAidConflictException(message, code: code);
+        throw GuardAidConflictException(
+          failure.message,
+          code: failure.code ?? 'workflow_changed',
+        );
       }
-      throw GuardAidApiException(response.statusCode, message);
+      throw GuardAidApiException(
+        response.statusCode,
+        failure.message,
+        code: failure.code,
+      );
     }
+    _lastAuthorizedToken = token;
     if (response.body.isEmpty) return null;
     return jsonDecode(response.body);
   }
@@ -927,7 +942,7 @@ class FirebaseApiGuardAidRepository implements GuardAidRepository {
 }
 
 class GuardAidApiException extends GuardAidRequestException {
-  const GuardAidApiException(super.statusCode, super.message);
+  const GuardAidApiException(super.statusCode, super.message, {super.code});
 }
 
 AlertType _alertType(String? value) => switch (value) {

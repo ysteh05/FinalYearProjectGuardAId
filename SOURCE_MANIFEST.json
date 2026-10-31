@@ -1,6 +1,7 @@
 {
-  "created_at": "2026-10-27T01:00:27.676964+08:00",
-  "scope": "Application system source only; no accounts, runtime database, media, credentials or model weights.",
+  "created_at": "2026-11-01T04:04:36+08:00",
+  "scope": "Application source only; no accounts, runtime databases, media, credentials, tests, reports or model weights.",
+  "baseline_commit": "eaab3feed584d8e46b80309c207921ea36dadcd4",
   "files": [
     {
       "path": "deployment/weapon_thresholds.json",
@@ -83,8 +84,8 @@
     {
       "path": "guardaid_monitor/app/inference/orchestrator.py",
       "source": "guardaid_monitor/app/inference/orchestrator.py",
-      "sha256": "39e2ceea7cbe368a4c9119b390fbf33d19e1b89716fecad25888742a8cc3f1a1",
-      "bytes": 82980
+      "sha256": "698f29c1a023bab1e8d62a4bc79b6b760b0e2ac791a2134afb56f5ee40f45b7a",
+      "bytes": 84557
     },
     {
       "path": "guardaid_monitor/app/inference/scene_reliability.py",
@@ -227,14 +228,20 @@
     {
       "path": "guardaid_monitor/app/sqlite_repository.py",
       "source": "guardaid_monitor/app/sqlite_repository.py",
-      "sha256": "fa9827e35c0514f34dbb62192d1dd1b5679bbd7c0cb693718d07b6697a00f645",
-      "bytes": 257246
+      "sha256": "40700ed9e81d855477f0bab7ff50984c8ad0130bb16cadccda54be3d8d6c5ba9",
+      "bytes": 258568
     },
     {
       "path": "guardaid_monitor/app/static/app.js",
       "source": "guardaid_monitor/app/static/app.js",
-      "sha256": "4450f8f5a323ad47f9227bb45be173a40657b67c4249f485c9bbc3da5f5c8610",
-      "bytes": 66496
+      "sha256": "1fe048f6302a84716e142406c2206e28238a7e1e98e3ef62517bd4a6cc059a33",
+      "bytes": 69429
+    },
+    {
+      "path": "guardaid_monitor/app/static/error_messages.js",
+      "source": "guardaid_monitor/app/static/error_messages.js",
+      "sha256": "2519a266943f09d9a6a15b26273c105a3ad9f572cc98deb6053a0d92e0aef1cf",
+      "bytes": 8249
     },
     {
       "path": "guardaid_monitor/app/static/guardaid-mark.svg",
@@ -245,8 +252,8 @@
     {
       "path": "guardaid_monitor/app/static/index.html",
       "source": "guardaid_monitor/app/static/index.html",
-      "sha256": "a48fcd0064e49067ae5a962fe8ea2546506504b0d99b605bd36ec63bc4089aa8",
-      "bytes": 16324
+      "sha256": "cdf690767af02e95d995e4d9d1f7585f4c08e0e3fd540fe36053f73befc7ad3f",
+      "bytes": 16490
     },
     {
       "path": "guardaid_monitor/app/static/monitor.js",
@@ -263,8 +270,8 @@
     {
       "path": "guardaid_monitor/app/static/styles.css",
       "source": "guardaid_monitor/app/static/styles.css",
-      "sha256": "8a1b7cf8ac61f77b6ed85da557c0c97d898de89760edcef51c02acae69ccaa95",
-      "bytes": 35979
+      "sha256": "1db484a2d78b6e5c4ebea06485a47309f8de810a33fda0c196ed1daa31bff14e",
+      "bytes": 36269
     },
     {
       "path": "guardaid_monitor/app/verify_v15.py",
@@ -947,20 +954,26 @@
     {
       "path": "mobileapp/lib/src/app.dart",
       "source": "mobileapp/lib/src/app.dart",
-      "sha256": "bd8cb395a1eed38b730d08063a9a69d831569189f6fe8b6615c512d0cc20f3c6",
-      "bytes": 6929
+      "sha256": "c9b0678ed164b1a04b7726df398986cb658794c5fa1897e347722daddfd88a18",
+      "bytes": 8107
     },
     {
       "path": "mobileapp/lib/src/controller.dart",
       "source": "mobileapp/lib/src/controller.dart",
-      "sha256": "cf1863baf5342e1d2f5f7f118f9c82749bf377d55a3e046fd0b96f85f24da15c",
-      "bytes": 23189
+      "sha256": "8f3039612de61c596be7fbcf23f3a0ec0076b3a7e662d8da2ca1ae36af13933e",
+      "bytes": 24458
+    },
+    {
+      "path": "mobileapp/lib/src/error_messages.dart",
+      "source": "mobileapp/lib/src/error_messages.dart",
+      "sha256": "4a06f25f7e5861a6b8685ace820edc89e8e01679e8118028d8eafbe7ea2b87c9",
+      "bytes": 11007
     },
     {
       "path": "mobileapp/lib/src/firebase_api_repository.dart",
       "source": "mobileapp/lib/src/firebase_api_repository.dart",
-      "sha256": "70596d4235d891919a300b95217869f632079f06508ad0014cf4bd5227c234cd",
-      "bytes": 37955
+      "sha256": "e58b06a035d8735dc12b31d3cfd985254bcc1acbe888eb1e2de8f89eed2cda94",
+      "bytes": 38473
     },
     {
       "path": "mobileapp/lib/src/models.dart",
@@ -977,14 +990,14 @@
     {
       "path": "mobileapp/lib/src/repository.dart",
       "source": "mobileapp/lib/src/repository.dart",
-      "sha256": "e54fa149c6a7226dcc1fcc9422a21f943b3449a88bba613654ff5290ea7908ab",
-      "bytes": 37559
+      "sha256": "4c91fc8d64f7b7861a49073e0af22ad88556169c1a373c9234a2740ccbda8644",
+      "bytes": 37735
     },
     {
       "path": "mobileapp/lib/src/screens/alert_detail_screen.dart",
       "source": "mobileapp/lib/src/screens/alert_detail_screen.dart",
-      "sha256": "19bd46ddd68f58562caa8ba4937e733103484288c42051b19b1cba3e8add1bc2",
-      "bytes": 57948
+      "sha256": "60cf23d9f223555c9ef3d49e46c2f62d62c96d0c73178aef17623daac71b5864",
+      "bytes": 58457
     },
     {
       "path": "mobileapp/lib/src/screens/alerts_screen.dart",
@@ -1019,8 +1032,8 @@
     {
       "path": "mobileapp/lib/src/screens/settings_screen.dart",
       "source": "mobileapp/lib/src/screens/settings_screen.dart",
-      "sha256": "40c3e12422f69076c724a87e9a6a45949bb9aac7957339c5c574683047712a0e",
-      "bytes": 72815
+      "sha256": "f9ae2c113ebe94b89f5bea2c0e991ff3d878f69fd3f2928ef52f295e3e9fbd1f",
+      "bytes": 73031
     },
     {
       "path": "mobileapp/lib/src/screens/updates_screen.dart",

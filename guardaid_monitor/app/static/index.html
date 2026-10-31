@@ -45,7 +45,7 @@
       <section id="view-cameras" class="view">
         <div class="view-heading"><div><h2>Camera sources</h2><p>Add, rename, enable, replace or remove uploaded CCTV simulations.</p></div></div>
         <div class="camera-admin-layout">
-          <form id="camera-upload-form" class="panel upload-panel"><div class="panel-title">Add simulated camera</div><label class="dropzone" id="dropzone"><input id="camera-file" name="video" type="file" accept="video/mp4,video/webm,video/quicktime,.mkv,.avi" required><span class="upload-glyph">⇧</span><strong id="file-label">Choose a CCTV video</strong><small>MP4, MOV, MKV, AVI or WebM</small></label><div class="form-grid two"><label>Camera name<input id="camera-name" name="name" placeholder="e.g. Block A Corridor" maxlength="80" required></label><label>Location<input id="camera-location" name="location" placeholder="e.g. Level 2" maxlength="120"></label></div><div id="upload-privacy-note" class="privacy-note"></div><button class="button primary wide" type="submit">Add camera feed</button></form>
+          <form id="camera-upload-form" class="panel upload-panel"><div class="panel-title">Add simulated camera</div><label class="dropzone" id="dropzone"><input id="camera-file" name="video" type="file" accept="video/mp4,video/webm,video/quicktime,.mkv,.avi" required><span class="upload-glyph">⇧</span><strong id="file-label">Choose a CCTV video</strong><small>MP4, MOV, MKV, AVI or WebM</small></label><div class="form-grid two"><label>Camera name<input id="camera-name" name="name" placeholder="e.g. Block A Corridor" maxlength="80" required></label><label>Location<input id="camera-location" name="location" placeholder="e.g. Level 2" maxlength="120"></label></div><div id="upload-privacy-note" class="privacy-note"></div><div id="camera-upload-feedback" class="runtime-banner hidden" role="alert"></div><button class="button primary wide" type="submit">Add camera feed</button></form>
           <div class="panel camera-table-panel"><div class="panel-title"><span>Configured cameras</span><span id="camera-total" class="muted">0 total</span></div><div id="camera-admin-list" class="camera-admin-list"></div></div>
         </div>
       </section>
@@ -79,6 +79,7 @@
   </dialog>
   <script src="/static/monitor.js?v=20261018-avi-playback-v4"></script>
   <script src="/static/refresh_state.js?v=20261019-correctness-v1"></script>
-  <script src="/static/app.js?v=20261019-correctness-v1"></script>
+  <script src="/static/error_messages.js?v=20261027-error-messages-v1"></script>
+  <script src="/static/app.js?v=20261027-error-messages-v1"></script>
 </body>
 </html>

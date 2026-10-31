@@ -121,6 +121,9 @@ input { padding: 10px 11px; width: 100%; }
 .progress-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg,var(--blue),#62d9c6); transition: width .25s ease; }
 .job-counters { color: var(--muted); font-size: 9px; }
 .job-panel > small { display: block; margin-top: 7px; color: var(--muted); overflow-wrap: anywhere; }
+.job-technical { margin-top: 6px; color: var(--muted); }
+.job-technical summary { cursor: pointer; font-size: 11px; letter-spacing: .02em; text-transform: uppercase; }
+.job-technical code { display: block; margin-top: 4px; font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .debug-panel { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
 .debug-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .debug-panel-head strong, .debug-panel-head small { display: block; }

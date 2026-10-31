@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'controller.dart';
+import 'error_messages.dart';
 import 'firebase_api_repository.dart';
 import 'models.dart';
 import 'notification_service.dart';
@@ -93,7 +94,7 @@ class _GuardAidAppState extends State<GuardAidApp> with WidgetsBindingObserver {
       debugShowCheckedModeBanner: false,
       theme: buildGuardAidTheme(),
       home: initialisationError != null
-          ? _ConfigurationErrorScreen(error: initialisationError!)
+          ? ConfigurationErrorScreen(error: initialisationError!)
           : controller == null || showSplash
           ? const _SplashScreen()
           : ListenableBuilder(
@@ -116,10 +117,18 @@ class _GuardAidAppState extends State<GuardAidApp> with WidgetsBindingObserver {
   }
 }
 
-class _ConfigurationErrorScreen extends StatelessWidget {
-  const _ConfigurationErrorScreen({required this.error});
+class ConfigurationErrorScreen extends StatefulWidget {
+  const ConfigurationErrorScreen({super.key, required this.error});
 
   final Object error;
+
+  @override
+  State<ConfigurationErrorScreen> createState() =>
+      _ConfigurationErrorScreenState();
+}
+
+class _ConfigurationErrorScreenState extends State<ConfigurationErrorScreen> {
+  bool showDetails = false;
 
   @override
   Widget build(BuildContext context) {
@@ -143,30 +152,52 @@ class _ConfigurationErrorScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'Live mode is not configured',
+                        'GuardAId could not start',
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 23,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
                       const SizedBox(height: 10),
-                      const Text(
-                        'Complete the Firebase Android setup and provide the GuardAId backend URL before starting live mode.',
+                      Text(
+                        describeStartupFailure(widget.error),
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: GuardAidColors.muted,
                           height: 1.45,
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Text(
-                        error.toString(),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: GuardAidColors.muted,
+                      TextButton(
+                        onPressed: () =>
+                            setState(() => showDetails = !showDetails),
+                        child: Text(
+                          showDetails
+                              ? 'Hide technical details'
+                              : 'Technical details',
                         ),
                       ),
+                      if (showDetails) ...[
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Diagnostic detail for an administrator:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: GuardAidColors.muted,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        SelectableText(
+                          '${widget.error}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: GuardAidColors.muted,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -204,8 +235,7 @@ class _SplashScreen extends StatelessWidget {
             SizedBox(height: 8),
             Text(
               'School Safety Response',
-              style: TextStyle(color: Color(0xFFBFD4E0), fontSize: 15),
-            ),
+              style: TextStyle(color: Color(0xFFBFD4E0), fontSize: 15),            ),
           ],
         ),
       ),

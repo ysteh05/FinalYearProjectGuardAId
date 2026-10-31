@@ -2706,6 +2706,40 @@ class SQLiteRepository:
                             ))
             connection.commit()
 
+    @staticmethod
+    def _outbox_delivery_totals(connection, outbox_id: str) -> tuple[int, int, int]:
+        """Return (devices attempted, sent, failed) for one dispatch."""
+        stats = connection.execute(
+            read_sql("""
+            SELECT COUNT(*) AS total,
+                   SUM(CASE WHEN status='sent' THEN 1 ELSE 0 END) AS sent,
+                   SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END) AS failed
+            FROM device_results WHERE outbox_id=?
+            """),
+            (outbox_id,),
+        ).fetchone()
+        return (
+            int(stats["total"] or 0),
+            int(stats["sent"] or 0),
+            int(stats["failed"] or 0),
+        )
+
+    @staticmethod
+    def _outbox_terminal_status(total: int, sent: int, failed: int) -> str:
+        """Aggregate a dispatch that will not be attempted again.
+
+        ``no_recipients`` means the dispatch never reached a device; once a
+        delivery row exists the summary has to describe what actually happened,
+        even if a later pass has nothing left to send.
+        """
+        if total == 0:
+            return "no_recipients"
+        if sent and failed:
+            return "partial"
+        if sent:
+            return "sent"
+        return "failed"
+
     def complete_mobile_notification_outbox(
         self,
         outbox_id: str,
@@ -2725,21 +2759,10 @@ class SQLiteRepository:
             if outbox is None:
                 connection.rollback()
                 raise ValueError("Notification dispatch was not found.")
-            stats = connection.execute(
-                read_sql("""
-                SELECT COUNT(*) AS total,
-                       SUM(CASE WHEN status='sent' THEN 1 ELSE 0 END) AS sent,
-                       SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END) AS failed
-                FROM device_results WHERE outbox_id=?
-                """),
-                (outbox_id,),
-            ).fetchone()
-            total = int(stats["total"] or 0)
-            sent = int(stats["sent"] or 0)
-            failed = int(stats["failed"] or 0)
+            total, sent, failed = self._outbox_delivery_totals(connection, outbox_id)
             attempts = int(outbox["attempt_count"])
             if no_recipients or total == 0:
-                status = "no_recipients"
+                status = self._outbox_terminal_status(total, sent, failed)
                 next_attempt = now_iso
             elif failed and attempts < 3:
                 status = "pending"
@@ -4356,6 +4379,7 @@ class SQLiteRepository:
                 return recipient_ids
 
             if row:
+                total, sent, failed = self._outbox_delivery_totals(connection, outbox_id)
                 if row["phase_status"] == "active" and row["workflow_status"] != expected:
                     self._cancel_mobile_alert_reminder_phases(
                         connection,
@@ -4369,14 +4393,20 @@ class SQLiteRepository:
                         SET status='skipped_stopped',error_code='WorkflowChanged',completed_at=?
                         WHERE phase_id=? AND stage=? AND status IN ('queued','dispatching')
                         """),(now_iso, phase_id, stage))
+                connection.execute(read_sql("""
+                    UPDATE notification_phase_dispatches
+                    SET recipient_count=?,sent_count=?,failed_count=?
+                    WHERE phase_id=? AND stage=?
+                    """),(total, sent, failed, phase_id, stage))
+                stop_status = self._outbox_terminal_status(total, sent, failed)
                 connection.execute(
                     read_sql("""
                     UPDATE notification_outbox
-                    SET status='no_recipients',last_error_code='WorkflowChanged',
+                    SET status=?,last_error_code='WorkflowChanged',
                         claimed_at=NULL,next_attempt_at=?,updated_at=?
                     WHERE id=? AND status IN ('pending','dispatching')
                     """),
-                    (now_iso, now_iso, outbox_id),
+                    (stop_status, now_iso, now_iso, outbox_id),
                 )
                 connection.execute(read_sql("UPDATE notification_phase_audience SET status='skipped',updated_at=? WHERE notification_id=(SELECT notification_id FROM notification_outbox WHERE id=?) AND status='queued'"),(now_iso, outbox_id))
             connection.commit()

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'models.dart';
 import 'repository.dart';
 import 'workflow_requests.dart';
+import 'error_messages.dart';
 
 class GuardAidController extends ChangeNotifier {
   GuardAidController(
@@ -56,6 +57,10 @@ class GuardAidController extends ChangeNotifier {
   List<AppUser> users = const [];
   bool isBusy = false;
   String? error;
+
+  /// Machine code for the current [error], when a screen still needs it to
+  /// choose a branch. It is never shown to the user.
+  String? errorCode;
   bool borderlineEnabled = true;
   Set<String> borderlineRecipientRoleIds = {
     'role_school_administrator',
@@ -91,6 +96,16 @@ class GuardAidController extends ChangeNotifier {
   static const emailInvalidMessage = 'Enter a valid email address.';
   static const passwordRequiredMessage = 'Enter your password.';
   static const signInFailedMessage = 'Unable to sign in. Please try again.';
+  static const profileSaveFailedMessage =
+      'Unable to save your profile. Please try again.';
+  static const resetRequestFailedMessage =
+      'Unable to request a password reset. Please try again.';
+  static const setupEmailFailedMessage =
+      'Unable to send the setup email. Please try again.';
+  static const accountCreateFailedMessage =
+      'Unable to create the account. Please try again.';
+  static const responseSubmitFailedMessage =
+      'Unable to submit this response. Please try again.';
 
   static final RegExp _emailPattern = RegExp(
     r'^[A-Za-z0-9.!#$%&*+/=?^_`{|}~-]+@'
@@ -113,6 +128,7 @@ class GuardAidController extends ChangeNotifier {
     final validationError = validateSignInInput(trimmedEmail, password);
     if (validationError != null) {
       error = validationError;
+      errorCode = null;
       notifyListeners();
       return Future.value(false);
     }
@@ -133,10 +149,14 @@ class GuardAidController extends ChangeNotifier {
   Future<bool> sendPasswordReset(String email) {
     if (email.trim().isEmpty) {
       error = resetEmailRequiredMessage;
+      errorCode = null;
       notifyListeners();
       return Future.value(false);
     }
-    return _run(() => repository.sendPasswordReset(email));
+    return _run(
+      () => repository.sendPasswordReset(email),
+      fallbackMessage: resetRequestFailedMessage,
+    );
   }
 
   Future<void> refresh() => _refreshData(includeAdministration: true);
@@ -483,7 +503,7 @@ class GuardAidController extends ChangeNotifier {
     } finally {
       _workflowInFlight.remove(alertId);
     }
-  });
+  }, fallbackMessage: responseSubmitFailedMessage);
 
   Future<bool> simulateEmergencyCall(String alertId) => _run(() async {
     await repository.recordSimulatedEmergencyCall(alertId);
@@ -561,6 +581,7 @@ class GuardAidController extends ChangeNotifier {
   }) async {
     isBusy = true;
     error = null;
+    errorCode = null;
     notifyListeners();
     try {
       final result = await repository.createUser(
@@ -574,7 +595,7 @@ class GuardAidController extends ChangeNotifier {
       roles = await repository.loadRoles();
       return result;
     } catch (exception) {
-      error = _errorMessage(exception);
+      _recordError(exception, fallbackMessage: accountCreateFailedMessage);
       return null;
     } finally {
       isBusy = false;
@@ -584,12 +605,15 @@ class GuardAidController extends ChangeNotifier {
 
   Future<bool> resendUserSetupEmail(String email) async {
     if (repository.isDemo) return false;
-    return _run(() async {
-      final requested = await repository.sendUserSetupEmail(email);
-      if (!requested) {
-        throw StateError('The setup email could not be requested.');
-      }
-    });
+    return _run(
+      () async {
+        final requested = await repository.sendUserSetupEmail(email);
+        if (!requested) {
+          throw StateError('The setup email could not be requested.');
+        }
+      },
+      fallbackMessage: setupEmailFailedMessage,
+    );
   }
 
   Future<bool> deactivateUser(String userId) => _run(() async {
@@ -598,11 +622,14 @@ class GuardAidController extends ChangeNotifier {
     roles = await repository.loadRoles();
   });
 
-  Future<bool> updateProfile(String displayName) => _run(() async {
-    await repository.updateProfile(displayName);
-    currentUser = await repository.refreshSession();
-    users = await repository.loadUsers();
-  });
+  Future<bool> updateProfile(String displayName) => _run(
+    () async {
+      await repository.updateProfile(displayName);
+      currentUser = await repository.refreshSession();
+      users = await repository.loadUsers();
+    },
+    fallbackMessage: profileSaveFailedMessage,
+  );
 
   Future<bool> updateBorderlineSettings(bool enabled, Set<String> recipients) =>
       _run(() async {
@@ -652,12 +679,16 @@ class GuardAidController extends ChangeNotifier {
   }) async {
     isBusy = true;
     error = null;
+    errorCode = null;
     notifyListeners();
     try {
       await task();
       return true;
     } catch (exception) {
-      error = _errorMessage(exception, fallbackMessage: fallbackMessage);
+      _recordError(
+        exception,
+        fallbackMessage: fallbackMessage ?? guardAidGenericFailure,
+      );
       return false;
     } finally {
       isBusy = false;
@@ -665,14 +696,21 @@ class GuardAidController extends ChangeNotifier {
     }
   }
 
-  Future<T?> _runResult<T>(Future<T> Function() task) async {
+  Future<T?> _runResult<T>(
+    Future<T> Function() task, {
+    String? fallbackMessage,
+  }) async {
     isBusy = true;
     error = null;
+    errorCode = null;
     notifyListeners();
     try {
       return await task();
     } catch (exception) {
-      error = _errorMessage(exception);
+      _recordError(
+        exception,
+        fallbackMessage: fallbackMessage ?? guardAidGenericFailure,
+      );
       return null;
     } finally {
       isBusy = false;
@@ -680,12 +718,13 @@ class GuardAidController extends ChangeNotifier {
     }
   }
 
-  String _errorMessage(Object exception, {String? fallbackMessage}) =>
-      switch (exception) {
-        FormatException(:final message) => message,
-        TimeoutException(:final message) when message != null => message,
-        _ =>
-          fallbackMessage ??
-              exception.toString().replaceFirst('Exception: ', ''),
-      };
+  /// Keeps [error] readable and [errorCode] available for screen branches.
+  void _recordError(Object exception, {required String fallbackMessage}) {
+    final described = describeUserFacingError(
+      exception,
+      fallbackMessage: fallbackMessage,
+    );
+    error = described.message;
+    errorCode = described.code;
+  }
 }

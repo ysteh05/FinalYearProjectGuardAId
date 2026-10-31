@@ -16,9 +16,14 @@ class GuardAidConflictException implements Exception {
 }
 
 abstract class GuardAidRequestException implements Exception {
-  const GuardAidRequestException(this.statusCode, this.message);
+  const GuardAidRequestException(this.statusCode, this.message, {this.code});
   final int statusCode;
   final String message;
+
+  /// Stable machine code from the service, kept separate from [message] so a
+  /// screen can still branch on it without showing it.
+  final String? code;
+
   @override
   String toString() => message;
 }

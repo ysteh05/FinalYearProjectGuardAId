@@ -1464,8 +1464,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
       return;
     }
 
-    final error = widget.controller.error ?? 'Unable to create this user.';
-    if (error == 'firebase_identity_exists' && !linkExisting) {
+    final code = widget.controller.errorCode;
+    if (code == 'firebase_identity_exists' && !linkExisting) {
       final link = await showConfirmDialog(
         context,
         title: 'Link existing Firebase account?',
@@ -1476,7 +1476,13 @@ class _AddUserScreenState extends State<AddUserScreen> {
       if (link && mounted) await _create(linkExisting: true);
       return;
     }
-    showMessage(context, _friendlyError(error), error: true);
+    showMessage(
+      context,
+      _friendlyError(code) ??
+          widget.controller.error ??
+          'Unable to create this user.',
+      error: true,
+    );
   }
 
   String _createConfirmation(GuardRole role) {
@@ -1491,16 +1497,18 @@ class _AddUserScreenState extends State<AddUserScreen> {
         '$setupNote';
   }
 
-  String _friendlyError(String error) => switch (error) {
+  String? _friendlyError(String? code) => switch (code) {
     'user_already_registered' =>
       'A GuardAId user with this email already exists. Find the user in the assignments list.',
+    'firebase_identity_exists' =>
+      'A Firebase sign-in already uses this email. Review the existing account before trying again.',
     'firebase_identity_disabled' =>
       'This Firebase account is disabled and cannot be linked from GuardAId.',
     'firebase_identity_not_found' =>
       'The Firebase account was not found. Check the email and try again.',
     'account_created_but_local_setup_failed' =>
       'Firebase created the sign-in, but GuardAId could not finish saving the user. Ask an administrator to check the account before retrying.',
-    _ => error,
+    _ => null,
   };
 
   @override

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 import '../controller.dart';
+import '../error_messages.dart';
 import '../models.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -74,12 +75,13 @@ class _AlertDetailScreenState extends State<AlertDetailScreen> {
     try {
       options = await widget.controller.loadBroadcastRoleOptions(alert.id);
     } catch (error) {
+      final described = describeUserFacingError(
+        error,
+        fallbackMessage:
+            'Unable to load recipient roles. Please try again.',
+      );
       if (mounted) {
-        showMessage(
-          context,
-          'Could not load broadcast roles: $error',
-          error: true,
-        );
+        showMessage(context, described.message, error: true);
       }
       return;
     }
@@ -565,7 +567,14 @@ class _AlertDetailScreenState extends State<AlertDetailScreen> {
             ...otherEvidence.map(
               (item) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: EvidenceViewer(evidence: item, accent: color),
+                child: EvidenceViewer(
+                  // The media URL carries the current ID token. When a refresh
+                  // replaces it, a new key recreates the player with the new
+                  // header instead of retrying with the rejected token.
+                  key: ValueKey<String>(item.httpHeaders['Authorization'] ?? ''),
+                  evidence: item,
+                  accent: color,
+                ),
               ),
             ),
           ],
