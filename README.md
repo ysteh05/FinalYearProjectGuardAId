@@ -16,7 +16,7 @@ dataset, user-account backup, experimental report or model distribution.
 
 ## Local setup
 
-Use Python 3.11 or newer, FFmpeg, Flutter matching `mobileapp/pubspec.yaml`, and
+Use Python 3.11–3.13, FFmpeg, Flutter matching `mobileapp/pubspec.yaml`, and
 local Ollama with `openbmb/minicpm-v4.7:1b-q4_K_M` for VLM inference. Install an
 appropriate PyTorch/TorchVision build first (see `requirements-cuda.txt`), then
 install `guardaid_monitor/requirements.txt` in an isolated environment.
@@ -64,3 +64,14 @@ videos, datasets, model weights, generated application packages or the report.
 Only generic application branding/icons and generated notification sounds belong
 among the source assets. Supply private dependencies separately on a trusted
 machine; this repository is not a complete operational-data backup.
+
+## Packaged regression tests
+
+From `guardaid_monitor/`, run `python -m pytest` and
+`node --test tests/error_messages.test.cjs tests/monitor_playback.test.cjs tests/refresh_state.test.cjs`.
+From `mobileapp/`, run `flutter pub get` followed by `flutter analyze` and
+`flutter test`. These are self-contained regressions using generated media,
+temporary SQLite databases and mocked model responses; they do not call live
+Firebase services or measure real model accuracy. Legacy migration tests that
+require a separately retained database fixture are outside this packaged subset;
+no historical database dump is distributed here.

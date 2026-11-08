@@ -30,7 +30,7 @@ from ..domain import (
 )
 from ..media import MediaStore
 from ..media_tasks import MediaTaskStore, MediaTaskWorker
-from ..vlm_contract import SCENE_PROMPT_VERSION
+from ..vlm_contract import SCENE_PROMPT_VERSION, BINARY_PROMPT_VERSION
 from ..model_metadata import VIOLENCE_MODEL_PROTOCOL, VIOLENCE_MODEL_VERSION
 from ..policy import (
     generate_segment_windows,
@@ -964,6 +964,8 @@ class InferenceOrchestrator(BackgroundMediaPipeline):
         detection_event_key: str,
         context_error: str | None = None,
     ) -> None:
+        settings = settings.model_copy(update={'vlm': settings.vlm.model_copy(
+            update={'binary_prompt_version': BINARY_PROMPT_VERSION})})
         context_path = (
             self.runtime.data_dir / "tmp" / "borderline_reviews"
             / f"{detection_event_key}.mp4"
@@ -978,6 +980,14 @@ class InferenceOrchestrator(BackgroundMediaPipeline):
         if hasattr(self.repository, "create_borderline_review_task"):
             task_id = None
             try:
+                task_settings = settings.vlm.model_dump(mode="json")
+                if isinstance(self.vlm, MiniCpmOllamaRunner) and context_error is None and context_bytes:
+                    source = self.media_store.materialize(camera.storage_path)
+                    stat = source.stat()
+                    task_settings['_borderline_source'] = {
+                        'storage_path': camera.storage_path,
+                        'size': stat.st_size, 'mtime_ns': stat.st_mtime_ns,
+                    }
                 task_id = self.repository.create_borderline_review_task(
                     alert_id=alert_id,
                     camera_id=camera.id,
@@ -989,7 +999,7 @@ class InferenceOrchestrator(BackgroundMediaPipeline):
                     model_version=settings.vlm.model_id,
                     prompt_version=settings.vlm.binary_prompt_version,
                     config_version=settings.config_version,
-                    vlm_settings=settings.vlm.model_dump(mode="json"),
+                    vlm_settings=task_settings,
                 )
                 if task_id is None:
                     self._remove_borderline_context(context_path)
@@ -1038,7 +1048,7 @@ class InferenceOrchestrator(BackgroundMediaPipeline):
                 if not self.repository.get_settings().vlm.borderline_review_enabled:
                     self._record_review_disabled(alert_id)
                     return
-                review = self.vlm.review_borderline(context_path, settings.vlm)
+                review = self._review_original_window(camera.id, context_path, settings.vlm, start)
                 self._record_borderline_review_status(
                     alert_id, "positive" if review["raise_alert"] else "negative"
                 )
@@ -1076,12 +1086,14 @@ class InferenceOrchestrator(BackgroundMediaPipeline):
                 return
             if not context_path.is_file():
                 raise FileNotFoundError("Borderline review context is missing.")
-            review_settings = VlmSettings.model_validate(
-                json.loads(task["vlm_settings_json"])
-            )
-            if review_settings.model_id != MiniCpmOllamaRunner.MODEL_VERSION:
+            saved_settings = json.loads(task["vlm_settings_json"])
+            source_snapshot = saved_settings.pop('_borderline_source', None)
+            review_settings = VlmSettings.model_validate(saved_settings)
+            if (review_settings.model_id != MiniCpmOllamaRunner.MODEL_VERSION or
+                    (isinstance(self.vlm, MiniCpmOllamaRunner) and
+                     review_settings.binary_prompt_version != BINARY_PROMPT_VERSION)):
                 self.repository.finish_borderline_review_task(
-                    task_id, status="cancelled", error_code="superseded_vlm_model"
+                    task_id, status="cancelled", error_code="superseded_vlm_protocol"
                 )
                 self._remove_borderline_context(context_path)
                 return
@@ -1091,7 +1103,9 @@ class InferenceOrchestrator(BackgroundMediaPipeline):
                 return
             began = time.perf_counter()
             try:
-                review = self.vlm.review_borderline(context_path, review_settings)
+                review = self._review_original_window(
+                    task['camera_id'], context_path, review_settings, task['source_start_seconds'],
+                    source_snapshot)
             finally:
                 if hasattr(self, '_timing'):
                     self._timing.record(job_id, 'borderlineReview', time.perf_counter()-began)
@@ -1176,6 +1190,24 @@ class InferenceOrchestrator(BackgroundMediaPipeline):
         finally:
             if counter_complete and job_id and job_id in self._jobs:
                 self._increment(job_id, pending_vlm_jobs=-1, borderline_reviews_processed=1)
+
+    def _review_original_window(self, camera_id, context_path, settings, start, expected_source=None):
+        if not isinstance(self.vlm, MiniCpmOllamaRunner):
+            return self.vlm.review_borderline(context_path, settings)
+        camera = self.repository.get_camera(camera_id)
+        if camera is None:
+            raise FileNotFoundError('Borderline source camera is missing')
+        source = self.media_store.materialize(camera.storage_path)
+        if expected_source is not None:
+            stat = source.stat()
+            actual = {'storage_path': camera.storage_path,
+                      'size': stat.st_size, 'mtime_ns': stat.st_mtime_ns}
+            if actual != expected_source:
+                raise ValueError('Borderline source changed after the review was queued')
+        # This is queued only after the detector has completed this window.
+        # The context export remains evidence, not the model's input source.
+        return self.vlm.review_borderline(context_path, settings, source_path=source,
+                                          start_seconds=float(start))
 
     def _record_borderline_review_status(self, alert_id: str, status: str) -> None:
         alert = self._get_alert(alert_id)

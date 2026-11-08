@@ -75,3 +75,10 @@ app.*.map.json
 *.safetensors
 *.apk
 *.aab
+
+# Only the reviewed, self-contained public regression sources are included.
+!/test/
+/test/*
+!/test/correctness_gaps_test.dart
+!/test/correctness_http_test.dart
+!/test/public_demo_configuration_test.dart

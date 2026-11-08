@@ -604,6 +604,13 @@ class SQLiteRepository:
                     'updated_by':'migration-minicpm-scene-v10','updated_at':utc_now(),
                 }))
                 current=self.get_settings()
+            if current.vlm.binary_prompt_version == 'minicpm_binary_360p_v1':
+                self.save_settings(current.model_copy(update={
+                    'vlm': current.vlm.model_copy(update={'binary_prompt_version': BINARY_PROMPT_VERSION}),
+                    'config_version': current.config_version + 1,
+                    'updated_by': 'migration-borderline-source-window-v2', 'updated_at': utc_now(),
+                }))
+                current = self.get_settings()
             # Upgrade exact defaults from the previously deployed BREV
             # hard-negative Epoch 5 model; retain per-class operator edits.
             threshold_profiles = {}
