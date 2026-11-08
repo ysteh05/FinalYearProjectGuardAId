@@ -1,6 +1,6 @@
 """Shared MiniCPM policy, independent of the serving or model runtime."""
 MODEL_ID = "openbmb/minicpm-v4.7:1b-q4_K_M"
-BINARY_PROMPT_VERSION = "minicpm_binary_360p_v1"
+BINARY_PROMPT_VERSION = "minicpm_binary_source_window_v2"
 SCENE_PROMPT_VERSION = "minicpm_unannotated_scene_v10"
 
 SCENE_SCHEMA = {

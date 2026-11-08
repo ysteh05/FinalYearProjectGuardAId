@@ -17,3 +17,5 @@ PyYAML>=6,<7
 # VLM inference uses the already-installed local Ollama service and MiniCPM.
 # Historical offline Qwen evaluators may keep their own existing dependencies.
 av>=14
+# Pillow/LANCZOS is part of the selected Borderline input protocol.
+Pillow>=12,<14

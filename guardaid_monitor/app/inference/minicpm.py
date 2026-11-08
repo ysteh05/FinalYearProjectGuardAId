@@ -13,10 +13,11 @@ import time
 from typing import Any
 from urllib.request import Request, urlopen
 from .scene_reliability import SceneFormatError, SceneLengthError, SceneOutputTruncated
+from .borderline_protocol import prepare_images, request_payload, parse_decision
 
 from ..vlm_contract import (
     MODEL_ID, SCENE_SCHEMA, SCENE_SYSTEM_PROMPT, SCENE_USER_PROMPT,
-    BINARY_SYSTEM_PROMPT, BINARY_USER_PROMPT, scene_sampling, scene_prompt,
+    scene_sampling, scene_prompt,
 )
 
 
@@ -202,16 +203,24 @@ class MiniCpmOllamaRunner:
             raise SceneOutputTruncated("MiniCPM output reached its token limit")
         return response.get("message", {}).get("content", "").strip()
 
-    def review_borderline(self, video_path: Path, settings) -> dict[str, Any]:
+    def review_borderline(self, video_path: Path, settings, *, source_path: Path | None = None,
+                          start_seconds: float = 0) -> dict[str, Any]:
         with self._lock:
             self.scene_trace = {}
-            images, self.last_call_metadata = self._sample(video_path, fps=settings.input_fps)
-            times = ", ".join(f"{t:.2f}" for t in self.last_call_metadata["sample_times"])
-            raw = self._chat(images, settings, system=BINARY_SYSTEM_PROMPT,
-                prompt=BINARY_USER_PROMPT + f" The {len(images)} images are chronological samples at {times} seconds.",
-                schema={"type": "integer", "enum": [0, 1]}, output_tokens=8, think=False)
-            if raw not in {"0", "1"}:
-                raise ValueError("MiniCPM Borderline response must be exactly 0 or 1")
+            if settings.model_id != MODEL_ID:
+                raise ValueError(f"This runtime uses {MODEL_ID}")
+            images, self.last_call_metadata = prepare_images(
+                source_path if source_path is not None else video_path,
+                start=start_seconds, fps=settings.input_fps)
+            payload = request_payload(MODEL_ID, images, self.last_call_metadata['fps'])
+            response = self._api('/api/chat', payload)
+            self._loaded = True
+            self.last_call_metadata.update({key: response.get(key) for key in (
+                'total_duration', 'load_duration', 'prompt_eval_duration', 'eval_duration',
+                'prompt_eval_count', 'eval_count', 'done_reason')})
+            self.last_call_metadata['think_requested'] = False
+            self.last_call_metadata['raw_output'] = response.get('message', {}).get('content', '')
+            raw = parse_decision(response)
             return {"raise_alert": raw == "1", "uncertainty": "high", "brief_reason": "",
                     "visible_evidence": [], "raw_output": raw}
 
