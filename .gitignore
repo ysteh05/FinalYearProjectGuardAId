@@ -1,77 +1,69 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-**/ios/Flutter/Generated.xcconfig
-**/ios/Flutter/flutter_export_environment.sh
-**/ios/Flutter/ephemeral/
-.dart_tool/
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
-**/.gradle/
-android/local.properties
-android/app/google-services.json
-ios/Runner/GoogleService-Info.plist
-firebase_options.dart
-/firebase.json
-/coverage/
-
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
-
-# Local-only project documentation, reports and test artifacts.
-# These records remain on the developer workstation and must not enter GitHub.
-*.md
-*.pdf
-*.docx
-*.pptx
-/test/
-/integration_test/
-**/test/
-**/integration_test/
-**/RunnerTests/
-
-# Local datasets, model/runtime evidence and generated packages.
+# Private configuration and credentials
+.env
+.env.*
+!.env.example
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase_options.dart
+**/firebase*.json
+**/*service-account*.json
+**/*service_account*.json
+**/*adminsdk*.json
+**/local.properties
+**/key.properties
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+# Runtime data, model files and source media
+runtime_data/
+**/runtime_data/
+external_models/
+datasets/
+model_runs/
+test_artifacts/
+**/test_artifacts/
+*.db
+*.db-*
 *.sqlite
 *.sqlite3
-*.db
-*.onnx
+*.sqlite-*
 *.pt
 *.pth
+*.onnx
 *.safetensors
+*.gguf
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.log
+*.jsonl
+*.csv
+# Reports and generated outputs are not application source
+*.docx
+*.pdf
+*.xlsx
+*.pptx
+reports/
+screenshots/
+**/screenshots/
+build/
+**/build/
 *.apk
 *.aab
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+.dart_tool/
+**/.dart_tool/
+.gradle/
+**/.gradle/
+node_modules/
+.idea/
+.vscode/
+*.iml
