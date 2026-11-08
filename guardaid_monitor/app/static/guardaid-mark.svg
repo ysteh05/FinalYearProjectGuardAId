@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <title>GuardAId shield</title>
+  <metadata>Uses Google's Material Icons shield_rounded, the same glyph as mobileapp GuardAidBrand. Converted from the Flutter Material Icons font to SVG. Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/ .</metadata>
+  <rect width="48" height="48" rx="15" fill="#0B314A"/>
+  <svg x="9" y="9" width="30" height="30" viewBox="0 0 512 512">
+    <path fill="#fff" transform="translate(0 512) scale(1 -1)" d="M241 464 113 416C96 409 85 394 85 376V275C85 172 152 76 244 46C252 44 260 44 268 46C360 76 427 172 427 275V376C427 393 416 409 399 416L271 464C261 467 251 467 241 464Z"/>
+  </svg>
+</svg>
